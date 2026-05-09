@@ -3,8 +3,6 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { ServiceWorkerRegistration } from '@/components/sw-registration'
-import { PlayerProvider } from '@/context/player-context'
-import { PersistentYouTubePlayer } from '@/components/persistent-player'
 import './globals.css'
 
 const geist = Geist({
@@ -59,11 +57,7 @@ export default function RootLayout({
       </head>
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased min-h-screen`}>
         <ServiceWorkerRegistration />
-        <PlayerProvider>
-          {/* Persistent player — ไม่ unmount เมื่อเปลี่ยนหน้า */}
-          <PersistentYouTubePlayer />
-          {children}
-        </PlayerProvider>
+        {children}
         <Toaster
           position="top-center"
           richColors
