@@ -132,7 +132,7 @@ export function PlayerView() {
                   </Badge>
                 )}
               </div>
-              <h2 className="text-4xl sm:text-6xl font-black line-clamp-2 leading-[1.1] tracking-tighter text-foreground mb-6 drop-shadow-sm">
+              <h2 className="text-2xl sm:text-3xl font-black line-clamp-2 leading-[1.1] tracking-tighter text-foreground mb-6 drop-shadow-sm">
                 {currentSong.title}
               </h2>
               <p className="text-xl sm:text-2xl text-muted-foreground font-medium opacity-80 max-w-2xl mx-auto">
