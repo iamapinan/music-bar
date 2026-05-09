@@ -126,8 +126,12 @@ export function PersistentYouTubePlayer() {
       events: {
         onReady: (event) => {
           event.target.setVolume(volume)
-          event.target.playVideo()
-          setIsPlaying(true)
+          if (isAutoPlayEnabled) {
+            event.target.playVideo()
+            setIsPlaying(true)
+          } else {
+            setIsPlaying(false)
+          }
           exposeMethods()
         },
         onStateChange: (event) => {
@@ -153,7 +157,7 @@ export function PersistentYouTubePlayer() {
       },
     })
     currentVideoRef.current = videoId
-  }, [handleSongEnd, setIsPlaying, exposeMethods, volume])
+  }, [handleSongEnd, setIsPlaying, exposeMethods, volume, isAutoPlayEnabled])
 
   // Load YouTube IFrame API once
   useEffect(() => {
