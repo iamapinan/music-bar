@@ -51,17 +51,21 @@ export function PlayerView() {
       )}
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 min-h-0 overflow-y-auto bg-gradient-to-b from-background to-background/50">
-        <div className="w-full max-w-4xl flex flex-col items-center">
+        <div className="w-full max-w-5xl flex flex-col items-center">
           
-          {/* Artwork / Thumbnail / Video Target */}
+          {/* Artwork / Thumbnail / Video Target Container */}
           <div className={cn(
-            "relative w-full max-w-[420px] aspect-square overflow-hidden shadow-2xl border border-white/5 mb-12 group bg-black/50 transition-all duration-500",
+            "relative w-full overflow-hidden shadow-2xl border border-white/5 transition-all duration-500 bg-black/50",
             (isFullscreen && isVideoMode) 
               ? "fixed inset-0 z-[60] w-screen h-screen max-w-none aspect-auto rounded-none m-0 border-none" 
-              : "rounded-2xl sm:rounded-[2rem]"
+              : isVideoMode
+                ? "max-w-4xl aspect-video rounded-xl sm:rounded-2xl mb-8"
+                : "max-w-[420px] aspect-square rounded-2xl sm:rounded-[2rem] mb-12"
           )}>
+            {/* The actual target where PersistentYouTubePlayer will move the iframe */}
             <div id="video-target-rect" className="w-full h-full absolute inset-0" />
             
+            {/* Thumbnail for Music Mode */}
             {!isVideoMode && (
               currentSong.thumbnail ? (
                 <img
@@ -81,46 +85,64 @@ export function PlayerView() {
             
             {!isVideoMode && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />}
             
+            {/* Layered Controls on top of Video */}
+            <div className="absolute inset-0 flex items-start justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity z-[95] pointer-events-none">
+              <button
+                className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all pointer-events-auto"
+                onClick={() => setIsVideoMode(!isVideoMode)}
+                title={isVideoMode ? 'Switch to Music Mode' : 'Switch to Video Mode'}
+              >
+                <div className={cn("w-2 h-2 rounded-full", isVideoMode ? "bg-red-500 animate-pulse" : "bg-white/40")} />
+              </button>
+
+              <button
+                className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition-all pointer-events-auto"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                title={isFullscreen ? 'Minimize' : 'Fullscreen'}
+              >
+                {isFullscreen ? <Minimize2 className="w-5 h-5 text-white" /> : <Maximize2 className="w-5 h-5 text-white" />}
+              </button>
+            </div>
+
+            {/* Permanent Small Mode Toggle for Video Mode (always visible) */}
             <button
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100 z-10"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-            >
-              {isFullscreen ? <Minimize2 className="w-5 h-5 text-white" /> : <Maximize2 className="w-5 h-5 text-white" />}
-            </button>
-            
-            <button
-              className="absolute top-4 left-4 h-10 px-3 rounded-full bg-black/40 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100 z-10"
+              className={cn(
+                "absolute top-4 left-4 h-8 px-3 rounded-full bg-black/40 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all z-[90]",
+                "opacity-100 sm:opacity-0 group-hover:opacity-100"
+              )}
               onClick={() => setIsVideoMode(!isVideoMode)}
             >
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-xs font-medium text-white">{isVideoMode ? 'Music' : 'Video'}</span>
+              <div className={cn("w-1.5 h-1.5 rounded-full", isVideoMode ? "bg-red-500 animate-pulse" : "bg-white/40")} />
+              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{isVideoMode ? 'Video' : 'Audio'}</span>
             </button>
           </div>
 
           {/* Song Info (Main Stage) */}
-          <div className="w-full text-center px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex items-center justify-center gap-2 mb-6">
-              {playMode === 'request' && (
-                <Badge className="bg-accent/20 text-accent border-accent/30 text-[10px] uppercase tracking-widest px-4 py-1 rounded-full">
-                  Song Request
-                </Badge>
-              )}
-              {isShuffle && (
-                <Badge variant="outline" className="text-[10px] uppercase tracking-widest px-4 py-1 border-primary/40 text-primary rounded-full">
-                  Shuffle Mode
-                </Badge>
-              )}
+          {!isFullscreen && (
+            <div className="w-full text-center px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div className="flex items-center justify-center gap-2 mb-6">
+                {playMode === 'request' && (
+                  <Badge className="bg-accent/20 text-accent border-accent/30 text-[10px] uppercase tracking-widest px-4 py-1 rounded-full">
+                    Song Request
+                  </Badge>
+                )}
+                {isShuffle && (
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-widest px-4 py-1 border-primary/40 text-primary rounded-full">
+                    Shuffle Mode
+                  </Badge>
+                )}
+              </div>
+              <h2 className="text-4xl sm:text-6xl font-black line-clamp-2 leading-[1.1] tracking-tighter text-foreground mb-6 drop-shadow-sm">
+                {currentSong.title}
+              </h2>
+              <p className="text-xl sm:text-2xl text-muted-foreground font-medium opacity-80 max-w-2xl mx-auto">
+                {'requested_by' in currentSong && (currentSong as SongRequest).requested_by 
+                  ? `Requested by: ${(currentSong as SongRequest).requested_by}`
+                  : 'Music Bar Selection'
+                }
+              </p>
             </div>
-            <h2 className="text-4xl sm:text-6xl font-black line-clamp-2 leading-[1.1] tracking-tighter text-foreground mb-6 drop-shadow-sm">
-              {currentSong.title}
-            </h2>
-            <p className="text-xl sm:text-2xl text-muted-foreground font-medium opacity-80 max-w-2xl mx-auto">
-              {'requested_by' in currentSong && (currentSong as SongRequest).requested_by 
-                ? `Requested by: ${(currentSong as SongRequest).requested_by}`
-                : 'Music Bar Selection'
-              }
-            </p>
-          </div>
+          )}
         </div>
       </div>
     </div>
