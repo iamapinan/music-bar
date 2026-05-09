@@ -46,12 +46,13 @@ interface YTPlayer {
 export function PersistentYouTubePlayer() {
   const { 
     currentSong, handleSongEnd, setIsPlaying, playerRef, volume, 
-    isVideoMode, isAutoPlayEnabled, setCurrentTime, setDuration 
+    isVideoMode, isAutoPlayEnabled, setCurrentTime, setDuration, isFullscreen 
   } = usePlayer()
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const isApiReadyRef = useRef(false)
   const currentVideoRef = useRef<string>('')
   const containerRef = useRef<HTMLDivElement>(null)
+  const isCrossfadingRef = useRef(false)
   const [videoRect, setVideoRect] = useState<DOMRect | null>(null)
 
   // Track video container rect for Video Mode
@@ -143,7 +144,9 @@ export function PersistentYouTubePlayer() {
         onStateChange: (event) => {
           const state = window.YT.PlayerState
           if (event.data === state.ENDED) {
-            handleSongEnd()
+            if (!isCrossfadingRef.current) {
+              handleSongEnd()
+            }
           } else if (event.data === state.PLAYING) {
             setIsPlaying(true)
             if ('mediaSession' in navigator) {
@@ -207,6 +210,23 @@ export function PersistentYouTubePlayer() {
           startSeconds: startSeconds > 0 ? startSeconds : undefined
         })
         currentVideoRef.current = currentSong.youtube_id
+        
+        // FADE IN if crossfading
+        if (isCrossfadingRef.current) {
+          ytPlayerRef.current.setVolume(0)
+          let fadeInVol = 0
+          const fadeInInterval = setInterval(() => {
+            fadeInVol = Math.min(volume, fadeInVol + (volume / 10))
+            if (ytPlayerRef.current) ytPlayerRef.current.setVolume(fadeInVol)
+            if (fadeInVol >= volume) {
+              clearInterval(fadeInInterval)
+              isCrossfadingRef.current = false
+            }
+          }, 300)
+        } else {
+          ytPlayerRef.current.setVolume(volume)
+        }
+
         exposeMethods()
       } else {
         initPlayer(currentSong.youtube_id)
@@ -224,10 +244,21 @@ export function PersistentYouTubePlayer() {
         setCurrentTime(time)
         setDuration(duration)
 
-        // Only save to localStorage every 5 seconds equivalent (e.g. time is mod 5) 
-        // to avoid spamming localStorage. We do this by just unconditionally saving it 
-        // since localStorage is very fast, but if we want we can rate limit.
-        // For simplicity, just save it.
+        // Crossfade trigger
+        if (duration > 0 && duration - time <= 3 && !isCrossfadingRef.current) {
+          isCrossfadingRef.current = true
+          let fadeOutVol = ytPlayerRef.current.getVolume?.() || volume
+          const fadeOutInterval = setInterval(() => {
+            fadeOutVol = Math.max(0, fadeOutVol - (volume / 10))
+            if (ytPlayerRef.current) ytPlayerRef.current.setVolume(fadeOutVol)
+            if (fadeOutVol <= 0) {
+              clearInterval(fadeOutInterval)
+              handleSongEnd() // Trigger next song early
+            }
+          }, 300)
+        }
+
+        // Save seek time
         if (time > 0) {
           localStorage.setItem('music_bar_seek_time', JSON.stringify({
             videoId: currentVideoRef.current,
@@ -252,10 +283,10 @@ export function PersistentYouTubePlayer() {
               left: videoRect.left,
               width: videoRect.width,
               height: videoRect.height,
-              zIndex: 5,
+              zIndex: (isFullscreen && isVideoMode) ? 65 : 5,
               opacity: 1,
               pointerEvents: 'auto',
-              borderRadius: window.innerWidth >= 640 ? '2rem' : '1rem',
+              borderRadius: (isFullscreen && isVideoMode) ? '0' : (window.innerWidth >= 640 ? '2rem' : '1rem'),
               overflow: 'hidden'
             }
           : {

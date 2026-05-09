@@ -23,6 +23,7 @@ interface PlayerContextValue {
   isShuffle: boolean
   isVideoMode: boolean
   isAutoPlayEnabled: boolean
+  isFullscreen: boolean
   currentTime: number
   duration: number
   currentIndex: number
@@ -39,6 +40,7 @@ interface PlayerContextValue {
   setIsPlaying: (v: boolean) => void
   setIsVideoMode: (v: boolean) => void
   setIsAutoPlayEnabled: (v: boolean) => void
+  setIsFullscreen: (v: boolean) => void
   setCurrentTime: (v: number) => void
   setDuration: (v: number) => void
   // Player ref for YouTube component
@@ -69,6 +71,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isShuffle, setIsShuffle] = useState(false)
   const [isVideoMode, setIsVideoMode] = useState(false)
   const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [playMode, setPlayMode] = useState<'playlist' | 'request'>('playlist')
@@ -298,11 +301,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   return (
     <PlayerContext.Provider value={{
       isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
+      isFullscreen,
       currentTime, duration,
       currentIndex, requests, playlistSongs,
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
       toggleMute, toggleShuffle, handleSongEnd, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
-      setCurrentTime, setDuration,
+      setIsFullscreen, setCurrentTime, setDuration,
       playerRef,
     }}>
       {children}

@@ -18,13 +18,12 @@ import type { SongRequest } from '@/lib/types'
 export function PlayerView() {
   const {
     isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
-    currentTime, duration, playerRef,
+    isFullscreen, currentTime, duration, playerRef,
     requests, playlistSongs,
     togglePlay, handleSkip, handlePrevious, handleVolumeChange,
-    toggleMute, toggleShuffle, setIsVideoMode, setIsAutoPlayEnabled
+    toggleMute, toggleShuffle, setIsVideoMode, setIsAutoPlayEnabled, setIsFullscreen
   } = usePlayer()
 
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
   const [isDraggingTime, setIsDraggingTime] = useState(false)
   const [dragTime, setDragTime] = useState(0)
@@ -130,7 +129,12 @@ export function PlayerView() {
           <div className="w-full max-w-[420px] flex flex-col items-center">
             
             {/* Artwork / Thumbnail / Video Target */}
-            <div className="relative w-full aspect-square rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl border border-white/5 mb-8 group bg-black/50">
+            <div className={cn(
+              "relative w-full aspect-square overflow-hidden shadow-2xl border border-white/5 mb-8 group bg-black/50 transition-all duration-500",
+              (isFullscreen && isVideoMode) 
+                ? "fixed inset-0 z-[60] w-screen h-screen max-w-none rounded-none m-0 border-none" 
+                : "rounded-2xl sm:rounded-[2rem]"
+            )}>
               <div id="video-target-rect" className="w-full h-full absolute inset-0" />
               
               {!isVideoMode && (
