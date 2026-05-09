@@ -96,7 +96,7 @@ export function PlayerView() {
             className={cn(
               "relative w-full overflow-hidden shadow-2xl border border-white/5 transition-all duration-500 bg-black/50",
               isFullscreen && isVideoMode
-                ? "fixed inset-0 z-[60] w-screen h-screen max-w-none aspect-auto rounded-none m-0 border-none"
+                ? "fixed inset-0 z-[60] w-full h-[100dvh] max-w-none aspect-auto rounded-none m-0 border-none"
                 : isVideoMode
                   ? "max-w-4xl aspect-video rounded-xl sm:rounded-2xl"
                   : "max-w-4xl aspect-video rounded-2xl sm:rounded-[2rem]",

@@ -238,10 +238,10 @@ export function PersistentYouTubePlayer() {
         isVideoMode && videoRect
           ? {
               position: 'fixed',
-              top: videoRect.top,
-              left: videoRect.left,
-              width: videoRect.width,
-              height: videoRect.height,
+              top: (isFullscreen && isVideoMode) ? 0 : videoRect.top,
+              left: (isFullscreen && isVideoMode) ? 0 : videoRect.left,
+              width: (isFullscreen && isVideoMode) ? '100vw' : videoRect.width,
+              height: (isFullscreen && isVideoMode) ? '100dvh' : videoRect.height,
               zIndex: (isFullscreen && isVideoMode) ? 65 : 5,
               opacity: 1,
               pointerEvents: 'auto',

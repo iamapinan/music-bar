@@ -169,9 +169,12 @@
 }
 
 #video-target-rect iframe {
-  width: 100% !important;
-  height: 100% !important;
-  transform: scale(1.1); /* Zoom in to hide edges (logo, title) */
+  width: 115% !important;
+  height: 115% !important;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   pointer-events: none; /* Force events to go to our overlay */
 }
 
