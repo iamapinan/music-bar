@@ -20,31 +20,36 @@ export async function POST(request: Request) {
     let pageToken: string | null = null
 
     do {
-      const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${youtubePlaylistId}&maxResults=50${pageToken ? `&pageToken=${pageToken}` : ''}&key=${apiKey}`
-      const res = await fetch(url)
-      const data = await res.json()
+      const fetchUrl: string = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${youtubePlaylistId}&maxResults=50${pageToken ? `&pageToken=${pageToken}` : ''}&key=${apiKey}`
+      const fetchRes: Response = await fetch(fetchUrl)
+      const fetchData: {
+        error?: unknown
+        items?: Array<{
+          snippet: {
+            resourceId: { videoId: string }
+            title: string
+            thumbnails: { medium?: { url: string }; default?: { url: string } }
+            videoOwnerChannelTitle?: string
+          }
+        }>
+        nextPageToken?: string
+      } = await fetchRes.json()
 
-      if (data.error) {
+      if (fetchData.error) {
         return NextResponse.json({ error: 'YouTube API error' }, { status: 500 })
       }
 
-      const items = data.items?.map((item: {
-        snippet: {
-          resourceId: { videoId: string }
-          title: string
-          thumbnails: { medium?: { url: string }; default?: { url: string } }
-          videoOwnerChannelTitle?: string
-        }
-      }) => ({
+      const items = fetchData.items?.map(item => ({
         youtube_id: item.snippet.resourceId.videoId,
         title: item.snippet.title,
         thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url || '',
         channelTitle: item.snippet.videoOwnerChannelTitle || '',
-      })).filter((item: { youtube_id: string }) => item.youtube_id !== 'deleted') || []
+      })).filter(item => item.youtube_id !== 'deleted') || []
 
       allItems = [...allItems, ...items]
-      pageToken = data.nextPageToken || null
+      pageToken = fetchData.nextPageToken || null
     } while (pageToken && allItems.length < 200)
+
 
     // Create playlist in DB
     const playlist = await sql`
