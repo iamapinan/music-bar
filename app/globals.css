@@ -154,6 +154,18 @@
   height: 100%;
 }
 
+/* Masking YouTube internal UI by scaling and clipping */
+#video-target-rect {
+  overflow: hidden;
+}
+
+#video-target-rect iframe {
+  width: 100% !important;
+  height: 100% !important;
+  transform: scale(1.1); /* Zoom in to hide edges (logo, title) */
+  pointer-events: none; /* Force events to go to our overlay */
+}
+
 /* Fullscreen player */
 .fullscreen-player {
   position: fixed;
