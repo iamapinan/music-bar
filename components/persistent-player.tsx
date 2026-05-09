@@ -205,15 +205,22 @@ export function PersistentYouTubePlayer() {
           }
         } catch {}
         
+        // Prepare volume before playing
+        if (isCrossfadingRef.current) {
+          ytPlayerRef.current.setVolume(0)
+        } else {
+          ytPlayerRef.current.setVolume(volume)
+        }
+
         ytPlayerRef.current.loadVideoById({
           videoId: currentSong.youtube_id,
           startSeconds: startSeconds > 0 ? startSeconds : undefined
         })
+        ytPlayerRef.current.playVideo()
         currentVideoRef.current = currentSong.youtube_id
         
         // FADE IN if crossfading
         if (isCrossfadingRef.current) {
-          ytPlayerRef.current.setVolume(0)
           let fadeInVol = 0
           const fadeInInterval = setInterval(() => {
             fadeInVol = Math.min(volume, fadeInVol + (volume / 10))
@@ -223,8 +230,6 @@ export function PersistentYouTubePlayer() {
               isCrossfadingRef.current = false
             }
           }, 300)
-        } else {
-          ytPlayerRef.current.setVolume(volume)
         }
 
         exposeMethods()

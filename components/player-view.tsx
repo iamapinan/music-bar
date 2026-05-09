@@ -132,7 +132,7 @@ export function PlayerView() {
             <div className={cn(
               "relative w-full aspect-square overflow-hidden shadow-2xl border border-white/5 mb-8 group bg-black/50 transition-all duration-500",
               (isFullscreen && isVideoMode) 
-                ? "fixed inset-0 z-[60] w-screen h-screen max-w-none rounded-none m-0 border-none" 
+                ? "fixed inset-0 z-[60] w-screen h-screen max-w-none aspect-auto rounded-none m-0 border-none" 
                 : "rounded-2xl sm:rounded-[2rem]"
             )}>
               <div id="video-target-rect" className="w-full h-full absolute inset-0" />
