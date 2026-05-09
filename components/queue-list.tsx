@@ -1,7 +1,6 @@
 'use client'
 
 import { Music2, ListMusic, X, Play } from 'lucide-react'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { SheetClose } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -31,8 +30,8 @@ export function QueueList() {
         </SheetClose>
       </div>
 
-      <ScrollArea className="flex-1 px-4 py-4">
-        <div className="space-y-2 pr-1">
+      <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-none">
+        <div className="space-y-2 pr-1 pb-10">
           {/* Now Playing */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20 shadow-sm">
             <div className="flex-shrink-0 w-6 flex items-center justify-center">
@@ -73,7 +72,6 @@ export function QueueList() {
           {playlistSongs
             .map((song, originalIndex) => ({ song, originalIndex }))
             .filter(({ originalIndex }) => originalIndex !== currentIndex)
-            .slice(0, 20) // Limit to prevent performance issues
             .map(({ song, originalIndex }, i) => {
               const pendingReqCount = requests.filter(req => req.youtube_id !== currentSong.youtube_id).length
               return (
@@ -91,7 +89,7 @@ export function QueueList() {
             <p className="text-center py-10 text-muted-foreground text-sm">ไม่มีเพลงถัดไป</p>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }
