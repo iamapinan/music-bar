@@ -10,16 +10,17 @@ import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { usePlayer } from '@/context/player-context'
 import type { SongRequest } from '@/lib/types'
 
 export function PlayerView() {
   const {
-    isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode,
+    isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
     requests, playlistSongs,
     togglePlay, handleSkip, handlePrevious, handleVolumeChange,
-    toggleMute, toggleShuffle, setIsVideoMode
+    toggleMute, toggleShuffle, setIsVideoMode, setIsAutoPlayEnabled
   } = usePlayer()
 
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -180,21 +181,35 @@ export function PlayerView() {
               </p>
             </div>
 
-            {/* Volume Control */}
-            <div className="w-full flex items-center gap-4 mb-8 px-4">
-              <Button size="icon" variant="ghost" className="w-10 h-10 rounded-full hover:bg-white/5" onClick={toggleMute}>
-                {isMuted
-                  ? <VolumeX className="w-5 h-5 text-muted-foreground" />
-                  : <Volume2 className="w-5 h-5 text-muted-foreground" />
-                }
-              </Button>
-              <Slider
-                value={[isMuted ? 0 : volume]}
-                onValueChange={handleVolumeChange}
-                max={100}
-                step={1}
-                className="flex-1 cursor-pointer"
-              />
+            {/* Volume & Autoplay Controls */}
+            <div className="w-full flex items-center gap-6 mb-8 px-4">
+              <div className="flex items-center gap-2 shrink-0">
+                <Switch 
+                  id="autoplay-mode" 
+                  checked={isAutoPlayEnabled} 
+                  onCheckedChange={setIsAutoPlayEnabled}
+                  className="data-[state=checked]:bg-primary"
+                />
+                <label htmlFor="autoplay-mode" className="text-xs font-medium text-muted-foreground cursor-pointer">
+                  Autoplay
+                </label>
+              </div>
+
+              <div className="flex-1 flex items-center gap-3">
+                <Button size="icon" variant="ghost" className="w-10 h-10 rounded-full hover:bg-white/5 shrink-0" onClick={toggleMute}>
+                  {isMuted
+                    ? <VolumeX className="w-5 h-5 text-muted-foreground" />
+                    : <Volume2 className="w-5 h-5 text-muted-foreground" />
+                  }
+                </Button>
+                <Slider
+                  value={[isMuted ? 0 : volume]}
+                  onValueChange={handleVolumeChange}
+                  max={100}
+                  step={1}
+                  className="flex-1 cursor-pointer"
+                />
+              </div>
             </div>
 
             {/* Playback Controls */}

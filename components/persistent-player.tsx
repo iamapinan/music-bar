@@ -42,7 +42,7 @@ interface YTPlayer {
  * sehingga musik terus bermain di background.
  */
 export function PersistentYouTubePlayer() {
-  const { currentSong, handleSongEnd, setIsPlaying, playerRef, volume, isVideoMode } = usePlayer()
+  const { currentSong, handleSongEnd, setIsPlaying, playerRef, volume, isVideoMode, isAutoPlayEnabled } = usePlayer()
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const isApiReadyRef = useRef(false)
   const currentVideoRef = useRef<string>('')
@@ -112,7 +112,7 @@ export function PersistentYouTubePlayer() {
     ytPlayerRef.current = new window.YT.Player('yt-persistent-player', {
       videoId,
       playerVars: {
-        autoplay: 1,
+        autoplay: isAutoPlayEnabled ? 1 : 0,
         start: startSeconds > 0 ? startSeconds : 0,
         controls: 0,
         modestbranding: 1,

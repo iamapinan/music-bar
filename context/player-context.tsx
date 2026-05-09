@@ -22,6 +22,7 @@ interface PlayerContextValue {
   isMuted: boolean
   isShuffle: boolean
   isVideoMode: boolean
+  isAutoPlayEnabled: boolean
   currentIndex: number
   requests: SongRequest[]
   playlistSongs: PlaylistSong[]
@@ -35,6 +36,7 @@ interface PlayerContextValue {
   handleSongEnd: () => void
   setIsPlaying: (v: boolean) => void
   setIsVideoMode: (v: boolean) => void
+  setIsAutoPlayEnabled: (v: boolean) => void
   // Player ref for YouTube component
   playerRef: React.MutableRefObject<YouTubePlayerMethods | null>
 }
@@ -61,6 +63,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isMuted, setIsMuted] = useState(false)
   const [isShuffle, setIsShuffle] = useState(false)
   const [isVideoMode, setIsVideoMode] = useState(false)
+  const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(false)
   const [playMode, setPlayMode] = useState<'playlist' | 'request'>('playlist')
   const [isInitialized, setIsInitialized] = useState(false)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
@@ -74,6 +77,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (parsed.currentIndex !== undefined) setCurrentIndex(parsed.currentIndex)
         if (parsed.playMode) setPlayMode(parsed.playMode)
         if (parsed.isVideoMode !== undefined) setIsVideoMode(parsed.isVideoMode)
+        if (parsed.isAutoPlayEnabled !== undefined) setIsAutoPlayEnabled(parsed.isAutoPlayEnabled)
       }
     } catch {}
     setIsInitialized(true)
@@ -85,10 +89,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('music_bar_player_state', JSON.stringify({
         currentIndex,
         playMode,
-        isVideoMode
+        isVideoMode,
+        isAutoPlayEnabled
       }))
     }
-  }, [currentIndex, playMode, isVideoMode, isInitialized])
+  }, [currentIndex, playMode, isVideoMode, isAutoPlayEnabled, isInitialized])
 
   // Fetch playlists
   const { data: playlists } = useSWR('/api/playlists', fetcher, { refreshInterval: 15000 })
@@ -281,12 +286,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [isPlaying])
 
+  if (!isInitialized) return null
+
   return (
     <PlayerContext.Provider value={{
-      isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode,
+      isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
       currentIndex, requests, playlistSongs,
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
-      toggleMute, toggleShuffle, handleSongEnd, setIsPlaying, setIsVideoMode,
+      toggleMute, toggleShuffle, handleSongEnd, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
       playerRef,
     }}>
       {children}
