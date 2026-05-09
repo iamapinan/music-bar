@@ -89,7 +89,7 @@ export function PlayerView() {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 relative min-h-0">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 pb-24 sm:pb-32 relative min-h-0">
         <div className="w-full h-full max-w-5xl flex flex-col items-center justify-center relative">
           {/* Artwork / Thumbnail / Video Target Container */}
           <div
