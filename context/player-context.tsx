@@ -397,12 +397,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [isPlaying])
 
-  if (!isInitialized) return null
-
   const playByIndex = useCallback((index: number) => {
     setPlayMode('playlist')
     setCurrentIndex(index)
   }, [])
+
+  if (!isInitialized) return null
 
   return (
     <PlayerContext.Provider value={{
