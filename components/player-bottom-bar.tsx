@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX,
-  Music2, Shuffle, ListMusic, LayoutDashboard, Home, Tv, Maximize2, Minimize2
+  Music2, Shuffle, ListMusic, LayoutDashboard, Home, Tv, Maximize2, Minimize2, MoreVertical
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -16,6 +16,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { usePlayer } from '@/context/player-context'
 import { QueueList } from './queue-list'
 import { cn } from '@/lib/utils'
@@ -47,13 +53,13 @@ export function PlayerBottomBar() {
 
   return (
     <div className={cn(
-      "fixed bottom-0 left-0 right-0 z-[100] px-4 pb-4 transition-all duration-500",
+      "fixed bottom-0 left-0 right-0 z-[100] px-2 pb-2 sm:px-4 sm:pb-4 transition-all duration-500",
       (pathname === '/' && isVideoMode && isFullscreen && !showControls) ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-0 opacity-100 pointer-events-auto"
     )}>
-      <div className="max-w-7xl mx-auto glass border border-white/10 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] rounded-2xl pointer-events-auto overflow-hidden bg-background/50">
+      <div className="max-w-7xl mx-auto glass border border-white/10 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] rounded-2xl pointer-events-auto overflow-hidden bg-background/50 backdrop-blur-xl">
         
         {/* Progress Bar (Integrated at top) */}
-        <div className="absolute top-0 left-0 right-0 group px-6 h-1 hover:h-2 transition-all cursor-pointer">
+        <div className="absolute top-0 left-0 right-0 group px-4 sm:px-6 h-1 hover:h-1.5 transition-all cursor-pointer">
           <Slider
             value={[displayTime]}
             max={duration || 100}
@@ -76,10 +82,10 @@ export function PlayerBottomBar() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4 px-4 h-20 sm:h-24">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 h-20 sm:h-24">
           
           {/* Left: Navigation & Song Info */}
-          <div className="flex items-center gap-4 min-w-0 flex-1">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-[1.2] sm:flex-1">
             <div className="hidden lg:flex items-center gap-1 border-r border-white/10 pr-4 mr-2">
               <Link href="/">
                 <Button variant="ghost" size="icon" className={cn("w-10 h-10 rounded-xl", pathname === '/' && "bg-primary/10 text-primary")}>
@@ -94,31 +100,31 @@ export function PlayerBottomBar() {
             </div>
 
             <div className="relative group shrink-0">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-muted border border-white/5">
+              <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-muted border border-white/5">
                 {currentSong.thumbnail ? (
                   <img src={currentSong.thumbnail} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Music2 className="w-6 h-6 text-muted-foreground/30" />
+                    <Music2 className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground/30" />
                   </div>
                 )}
               </div>
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm sm:text-base font-bold truncate text-foreground leading-tight">
+              <h3 className="text-xs sm:text-base font-bold truncate text-foreground leading-tight">
                 {currentSong.title}
               </h3>
-              <p className="text-[10px] sm:text-xs text-muted-foreground font-medium mt-0.5 truncate uppercase tracking-wider">
+              <p className="text-[9px] sm:text-xs text-muted-foreground font-medium mt-0.5 truncate uppercase tracking-wider">
                 {'requested_by' in currentSong 
-                  ? `โดย: ${currentSong.requested_by || 'ลูกค้า'}` 
+                  ? `${currentSong.requested_by || 'ลูกค้า'}` 
                   : 'Playlist'}
               </p>
             </div>
           </div>
 
           {/* Center: Playback Controls */}
-          <div className="flex flex-col items-center gap-1 flex-1">
-            <div className="flex items-center gap-2 sm:gap-6">
+          <div className="flex flex-col items-center gap-1 shrink-0 px-2">
+            <div className="flex items-center gap-1 sm:gap-6">
               <Button
                 size="icon"
                 variant="ghost"
@@ -132,9 +138,9 @@ export function PlayerBottomBar() {
               <Button
                 size="icon"
                 onClick={togglePlay}
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
               >
-                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
+                {isPlaying ? <Pause className="w-5 h-5 sm:w-6 sm:h-6" /> : <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />}
               </Button>
 
               <Button
@@ -154,132 +160,136 @@ export function PlayerBottomBar() {
           </div>
 
           {/* Right: Extra Controls */}
-          <div className="flex items-center justify-end gap-2 sm:gap-4 flex-1">
+          <div className="flex items-center justify-end gap-1 sm:gap-4 flex-1">
             
-            {/* Requests Toggle (Admin Only) */}
-            {pathname === '/admin' && (
-              <div className="flex items-center gap-2 mr-4 pr-4 border-r border-white/10">
+            {/* Desktop Only Controls */}
+            <div className="hidden lg:flex items-center gap-3">
+               {/* Requests Toggle (Admin Only) */}
+              {pathname === '/admin' && (
+                <div className="flex items-center gap-2 mr-4 pr-4 border-r border-white/10">
+                  <Switch 
+                    checked={isRequestsEnabled} 
+                    onCheckedChange={setIsRequestsEnabled}
+                    className="scale-75 data-[state=checked]:bg-accent"
+                  />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                    {isRequestsEnabled ? 'เปิดรับเพลง' : 'ปิดรับเพลง'}
+                  </span>
+                </div>
+              )}
+
+              {/* Autoplay Switch */}
+              <div className="flex items-center gap-2 mr-2">
                 <Switch 
-                  checked={isRequestsEnabled} 
-                  onCheckedChange={setIsRequestsEnabled}
-                  className="scale-75 data-[state=checked]:bg-accent"
+                  checked={isAutoPlayEnabled} 
+                  onCheckedChange={setIsAutoPlayEnabled}
+                  className="scale-75"
                 />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
-                  {isRequestsEnabled ? 'เปิดรับเพลง' : 'ปิดรับเพลง'}
-                </span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Auto</span>
               </div>
-            )}
 
-            {/* Autoplay Switch (Desktop) */}
-            <div className="hidden md:flex items-center gap-2 mr-2">
-              <Switch 
-                checked={isAutoPlayEnabled} 
-                onCheckedChange={setIsAutoPlayEnabled}
-                className="scale-75"
-              />
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Auto</span>
-            </div>
-
-            {/* Video Mode Toggle */}
-            <Button
-              size="icon"
-              variant="ghost"
-              className={cn(
-                'w-10 h-10 rounded-full hidden sm:flex', 
-                isVideoMode ? 'text-primary bg-primary/10' : 'text-muted-foreground'
-              )}
-              onClick={() => setIsVideoMode(!isVideoMode)}
-              title={isVideoMode ? 'โหมดเพลง' : 'โหมดวิดีโอ'}
-            >
-              <Tv className="w-4 h-4" />
-            </Button>
-
-            {/* Fullscreen Toggle */}
-            <Button
-              size="icon"
-              variant="ghost"
-              className={cn(
-                'w-10 h-10 rounded-full hidden sm:flex', 
-                isFullscreen ? 'text-primary bg-primary/10' : 'text-muted-foreground'
-              )}
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              title={isFullscreen ? 'ย่อหน้าจอ' : 'ขยายเต็มจอ'}
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-
-            {/* Shuffle Toggle */}
-            <Button
-              size="icon"
-              variant="ghost"
-              className={cn(
-                'w-10 h-10 rounded-full hidden sm:flex', 
-                isShuffle ? 'text-primary bg-primary/10' : 'text-muted-foreground'
-              )}
-              onClick={toggleShuffle}
-              title="สุ่มเพลง"
-            >
-              <Shuffle className="w-4 h-4" />
-            </Button>
-
-            {/* Volume Control (Desktop) */}
-            <div className="hidden sm:flex items-center gap-2 w-24 lg:w-32 mr-2">
-              <Button size="icon" variant="ghost" className="w-8 h-8 rounded-full shrink-0" onClick={toggleMute}>
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </Button>
-              <Slider
-                value={[isMuted ? 0 : volume]}
-                onValueChange={handleVolumeChange}
-                max={100}
-                className="flex-1 cursor-pointer"
-              />
-            </div>
-
-            {/* Playlist Toggle */}
-            <div className="flex items-center gap-1 ml-2 pl-2 border-l border-white/10 lg:hidden">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className={cn("w-10 h-10 rounded-xl", isVideoMode && "text-primary bg-primary/10")}
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn('w-10 h-10 rounded-full', isVideoMode ? 'text-primary bg-primary/10' : 'text-muted-foreground')}
                 onClick={() => setIsVideoMode(!isVideoMode)}
               >
                 <Tv className="w-4 h-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className={cn("w-10 h-10 rounded-xl", isFullscreen && "text-primary bg-primary/10")}
+
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn('w-10 h-10 rounded-full', isFullscreen ? 'text-primary bg-primary/10' : 'text-muted-foreground')}
                 onClick={() => setIsFullscreen(!isFullscreen)}
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </Button>
-              <Link href="/">
-                <Button variant="ghost" size="icon" className={cn("w-10 h-10 rounded-xl", pathname === '/' && "bg-primary/10 text-primary")}>
-                  <Home className="w-4 h-4" />
+
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn('w-10 h-10 rounded-full', isShuffle ? 'text-primary bg-primary/10' : 'text-muted-foreground')}
+                onClick={toggleShuffle}
+              >
+                <Shuffle className="w-4 h-4" />
+              </Button>
+
+              {/* Volume */}
+              <div className="flex items-center gap-2 w-24 lg:w-32 mr-2">
+                <Button size="icon" variant="ghost" className="w-8 h-8 rounded-full shrink-0" onClick={toggleMute}>
+                  {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 </Button>
-              </Link>
-              <Link href="/admin">
-                <Button variant="ghost" size="icon" className={cn("w-10 h-10 rounded-xl", pathname === '/admin' && "bg-primary/10 text-primary")}>
-                  <LayoutDashboard className="w-4 h-4" />
-                </Button>
-              </Link>
+                <Slider
+                  value={[isMuted ? 0 : volume]}
+                  onValueChange={handleVolumeChange}
+                  max={100}
+                  className="flex-1 cursor-pointer"
+                />
+              </div>
             </div>
 
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-full text-muted-foreground hover:text-foreground"
-                >
-                  <ListMusic className="w-5 h-5 sm:w-6 sm:h-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-md p-0 border-l border-white/10 z-[110]">
-                <SheetTitle className="sr-only">คิวเพลง</SheetTitle>
-                <QueueList />
-              </SheetContent>
-            </Sheet>
+            {/* Mobile/Tablet "More" Menu & Primary Actions */}
+            <div className="flex items-center gap-0.5 sm:gap-2 lg:hidden">
+              {/* Video Toggle (Always useful) */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-xl", isVideoMode && "text-primary bg-primary/10")}
+                onClick={() => setIsVideoMode(!isVideoMode)}
+              >
+                <Tv className="w-4 h-4" />
+              </Button>
+
+              {/* More Actions Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 glass backdrop-blur-xl border-white/10 z-[120]">
+                  <DropdownMenuItem onClick={() => setIsFullscreen(!isFullscreen)} className="flex items-center gap-2 py-3">
+                    {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                    <span>{isFullscreen ? 'ย่อหน้าจอ' : 'ขยายเต็มจอ'}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={toggleShuffle} className="flex items-center gap-2 py-3">
+                    <Shuffle className={cn("w-4 h-4", isShuffle && "text-primary")} />
+                    <span>สุ่มเพลง: {isShuffle ? 'เปิด' : 'ปิด'}</span>
+                  </DropdownMenuItem>
+                  <div className="h-px bg-white/10 my-1" />
+                  <Link href="/">
+                    <DropdownMenuItem className="flex items-center gap-2 py-3">
+                      <Home className="w-4 h-4" />
+                      <span>หน้าหลัก</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/admin">
+                    <DropdownMenuItem className="flex items-center gap-2 py-3">
+                      <LayoutDashboard className="w-4 h-4" />
+                      <span>หลังบ้าน (Admin)</span>
+                    </DropdownMenuItem>
+                  </Link>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Playlist (Main Mobile Action) */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 ml-1"
+                  >
+                    <ListMusic className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-md p-0 border-l border-white/10 z-[130]">
+                  <SheetTitle className="sr-only">คิวเพลง</SheetTitle>
+                  <QueueList />
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </div>
