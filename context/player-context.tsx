@@ -21,6 +21,7 @@ interface PlayerContextValue {
   volume: number
   isMuted: boolean
   isShuffle: boolean
+  isVideoMode: boolean
   currentIndex: number
   requests: SongRequest[]
   playlistSongs: PlaylistSong[]
@@ -33,6 +34,7 @@ interface PlayerContextValue {
   toggleShuffle: () => void
   handleSongEnd: () => void
   setIsPlaying: (v: boolean) => void
+  setIsVideoMode: (v: boolean) => void
   // Player ref for YouTube component
   playerRef: React.MutableRefObject<YouTubePlayerMethods | null>
 }
@@ -58,6 +60,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolume] = useState(70)
   const [isMuted, setIsMuted] = useState(false)
   const [isShuffle, setIsShuffle] = useState(false)
+  const [isVideoMode, setIsVideoMode] = useState(false)
   const [playMode, setPlayMode] = useState<'playlist' | 'request'>('playlist')
   const [isInitialized, setIsInitialized] = useState(false)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
@@ -70,6 +73,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(saved)
         if (parsed.currentIndex !== undefined) setCurrentIndex(parsed.currentIndex)
         if (parsed.playMode) setPlayMode(parsed.playMode)
+        if (parsed.isVideoMode !== undefined) setIsVideoMode(parsed.isVideoMode)
       }
     } catch {}
     setIsInitialized(true)
@@ -80,10 +84,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (isInitialized) {
       localStorage.setItem('music_bar_player_state', JSON.stringify({
         currentIndex,
-        playMode
+        playMode,
+        isVideoMode
       }))
     }
-  }, [currentIndex, playMode, isInitialized])
+  }, [currentIndex, playMode, isVideoMode, isInitialized])
 
   // Fetch playlists
   const { data: playlists } = useSWR('/api/playlists', fetcher, { refreshInterval: 15000 })
@@ -278,10 +283,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   return (
     <PlayerContext.Provider value={{
-      isPlaying, currentSong, playMode, volume, isMuted, isShuffle,
+      isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode,
       currentIndex, requests, playlistSongs,
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
-      toggleMute, toggleShuffle, handleSongEnd, setIsPlaying,
+      toggleMute, toggleShuffle, handleSongEnd, setIsPlaying, setIsVideoMode,
       playerRef,
     }}>
       {children}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { usePlayer, YouTubePlayerMethods } from '@/context/player-context'
 
 declare global {
@@ -42,11 +42,36 @@ interface YTPlayer {
  * sehingga musik terus bermain di background.
  */
 export function PersistentYouTubePlayer() {
-  const { currentSong, handleSongEnd, setIsPlaying, playerRef, volume } = usePlayer()
+  const { currentSong, handleSongEnd, setIsPlaying, playerRef, volume, isVideoMode } = usePlayer()
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const isApiReadyRef = useRef(false)
   const currentVideoRef = useRef<string>('')
   const containerRef = useRef<HTMLDivElement>(null)
+  const [videoRect, setVideoRect] = useState<DOMRect | null>(null)
+
+  // Track video container rect for Video Mode
+  useEffect(() => {
+    if (!isVideoMode) return
+    const updateRect = () => {
+      const el = document.getElementById('video-target-rect')
+      if (el) setVideoRect(el.getBoundingClientRect())
+    }
+    
+    updateRect()
+    const observer = new ResizeObserver(updateRect)
+    const el = document.getElementById('video-target-rect')
+    if (el) observer.observe(el)
+    window.addEventListener('resize', updateRect)
+    
+    // Interval for safety if layout shifts due to images loading
+    const interval = setInterval(updateRect, 1000)
+    
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateRect)
+      clearInterval(interval)
+    }
+  }, [isVideoMode, currentSong])
 
   // Expose methods to context
   const exposeMethods = useCallback(() => {
@@ -199,21 +224,35 @@ export function PersistentYouTubePlayer() {
   // YouTube ต้องการ DOM element จริงถึงจะเล่นได้
   return (
     <div
-      aria-hidden="true"
-      style={{
-        position: 'fixed',
-        width: '1px',
-        height: '1px',
-        opacity: 0,
-        pointerEvents: 'none',
-        // ต้องอยู่ใน viewport หรือบางส่วน ไม่งั้น browser อาจ throttle
-        bottom: 0,
-        right: 0,
-        zIndex: -1,
-      }}
+      aria-hidden={!isVideoMode}
+      style={
+        isVideoMode && videoRect
+          ? {
+              position: 'fixed',
+              top: videoRect.top,
+              left: videoRect.left,
+              width: videoRect.width,
+              height: videoRect.height,
+              zIndex: 5,
+              opacity: 1,
+              pointerEvents: 'auto',
+              borderRadius: window.innerWidth >= 640 ? '2rem' : '1rem',
+              overflow: 'hidden'
+            }
+          : {
+              position: 'fixed',
+              width: '1px',
+              height: '1px',
+              opacity: 0,
+              pointerEvents: 'none',
+              bottom: 0,
+              right: 0,
+              zIndex: -1,
+            }
+      }
     >
-      <div ref={containerRef}>
-        <div id="yt-persistent-player" />
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+        <div id="yt-persistent-player" style={{ width: '100%', height: '100%' }} />
       </div>
     </div>
   )

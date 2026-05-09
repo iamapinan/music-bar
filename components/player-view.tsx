@@ -16,10 +16,10 @@ import type { SongRequest } from '@/lib/types'
 
 export function PlayerView() {
   const {
-    isPlaying, currentSong, playMode, volume, isMuted, isShuffle,
+    isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode,
     requests, playlistSongs,
     togglePlay, handleSkip, handlePrevious, handleVolumeChange,
-    toggleMute, toggleShuffle,
+    toggleMute, toggleShuffle, setIsVideoMode
   } = usePlayer()
 
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -116,29 +116,42 @@ export function PlayerView() {
         <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 min-h-0 overflow-y-auto">
           <div className="w-full max-w-[420px] flex flex-col items-center">
             
-            {/* Artwork / Thumbnail */}
-            <div className="relative w-full aspect-square rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl border border-white/5 mb-8 group">
-              {currentSong.thumbnail ? (
-                <img
-                  src={currentSong.thumbnail}
-                  alt={currentSong.title}
-                  className={cn(
-                    "w-full h-full object-cover transition-transform duration-700",
-                    isPlaying ? "scale-105" : "scale-100 grayscale-[0.2]"
-                  )}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-card">
-                  <Music2 className="w-24 h-24 text-muted-foreground/30" />
-                </div>
+            {/* Artwork / Thumbnail / Video Target */}
+            <div className="relative w-full aspect-square rounded-2xl sm:rounded-[2rem] overflow-hidden shadow-2xl border border-white/5 mb-8 group bg-black/50">
+              <div id="video-target-rect" className="w-full h-full absolute inset-0" />
+              
+              {!isVideoMode && (
+                currentSong.thumbnail ? (
+                  <img
+                    src={currentSong.thumbnail}
+                    alt={currentSong.title}
+                    className={cn(
+                      "w-full h-full object-cover transition-transform duration-700",
+                      isPlaying ? "scale-105" : "scale-100 grayscale-[0.2]"
+                    )}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-card">
+                    <Music2 className="w-24 h-24 text-muted-foreground/30" />
+                  </div>
+                )
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+              
+              {!isVideoMode && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />}
               
               <button
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100"
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100 z-10"
                 onClick={() => setIsFullscreen(!isFullscreen)}
               >
                 {isFullscreen ? <Minimize2 className="w-5 h-5 text-white" /> : <Maximize2 className="w-5 h-5 text-white" />}
+              </button>
+              
+              <button
+                className="absolute top-4 left-4 h-10 px-3 rounded-full bg-black/40 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100 z-10"
+                onClick={() => setIsVideoMode(!isVideoMode)}
+              >
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-xs font-medium text-white">{isVideoMode ? 'Music' : 'Video'}</span>
               </button>
             </div>
 
