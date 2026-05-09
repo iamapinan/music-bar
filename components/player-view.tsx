@@ -68,7 +68,7 @@ export function PlayerView() {
               ? "fixed inset-0 z-[60] w-screen h-screen max-w-none aspect-auto rounded-none m-0 border-none" 
               : isVideoMode
                 ? "max-w-4xl aspect-video rounded-xl sm:rounded-2xl mb-8"
-                : "max-w-[420px] aspect-square rounded-2xl sm:rounded-[2rem] mb-12"
+              : "max-w-4xl aspect-video rounded-2xl sm:rounded-[2rem]"
           )}>
             {/* The actual target where PersistentYouTubePlayer will move the iframe */}
             <div id="video-target-rect" className="w-full h-full absolute inset-0" />
