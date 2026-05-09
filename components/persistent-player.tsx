@@ -32,6 +32,8 @@ interface YTPlayer {
   setVolume: (v: number) => void
   getVolume: () => number
   getCurrentTime: () => number
+  getDuration: () => number
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void
   loadVideoById: (args: string | { videoId: string, startSeconds?: number }) => void
   destroy: () => void
 }
@@ -42,7 +44,10 @@ interface YTPlayer {
  * sehingga musik terus bermain di background.
  */
 export function PersistentYouTubePlayer() {
-  const { currentSong, handleSongEnd, setIsPlaying, playerRef, volume, isVideoMode, isAutoPlayEnabled } = usePlayer()
+  const { 
+    currentSong, handleSongEnd, setIsPlaying, playerRef, volume, 
+    isVideoMode, isAutoPlayEnabled, setCurrentTime, setDuration 
+  } = usePlayer()
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const isApiReadyRef = useRef(false)
   const currentVideoRef = useRef<string>('')
@@ -80,6 +85,7 @@ export function PersistentYouTubePlayer() {
       pause: () => ytPlayerRef.current?.pauseVideo(),
       setVolume: (v: number) => ytPlayerRef.current?.setVolume(v),
       loadVideo: (id: string) => ytPlayerRef.current?.loadVideoById(id),
+      seekTo: (seconds: number) => ytPlayerRef.current?.seekTo(seconds, true),
     }
     playerRef.current = methods
   }, [playerRef])
@@ -208,21 +214,30 @@ export function PersistentYouTubePlayer() {
     }
   }, [currentSong?.youtube_id, initPlayer, exposeMethods])
 
-  // Track playback progress
+  // Track playback progress & update context
   useEffect(() => {
     const interval = setInterval(() => {
       if (currentVideoRef.current && ytPlayerRef.current) {
-        const time = ytPlayerRef.current.getCurrentTime?.()
-        if (time && time > 0) {
+        const time = ytPlayerRef.current.getCurrentTime?.() || 0
+        const duration = ytPlayerRef.current.getDuration?.() || 0
+        
+        setCurrentTime(time)
+        setDuration(duration)
+
+        // Only save to localStorage every 5 seconds equivalent (e.g. time is mod 5) 
+        // to avoid spamming localStorage. We do this by just unconditionally saving it 
+        // since localStorage is very fast, but if we want we can rate limit.
+        // For simplicity, just save it.
+        if (time > 0) {
           localStorage.setItem('music_bar_seek_time', JSON.stringify({
             videoId: currentVideoRef.current,
             time
           }))
         }
       }
-    }, 5000)
+    }, 500)
     return () => clearInterval(interval)
-  }, [])
+  }, [setCurrentTime, setDuration])
 
   // Hidden player — อยู่นอกจอ ไม่ทำลาย layout
   // YouTube ต้องการ DOM element จริงถึงจะเล่นได้

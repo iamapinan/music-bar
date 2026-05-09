@@ -18,6 +18,7 @@ import type { SongRequest } from '@/lib/types'
 export function PlayerView() {
   const {
     isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
+    currentTime, duration, playerRef,
     requests, playlistSongs,
     togglePlay, handleSkip, handlePrevious, handleVolumeChange,
     toggleMute, toggleShuffle, setIsVideoMode, setIsAutoPlayEnabled
@@ -25,6 +26,17 @@ export function PlayerView() {
 
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
+  const [isDraggingTime, setIsDraggingTime] = useState(false)
+  const [dragTime, setDragTime] = useState(0)
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return '0:00'
+    const m = Math.floor(seconds / 60)
+    const s = Math.floor(seconds % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  const displayTime = isDraggingTime ? dragTime : currentTime
 
   if (!currentSong) {
     return (
@@ -179,6 +191,28 @@ export function PlayerView() {
                   : 'Music Bar Playlist'
                 }
               </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full px-4 mb-6">
+              <Slider
+                value={[displayTime]}
+                max={duration || 100}
+                step={1}
+                onValueChange={(vals) => {
+                  setIsDraggingTime(true)
+                  setDragTime(vals[0])
+                }}
+                onValueCommit={(vals) => {
+                  setIsDraggingTime(false)
+                  playerRef.current?.seekTo(vals[0])
+                }}
+                className="cursor-pointer mb-2"
+              />
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground font-medium px-1">
+                <span>{formatTime(displayTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
             </div>
 
             {/* Volume & Autoplay Controls */}

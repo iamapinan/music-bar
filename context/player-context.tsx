@@ -23,6 +23,8 @@ interface PlayerContextValue {
   isShuffle: boolean
   isVideoMode: boolean
   isAutoPlayEnabled: boolean
+  currentTime: number
+  duration: number
   currentIndex: number
   requests: SongRequest[]
   playlistSongs: PlaylistSong[]
@@ -37,6 +39,8 @@ interface PlayerContextValue {
   setIsPlaying: (v: boolean) => void
   setIsVideoMode: (v: boolean) => void
   setIsAutoPlayEnabled: (v: boolean) => void
+  setCurrentTime: (v: number) => void
+  setDuration: (v: number) => void
   // Player ref for YouTube component
   playerRef: React.MutableRefObject<YouTubePlayerMethods | null>
 }
@@ -46,6 +50,7 @@ export interface YouTubePlayerMethods {
   pause: () => void
   setVolume: (v: number) => void
   loadVideo: (id: string) => void
+  seekTo: (seconds: number) => void
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null)
@@ -64,6 +69,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isShuffle, setIsShuffle] = useState(false)
   const [isVideoMode, setIsVideoMode] = useState(false)
   const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
   const [playMode, setPlayMode] = useState<'playlist' | 'request'>('playlist')
   const [isInitialized, setIsInitialized] = useState(false)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
@@ -291,9 +298,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   return (
     <PlayerContext.Provider value={{
       isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
+      currentTime, duration,
       currentIndex, requests, playlistSongs,
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
       toggleMute, toggleShuffle, handleSongEnd, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
+      setCurrentTime, setDuration,
       playerRef,
     }}>
       {children}
