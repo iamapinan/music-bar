@@ -39,6 +39,7 @@ interface PlayerContextValue {
   toggleMute: () => void
   toggleShuffle: () => void
   handleSongEnd: () => void
+  playByIndex: (index: number) => void
   setIsPlaying: (v: boolean) => void
   setIsVideoMode: (v: boolean) => void
   setIsAutoPlayEnabled: (v: boolean) => void
@@ -398,6 +399,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   if (!isInitialized) return null
 
+  const playByIndex = useCallback((index: number) => {
+    setPlayMode('playlist')
+    setCurrentIndex(index)
+  }, [])
+
   return (
     <PlayerContext.Provider value={{
       isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
@@ -405,7 +411,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       currentTime, duration,
       currentIndex, requests, playlistSongs,
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
-      toggleMute, toggleShuffle, handleSongEnd, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
+      toggleMute, toggleShuffle, handleSongEnd, playByIndex, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
       setIsFullscreen, setIsRequestsEnabled: handleSetIsRequestsEnabled, setCurrentTime, setDuration,
       playerRef, isRequestsEnabled, showControls, setShowControls
     }}>

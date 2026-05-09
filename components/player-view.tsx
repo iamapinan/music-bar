@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
 import {
   Music2, Maximize2, Minimize2
 } from 'lucide-react'
@@ -19,7 +18,7 @@ export function PlayerView() {
 
   if (!currentSong) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100dvh-10rem)] text-center p-6">
+      <div className="flex flex-col items-center justify-center h-[100dvh] text-center p-6">
         <div className="relative mb-6">
           <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/30">
             <Music2 className="w-14 h-14 text-primary/60" />
@@ -35,15 +34,30 @@ export function PlayerView() {
   return (
     <div 
       className={cn(
-        'flex flex-col h-[100dvh] overflow-hidden transition-all duration-300 bg-background',
+        'relative flex flex-col h-[100dvh] overflow-hidden transition-all duration-300 bg-background',
         isFullscreen && 'fixed inset-0 z-50'
       )}
-      onMouseMove={() => !showControls && setShowControls(true)}
     >
-      {/* Fullscreen/Header bar (Optional: hide if desired, but good for title) */}
+      {/* ===== FULL-PAGE TOUCH OVERLAY (topmost, captures all taps to show controls) ===== */}
+      <div 
+        className="absolute inset-0 z-[80]"
+        onClick={() => {
+          if (!showControls) {
+            setShowControls(true)
+          }
+        }}
+        onTouchStart={() => {
+          if (!showControls) {
+            setShowControls(true)
+          }
+        }}
+        style={{ pointerEvents: showControls ? 'none' : 'auto' }}
+      />
+
+      {/* Fullscreen header bar */}
       {isFullscreen && (
         <div className={cn(
-          "flex items-center justify-between p-4 glass border-b border-border/10 shrink-0 transition-opacity z-[100]",
+          "absolute top-0 left-0 right-0 flex items-center justify-between p-4 glass border-b border-border/10 shrink-0 transition-opacity z-[100]",
           showControls ? "opacity-100" : "opacity-0 pointer-events-none"
         )}>
           <div className="flex items-center gap-3">
@@ -67,13 +81,13 @@ export function PlayerView() {
             (isFullscreen && isVideoMode) 
               ? "fixed inset-0 z-[60] w-screen h-screen max-w-none aspect-auto rounded-none m-0 border-none" 
               : isVideoMode
-                ? "max-w-4xl aspect-video rounded-xl sm:rounded-2xl mb-8"
+                ? "max-w-4xl aspect-video rounded-xl sm:rounded-2xl"
               : "max-w-4xl aspect-video rounded-2xl sm:rounded-[2rem]"
           )}>
             {/* The actual target where PersistentYouTubePlayer will move the iframe */}
             <div id="video-target-rect" className="w-full h-full absolute inset-0" />
 
-            {/* Interaction Overlay: Captures clicks/touches over the iframe to show controls or toggle play */}
+            {/* Interaction Overlay on video: toggle play when controls visible */}
             <div 
               className="absolute inset-0 z-[70] cursor-pointer"
               onClick={(e) => {
@@ -106,7 +120,7 @@ export function PlayerView() {
             
             {!isVideoMode && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />}
             
-            {/* Layered Controls on top of Video */}
+            {/* Top Controls (Video/Fullscreen buttons) */}
             <div className={cn(
               "absolute inset-0 flex items-start justify-between p-4 transition-opacity z-[95] pointer-events-none",
               showControls ? "opacity-100" : "opacity-0"
@@ -134,26 +148,9 @@ export function PlayerView() {
               </button>
             </div>
 
-            {/* Permanent Small Mode Toggle for Video Mode (always visible but follows showControls) */}
-            {/* Permanent Small Mode Toggle for Video Mode (always visible but follows showControls) */}
-            <button
-              className={cn(
-                "absolute top-4 left-4 h-8 px-3 rounded-full bg-black/20 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all z-[90]",
-                "transition-opacity",
-                showControls ? "opacity-100" : "opacity-0"
-              )}
-              onClick={(e) => {
-                e.stopPropagation()
-                setIsVideoMode(!isVideoMode)
-              }}
-            >
-              <div className={cn("w-1.5 h-1.5 rounded-full", isVideoMode ? "bg-red-500 animate-pulse" : "bg-white/40")} />
-              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{isVideoMode ? 'Video' : 'Audio'}</span>
-            </button>
-
-            {/* Song Info Overlay (Integrated into controls layer) */}
+            {/* Song Info Overlay (bottom of video) */}
             <div className={cn(
-              "absolute bottom-0 left-0 right-0 p-6 sm:p-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity pointer-events-none",
+              "absolute bottom-0 left-0 right-0 p-6 sm:p-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity pointer-events-none z-[90]",
               showControls ? "opacity-100" : "opacity-0"
             )}>
               <div className="flex items-center gap-3 mb-3">

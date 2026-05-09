@@ -38,6 +38,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
   const [newPlaylistName, setNewPlaylistName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [selectedPlaylists, setSelectedPlaylists] = useState<Set<number>>(new Set())
+  const [targetPlaylistId, setTargetPlaylistId] = useState<number | null>(null)
   
   // QR Code States
   const [showQR, setShowQR] = useState(false)
@@ -104,17 +105,19 @@ export function AdminView({ onLogout }: AdminViewProps) {
   }
 
   const handleAddToPlaylist = async (result: YouTubeSearchResult) => {
-    if (!currentPlaylist || addingIds.has(result.id)) return
+    const targetId = targetPlaylistId || currentPlaylist?.id
+    if (!targetId || addingIds.has(result.id)) return
     setAddingIds(prev => new Set(prev).add(result.id))
     try {
-      const res = await fetch(`/api/playlists/${currentPlaylist.id}/songs`, {
+      const res = await fetch(`/api/playlists/${targetId}/songs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ youtube_id: result.id, title: result.title, thumbnail: result.thumbnail, artist: result.channelTitle }),
       })
       if (!res.ok) throw new Error()
       mutateSongs()
-      toast.success('เพิ่มเพลงแล้ว')
+      const targetName = playlists.find(p => p.id === targetId)?.name || ''
+      toast.success(`เพิ่มเพลงไปยัง ${targetName} แล้ว`)
     } catch {
       toast.error('ไม่สามารถเพิ่มเพลงได้')
     } finally {
@@ -459,10 +462,19 @@ export function AdminView({ onLogout }: AdminViewProps) {
             </Button>
           </div>
 
-          {currentPlaylist && searchType === 'video' && (
-            <p className="text-xs text-muted-foreground mb-2">
-              เพิ่มไปยัง: <span className="text-primary font-medium">{currentPlaylist.name}</span>
-            </p>
+          {searchType === 'video' && playlists.length > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">เพิ่มไปยัง:</span>
+              <select
+                className="flex-1 h-8 px-2 text-xs rounded-lg border border-border bg-card text-foreground"
+                value={targetPlaylistId || currentPlaylist?.id || ''}
+                onChange={e => setTargetPlaylistId(Number(e.target.value))}
+              >
+                {playlists.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} {p.is_default ? '(เริ่มต้น)' : ''}</option>
+                ))}
+              </select>
+            </div>
           )}
 
           <ScrollArea className="flex-1 pb-20">

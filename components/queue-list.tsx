@@ -1,6 +1,6 @@
 'use client'
 
-import { Music2, ListMusic, X } from 'lucide-react'
+import { Music2, ListMusic, X, Play } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { SheetClose } from '@/components/ui/sheet'
@@ -9,7 +9,7 @@ import { usePlayer } from '@/context/player-context'
 import { cn } from '@/lib/utils'
 
 export function QueueList() {
-  const { isPlaying, currentSong, requests, playlistSongs, playMode, currentIndex } = usePlayer()
+  const { isPlaying, currentSong, requests, playlistSongs, currentIndex, playByIndex } = usePlayer()
 
   if (!currentSong) return null
 
@@ -32,7 +32,7 @@ export function QueueList() {
       </div>
 
       <ScrollArea className="flex-1 px-4 py-4">
-        <div className="space-y-2 pr-3">
+        <div className="space-y-2 pr-1">
           {/* Now Playing */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20 shadow-sm">
             <div className="flex-shrink-0 w-6 flex items-center justify-center">
@@ -71,16 +71,18 @@ export function QueueList() {
           </div>
 
           {playlistSongs
-            .slice(currentIndex)
-            .filter(song => song.youtube_id !== currentSong.youtube_id)
-            .map((song, i) => {
+            .map((song, originalIndex) => ({ song, originalIndex }))
+            .filter(({ originalIndex }) => originalIndex !== currentIndex)
+            .slice(0, 20) // Limit to prevent performance issues
+            .map(({ song, originalIndex }, i) => {
               const pendingReqCount = requests.filter(req => req.youtube_id !== currentSong.youtube_id).length
               return (
                 <QueueItem 
-                  key={`pl-${song.id}-${i}`} 
+                  key={`pl-${song.id}-${originalIndex}`} 
                   title={song.title} 
                   position={pendingReqCount + i + 1} 
-                  type="playlist" 
+                  type="playlist"
+                  onClick={() => playByIndex(originalIndex)}
                 />
               )
             })}
@@ -94,11 +96,17 @@ export function QueueList() {
   )
 }
 
-function QueueItem({ title, position, type, badge }: {
-  title: string; position: number; type: 'request' | 'playlist'; badge?: string
+function QueueItem({ title, position, type, badge, onClick }: {
+  title: string; position: number; type: 'request' | 'playlist'; badge?: string; onClick?: () => void
 }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-card/60 hover:bg-card border border-transparent hover:border-border/50 transition-all group">
+    <div 
+      className={cn(
+        "flex items-center gap-3 p-3 rounded-xl bg-card/60 hover:bg-card border border-transparent hover:border-border/50 transition-all group",
+        onClick && "cursor-pointer"
+      )}
+      onClick={onClick}
+    >
       <span className="text-xs font-medium text-muted-foreground w-6 text-center tabular-nums">{position}</span>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{title}</p>
@@ -106,6 +114,9 @@ function QueueItem({ title, position, type, badge }: {
       </div>
       {type === 'request' && (
         <Badge variant="outline" className="text-[10px] h-5 px-2 bg-accent/5 border-accent/30 text-accent flex-shrink-0 rounded-full">ขอ</Badge>
+      )}
+      {type === 'playlist' && onClick && (
+        <Play className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
       )}
     </div>
   )

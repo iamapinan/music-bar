@@ -137,6 +137,15 @@
   background: oklch(0.4 0.01 260);
 }
 
+/* Hide scrollbar when not needed */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* YouTube player container */
 .youtube-player-container {
   position: relative;
