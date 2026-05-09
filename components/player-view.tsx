@@ -13,7 +13,8 @@ import type { SongRequest } from '@/lib/types'
 export function PlayerView() {
   const {
     isPlaying, currentSong, playMode, isShuffle, isVideoMode,
-    isFullscreen, setIsVideoMode, setIsFullscreen, showControls, setShowControls
+    isFullscreen, setIsVideoMode, setIsFullscreen, showControls, setShowControls,
+    togglePlay
   } = usePlayer()
 
   if (!currentSong) {
@@ -68,6 +69,19 @@ export function PlayerView() {
           )}>
             {/* The actual target where PersistentYouTubePlayer will move the iframe */}
             <div id="video-target-rect" className="w-full h-full absolute inset-0" />
+
+            {/* Interaction Overlay: Captures clicks/touches over the iframe to show controls or toggle play */}
+            <div 
+              className="absolute inset-0 z-[70] cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (showControls) {
+                  togglePlay()
+                } else {
+                  setShowControls(true)
+                }
+              }}
+            />
             
             {/* Thumbnail for Music Mode */}
             {!isVideoMode && (

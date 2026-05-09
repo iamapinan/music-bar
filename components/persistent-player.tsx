@@ -129,11 +129,11 @@ export function PersistentYouTubePlayer() {
         controls: 0,
         modestbranding: 1,
         rel: 0,
+        iv_load_policy: 3,
+        fs: 0,
         playsinline: 1,
         enablejsapi: 1,
         origin: window.location.origin,
-        // Allow background play on iOS
-        fs: 0,
       },
       events: {
         onReady: (event) => {
