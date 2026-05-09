@@ -31,7 +31,8 @@ interface YTPlayer {
   stopVideo: () => void
   setVolume: (v: number) => void
   getVolume: () => number
-  loadVideoById: (id: string) => void
+  getCurrentTime: () => number
+  loadVideoById: (args: string | { videoId: string, startSeconds?: number }) => void
   destroy: () => void
 }
 
@@ -74,10 +75,20 @@ export function PersistentYouTubePlayer() {
       containerRef.current.appendChild(div)
     }
 
+    let startSeconds = 0
+    try {
+      const saved = localStorage.getItem('music_bar_seek_time')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.videoId === videoId) startSeconds = Math.floor(parsed.time)
+      }
+    } catch {}
+
     ytPlayerRef.current = new window.YT.Player('yt-persistent-player', {
       videoId,
       playerVars: {
         autoplay: 1,
+        start: startSeconds > 0 ? startSeconds : 0,
         controls: 0,
         modestbranding: 1,
         rel: 0,
@@ -147,7 +158,19 @@ export function PersistentYouTubePlayer() {
 
     if (currentSong.youtube_id !== currentVideoRef.current) {
       if (ytPlayerRef.current) {
-        ytPlayerRef.current.loadVideoById(currentSong.youtube_id)
+        let startSeconds = 0
+        try {
+          const saved = localStorage.getItem('music_bar_seek_time')
+          if (saved) {
+            const parsed = JSON.parse(saved)
+            if (parsed.videoId === currentSong.youtube_id) startSeconds = Math.floor(parsed.time)
+          }
+        } catch {}
+        
+        ytPlayerRef.current.loadVideoById({
+          videoId: currentSong.youtube_id,
+          startSeconds: startSeconds > 0 ? startSeconds : undefined
+        })
         currentVideoRef.current = currentSong.youtube_id
         exposeMethods()
       } else {
@@ -155,6 +178,22 @@ export function PersistentYouTubePlayer() {
       }
     }
   }, [currentSong?.youtube_id, initPlayer, exposeMethods])
+
+  // Track playback progress
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (currentVideoRef.current && ytPlayerRef.current) {
+        const time = ytPlayerRef.current.getCurrentTime?.()
+        if (time && time > 0) {
+          localStorage.setItem('music_bar_seek_time', JSON.stringify({
+            videoId: currentVideoRef.current,
+            time
+          }))
+        }
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Hidden player — อยู่นอกจอ ไม่ทำลาย layout
   // YouTube ต้องการ DOM element จริงถึงจะเล่นได้

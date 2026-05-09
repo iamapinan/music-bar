@@ -58,8 +58,32 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolume] = useState(70)
   const [isMuted, setIsMuted] = useState(false)
   const [isShuffle, setIsShuffle] = useState(false)
-  const [playMode, setPlayMode] = useState<'playlist' | 'request'>('request')
+  const [playMode, setPlayMode] = useState<'playlist' | 'request'>('playlist')
+  const [isInitialized, setIsInitialized] = useState(false)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
+
+  // Load saved state
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('music_bar_player_state')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.currentIndex !== undefined) setCurrentIndex(parsed.currentIndex)
+        if (parsed.playMode) setPlayMode(parsed.playMode)
+      }
+    } catch {}
+    setIsInitialized(true)
+  }, [])
+
+  // Save state
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem('music_bar_player_state', JSON.stringify({
+        currentIndex,
+        playMode
+      }))
+    }
+  }, [currentIndex, playMode, isInitialized])
 
   // Fetch playlists
   const { data: playlists } = useSWR('/api/playlists', fetcher, { refreshInterval: 15000 })
@@ -82,12 +106,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       ? requests[0]
       : playlistSongs[currentIndex] ?? null
 
-  // Auto-switch to request mode when new request arrives
+  // Switch to request mode only if no song is playing (e.g. initial load or empty playlist)
   useEffect(() => {
-    if (requests.length > 0 && playMode === 'playlist') {
+    if (requests.length > 0 && playMode === 'playlist' && !currentSong && isInitialized) {
       setPlayMode('request')
     }
-  }, [requests.length, playMode])
+  }, [requests.length, playMode, currentSong, isInitialized])
 
   const handleSongEnd = useCallback(async () => {
     if (playMode === 'request' && requests.length > 0) {
@@ -96,13 +120,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: requests[0].id, status: 'played' }),
       })
-      mutateRequests()
+      await mutateRequests()
+      // Note: requests array here is still the old one in closure.
+      // If there was only 1 request, go back to playlist.
       if (requests.length <= 1) setPlayMode('playlist')
     } else {
-      const next = isShuffle
-        ? Math.floor(Math.random() * playlistSongs.length)
-        : (currentIndex + 1) % (playlistSongs.length || 1)
-      setCurrentIndex(next)
+      if (requests.length > 0) {
+        // Pending requests wait until playlist song ends
+        setPlayMode('request')
+      } else {
+        const next = isShuffle
+          ? Math.floor(Math.random() * playlistSongs.length)
+          : (currentIndex + 1) % (playlistSongs.length || 1)
+        setCurrentIndex(next)
+      }
     }
   }, [playMode, requests, playlistSongs.length, currentIndex, isShuffle, mutateRequests])
 

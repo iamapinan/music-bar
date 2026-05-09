@@ -41,8 +41,8 @@ export function PlayerView() {
 
   return (
     <div className={cn(
-      'flex flex-col h-full',
-      isFullscreen && 'fixed inset-0 z-50 bg-background overflow-auto'
+      'flex flex-col overflow-hidden',
+      isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'h-[calc(100dvh-4rem)]'
     )}>
       {/* Fullscreen header */}
       {isFullscreen && (
@@ -59,11 +59,11 @@ export function PlayerView() {
         </div>
       )}
 
-      <div className={cn('p-4 space-y-4', isFullscreen && 'flex-1 flex flex-col')}>
+      <div className={cn('p-4 space-y-4 flex flex-col', isFullscreen ? 'flex-1' : 'flex-none')}>
         {/* Thumbnail + visual (แทน iframe ที่ถูก hide ไปแล้ว) */}
         <div className={cn(
-          'relative rounded-xl overflow-hidden bg-card border border-border/30',
-          isFullscreen ? 'flex-1' : 'aspect-video'
+          'relative rounded-xl overflow-hidden bg-card border border-border/30 flex-none',
+          isFullscreen ? 'aspect-video w-full max-h-[40vh] mx-auto' : 'aspect-video'
         )}>
           {currentSong.thumbnail ? (
             <img
@@ -184,62 +184,54 @@ export function PlayerView() {
         </div>
       </div>
 
-      {/* Queue Section */}
-      <div className="px-4 pb-24">
-        <button
-          onClick={() => setShowQueue(!showQueue)}
-          className="w-full flex items-center justify-between py-3 border-t border-border/50 text-left"
-        >
-          <div className="flex items-center gap-2">
-            <ListMusic className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">คิวเพลง</span>
-            {requests.length > 0 && (
-              <Badge variant="outline" className="text-xs h-5 px-1.5 border-accent/40 text-accent">
-                {requests.length} คำขอ
-              </Badge>
+      {/* Queue Section - Takes remaining space */}
+      <div className="flex-1 flex flex-col min-h-0 border-t border-border/50">
+        <div className="flex items-center gap-2 px-4 py-3 bg-background/95 backdrop-blur z-10">
+          <ListMusic className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium">คิวเพลง</span>
+          {requests.length > 0 && (
+            <Badge variant="outline" className="text-xs h-5 px-1.5 border-accent/40 text-accent">
+              {requests.length} คำขอ
+            </Badge>
+          )}
+        </div>
+
+        <ScrollArea className="flex-1 px-4 pb-4">
+          <div className="space-y-1.5 pr-2">
+            {/* Now Playing */}
+            <div className="flex items-center gap-3 p-2.5 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="flex-shrink-0 w-4 flex items-center">
+                {isPlaying ? (
+                  <div className="playing-bars">
+                    <div className="playing-bar" />
+                    <div className="playing-bar" />
+                    <div className="playing-bar" />
+                  </div>
+                ) : (
+                  <Music2 className="w-4 h-4 text-primary" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate text-primary">{currentSong.title}</p>
+                <p className="text-xs text-primary/60">กำลังเล่น</p>
+              </div>
+            </div>
+
+            {/* Pending requests */}
+            {requests.slice(1).map((req, i) => (
+              <QueueItem key={`req-${req.id}`} title={req.title} position={i + 1} type="request" badge={req.requested_by || 'ลูกค้า'} />
+            ))}
+
+            {/* Playlist */}
+            {playlistSongs.map((song, i) => (
+              <QueueItem key={`pl-${song.id}-${i}`} title={song.title} position={requests.length + i} type="playlist" />
+            ))}
+
+            {requests.length === 0 && playlistSongs.length === 0 && (
+              <p className="text-center py-6 text-muted-foreground text-sm">ไม่มีเพลงในคิว</p>
             )}
           </div>
-          <span className="text-xs text-muted-foreground">{showQueue ? 'ซ่อน' : 'แสดง'}</span>
-        </button>
-
-        {showQueue && (
-          <ScrollArea className="h-64 mt-1">
-            <div className="space-y-1.5 pr-2">
-              {/* Now Playing */}
-              <div className="flex items-center gap-3 p-2.5 rounded-lg bg-primary/10 border border-primary/20">
-                <div className="flex-shrink-0 w-4 flex items-center">
-                  {isPlaying ? (
-                    <div className="playing-bars">
-                      <div className="playing-bar" />
-                      <div className="playing-bar" />
-                      <div className="playing-bar" />
-                    </div>
-                  ) : (
-                    <Music2 className="w-4 h-4 text-primary" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate text-primary">{currentSong.title}</p>
-                  <p className="text-xs text-primary/60">กำลังเล่น</p>
-                </div>
-              </div>
-
-              {/* Pending requests */}
-              {requests.slice(1).map((req, i) => (
-                <QueueItem key={req.id} title={req.title} position={i + 1} type="request" badge={req.requested_by || 'ลูกค้า'} />
-              ))}
-
-              {/* Playlist */}
-              {playlistSongs.map((song, i) => (
-                <QueueItem key={song.id} title={song.title} position={requests.length + i} type="playlist" />
-              ))}
-
-              {requests.length === 0 && playlistSongs.length === 0 && (
-                <p className="text-center py-6 text-muted-foreground text-sm">ไม่มีเพลงในคิว</p>
-              )}
-            </div>
-          </ScrollArea>
-        )}
+        </ScrollArea>
       </div>
     </div>
   )
