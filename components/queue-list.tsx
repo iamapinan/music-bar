@@ -52,33 +52,41 @@ export function QueueList() {
             </div>
           </div>
 
-          {/* Pending requests */}
-          {requests.slice(playMode === 'request' ? 1 : 0).map((req, i) => (
-            <QueueItem 
-              key={`req-${req.id}`} 
-              title={req.title} 
-              position={i + 1} 
-              type="request" 
-              badge={req.requested_by || 'ลูกค้า'} 
-            />
-          ))}
+          {/* Pending requests (excluding now playing) */}
+          {requests
+            .filter(req => req.youtube_id !== currentSong.youtube_id)
+            .map((req, i) => (
+              <QueueItem 
+                key={`req-${req.id}`} 
+                title={req.title} 
+                position={i + 1} 
+                type="request" 
+                badge={req.requested_by || 'ลูกค้า'} 
+              />
+            ))}
 
-          {/* Up Next from Playlist */}
+          {/* Up Next from Playlist (excluding now playing) */}
           <div className="pt-4 pb-2">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">ถัดไปจาก Playlist</p>
           </div>
 
-          {playlistSongs.slice(playMode === 'playlist' ? currentIndex + 1 : currentIndex).map((song, i) => (
-            <QueueItem 
-              key={`pl-${song.id}-${i}`} 
-              title={song.title} 
-              position={(requests.length - (playMode === 'request' ? 1 : 0)) + i + 1} 
-              type="playlist" 
-            />
-          ))}
+          {playlistSongs
+            .slice(currentIndex)
+            .filter(song => song.youtube_id !== currentSong.youtube_id)
+            .map((song, i) => {
+              const pendingReqCount = requests.filter(req => req.youtube_id !== currentSong.youtube_id).length
+              return (
+                <QueueItem 
+                  key={`pl-${song.id}-${i}`} 
+                  title={song.title} 
+                  position={pendingReqCount + i + 1} 
+                  type="playlist" 
+                />
+              )
+            })}
 
-          {requests.length === 0 && playlistSongs.length === 0 && (
-            <p className="text-center py-10 text-muted-foreground text-sm">ไม่มีเพลงในคิว</p>
+          {requests.length <= 1 && playlistSongs.length <= 1 && !requests.some(r => r.youtube_id !== currentSong.youtube_id) && (
+            <p className="text-center py-10 text-muted-foreground text-sm">ไม่มีเพลงถัดไป</p>
           )}
         </div>
       </ScrollArea>
