@@ -1,9 +1,10 @@
 'use client'
 
-import { Music2 } from 'lucide-react'
+import { Music2, ListMusic, X } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import { ListMusic } from 'lucide-react'
+import { SheetClose } from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
 import { usePlayer } from '@/context/player-context'
 import { cn } from '@/lib/utils'
 
@@ -18,10 +19,16 @@ export function QueueList() {
         <ListMusic className="w-5 h-5 text-primary" />
         <span className="font-semibold">คิวเพลง</span>
         {requests.length > 0 && (
-          <Badge variant="secondary" className="ml-auto text-xs px-2 h-6 bg-accent/10 text-accent border-accent/20">
-            {requests.length} คำขอ
+          <Badge variant="secondary" className="ml-2 text-xs px-2 h-6 bg-accent/10 text-accent border-accent/20">
+            {requests.length}
           </Badge>
         )}
+        
+        <SheetClose asChild>
+          <Button variant="ghost" size="icon" className="ml-auto w-8 h-8 rounded-full hover:bg-white/10">
+            <X className="w-4 h-4 text-muted-foreground" />
+          </Button>
+        </SheetClose>
       </div>
 
       <ScrollArea className="flex-1 px-4 py-4">
