@@ -1,0 +1,61 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { BottomNav } from '@/components/bottom-nav'
+import { AdminView } from '@/components/admin-view'
+import { PinEntry } from '@/components/pin-entry'
+import { Loader2 } from 'lucide-react'
+
+export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/auth')
+      const data = await res.json()
+      setIsAuthenticated(data.authenticated)
+    } catch {
+      setIsAuthenticated(false)
+    }
+  }
+
+  const handleLogin = () => {
+    setIsAuthenticated(true)
+  }
+
+  const handleLogout = async () => {
+    await fetch('/api/auth', { method: 'DELETE' })
+    setIsAuthenticated(false)
+  }
+
+  // Loading state
+  if (isAuthenticated === null) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </main>
+    )
+  }
+
+  // Not authenticated
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-background">
+        <PinEntry onSuccess={handleLogin} />
+        <BottomNav />
+      </main>
+    )
+  }
+
+  // Authenticated
+  return (
+    <main className="min-h-screen bg-background">
+      <AdminView onLogout={handleLogout} />
+      <BottomNav />
+    </main>
+  )
+}
