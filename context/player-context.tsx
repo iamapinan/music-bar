@@ -145,14 +145,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       // If there was only 1 request, go back to playlist.
       if (requests.length <= 1) setPlayMode('playlist')
     } else {
+      // Playlist song ended. Prepare NEXT playlist song.
+      const next = isShuffle
+        ? Math.floor(Math.random() * playlistSongs.length)
+        : (currentIndex + 1) % (playlistSongs.length || 1)
+      setCurrentIndex(next)
+
       if (requests.length > 0) {
-        // Pending requests wait until playlist song ends
+        // Switch to request mode if any
         setPlayMode('request')
-      } else {
-        const next = isShuffle
-          ? Math.floor(Math.random() * playlistSongs.length)
-          : (currentIndex + 1) % (playlistSongs.length || 1)
-        setCurrentIndex(next)
       }
     }
   }, [playMode, requests, playlistSongs.length, currentIndex, isShuffle, mutateRequests])

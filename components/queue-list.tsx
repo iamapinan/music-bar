@@ -8,7 +8,7 @@ import { usePlayer } from '@/context/player-context'
 import { cn } from '@/lib/utils'
 
 export function QueueList() {
-  const { isPlaying, currentSong, requests, playlistSongs } = usePlayer()
+  const { isPlaying, currentSong, requests, playlistSongs, playMode, currentIndex } = usePlayer()
 
   if (!currentSong) return null
 
@@ -46,7 +46,7 @@ export function QueueList() {
           </div>
 
           {/* Pending requests */}
-          {requests.slice(1).map((req, i) => (
+          {requests.slice(playMode === 'request' ? 1 : 0).map((req, i) => (
             <QueueItem 
               key={`req-${req.id}`} 
               title={req.title} 
@@ -56,12 +56,16 @@ export function QueueList() {
             />
           ))}
 
-          {/* Playlist */}
-          {playlistSongs.map((song, i) => (
+          {/* Up Next from Playlist */}
+          <div className="pt-4 pb-2">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">ถัดไปจาก Playlist</p>
+          </div>
+
+          {playlistSongs.slice(playMode === 'playlist' ? currentIndex + 1 : currentIndex).map((song, i) => (
             <QueueItem 
               key={`pl-${song.id}-${i}`} 
               title={song.title} 
-              position={requests.length + i} 
+              position={(requests.length - (playMode === 'request' ? 1 : 0)) + i + 1} 
               type="playlist" 
             />
           ))}
