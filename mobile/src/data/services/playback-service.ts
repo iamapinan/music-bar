@@ -1,16 +1,36 @@
 import TrackPlayer, { 
   AppKilledPlaybackBehavior, 
   Capability, 
-  RepeatMode 
+  RepeatMode,
+  Event
 } from 'react-native-track-player';
+import { MusicRepositoryImpl } from '../repositories/music-repository-impl';
+
+const musicRepo = new MusicRepositoryImpl();
 
 export const PlaybackService = async () => {
-  // ฟังก์ชันนี้จะถูกเรียกใช้โดย TrackPlayer เมื่อทำงานเบื้องหลัง
-  TrackPlayer.addEventListener('remote-play', () => TrackPlayer.play());
-  TrackPlayer.addEventListener('remote-pause', () => TrackPlayer.pause());
-  TrackPlayer.addEventListener('remote-next', () => TrackPlayer.skipToNext());
-  TrackPlayer.addEventListener('remote-previous', () => TrackPlayer.skipToPrevious());
-  TrackPlayer.addEventListener('remote-stop', () => TrackPlayer.destroy());
+  TrackPlayer.addEventListener(Event.RemotePlay, () => TrackPlayer.play());
+  TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
+  TrackPlayer.addEventListener(Event.RemoteNext, () => TrackPlayer.skipToNext());
+  TrackPlayer.addEventListener(Event.RemotePrevious, () => TrackPlayer.skipToPrevious());
+  TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.destroy());
+
+  // เมื่อเพลงเปลี่ยน ให้ตรวจสอบและอัปเดตสถานะใน API
+  TrackPlayer.addEventListener(Event.PlaybackTrackChanged, async (event) => {
+    if (event.nextTrack === undefined && event.track !== undefined) {
+      // เพลงจบและไม่มีเพลงถัดไป (หรือจบรายการ)
+      const track = await TrackPlayer.getTrack(event.track);
+      if (track) {
+        await musicRepo.updateRequestStatus(track.id, 'played');
+      }
+    } else if (event.track !== undefined) {
+      // เพลงเปลี่ยนเป็นเพลงใหม่
+      const track = await TrackPlayer.getTrack(event.track);
+      if (track) {
+        await musicRepo.updateRequestStatus(track.id, 'played');
+      }
+    }
+  });
 };
 
 export const setupPlayer = async () => {

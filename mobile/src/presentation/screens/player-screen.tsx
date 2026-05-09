@@ -13,12 +13,13 @@ import LinearGradient from 'react-native-linear-gradient';
 import { Play, Pause, SkipForward, SkipBack, ListMusic } from 'lucide-react-native';
 import { usePlayback } from '../hooks/use-playback';
 import { setupPlayer } from '../../data/services/playback-service';
-import { MOCK_TRACKS } from '../../assets/mock-data/tracks';
 import { Colors, Spacing } from '../theme';
 import TrackPlayer from 'react-native-track-player';
+import { MusicRepositoryImpl } from '../../data/repositories/music-repository-impl';
 
 const { width } = Dimensions.get('window');
 const ARTWORK_SIZE = width * 0.8;
+const musicRepo = new MusicRepositoryImpl();
 
 export const PlayerScreen = () => {
   const { 
@@ -36,12 +37,46 @@ export const PlayerScreen = () => {
     const init = async () => {
       const ready = await setupPlayer();
       if (ready) {
-        await TrackPlayer.add(MOCK_TRACKS);
+        await loadInitialData();
         setIsReady(true);
       }
     };
     init();
+
+    // Polling สำหรับคิวเพลงใหม่
+    const interval = setInterval(async () => {
+      const requests = await musicRepo.getPendingRequests();
+      if (requests.length > 0) {
+        const queue = await TrackPlayer.getQueue();
+        // เพิ่มเฉพาะเพลงที่ยังไม่มีในคิว
+        const newRequests = requests.filter(req => !queue.some(q => q.id === req.id));
+        if (newRequests.length > 0) {
+          await TrackPlayer.add(newRequests);
+        }
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  const loadInitialData = async () => {
+    // 1. ดึงคิวเพลงก่อน
+    const requests = await musicRepo.getPendingRequests();
+    if (requests.length > 0) {
+      await TrackPlayer.add(requests);
+    }
+
+    // 2. ถ้าคิวน้อยเกินไป ให้ดึงเพลย์ลิสต์หลักมาเสริม
+    const playlistId = await musicRepo.getDefaultPlaylistId();
+    const playlistSongs = await musicRepo.getSongsByPlaylist(playlistId);
+    
+    // กรองเพลงที่อาจจะซ้ำกับคิว
+    const filteredPlaylist = playlistSongs.filter(
+      song => !requests.some(req => req.id === song.id)
+    );
+    
+    await TrackPlayer.add(filteredPlaylist);
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
