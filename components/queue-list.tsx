@@ -1,60 +1,68 @@
-'use client'
+"use client";
 
-import { Music2, ListMusic, X, Play, Trash2 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { SheetClose } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { usePlayer } from '@/context/player-context'
-import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
-import { useState } from 'react'
+import { Music2, ListMusic, X, Play, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { SheetClose } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { usePlayer } from "@/context/player-context";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export function QueueList() {
-  const { 
-    isPlaying, currentSong, requests, playlistSongs, 
-    currentIndex, playByIndex, playMode,
-    mutatePlaylist, mutateRequests
-  } = usePlayer()
+  const {
+    isPlaying,
+    currentSong,
+    requests,
+    playlistSongs,
+    currentIndex,
+    playByIndex,
+    playMode,
+    mutatePlaylist,
+    mutateRequests,
+  } = usePlayer();
 
-  const [isDeleting, setIsDeleting] = useState<number | null>(null)
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
-  if (!currentSong) return null
+  if (!currentSong) return null;
 
   const handleRemoveSong = async (playlistId: number, songId: number) => {
-    setIsDeleting(songId)
+    if (!window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบเพลงนี้ออกจาก Playlist?")) return;
+    setIsDeleting(songId);
     try {
       const res = await fetch(`/api/playlists/${playlistId}/songs`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ songId }),
-      })
-      if (!res.ok) throw new Error()
-      await mutatePlaylist()
-      toast.success('ลบเพลงออกจาก Playlist แล้ว')
+      });
+      if (!res.ok) throw new Error();
+      await mutatePlaylist();
+      toast.success("ลบเพลงออกจาก Playlist แล้ว");
     } catch {
-      toast.error('ไม่สามารถลบเพลงได้')
+      toast.error("ไม่สามารถลบเพลงได้");
     } finally {
-      setIsDeleting(null)
+      setIsDeleting(null);
     }
-  }
+  };
 
   const handleRemoveRequest = async (requestId: number) => {
-    setIsDeleting(requestId)
+    if (!window.confirm("คุณแน่ใจหรือไม่ว่าต้องการลบคำขอเพลงนี้?")) return;
+    setIsDeleting(requestId);
     try {
-      const res = await fetch('/api/requests', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/requests", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: requestId }),
-      })
-      if (!res.ok) throw new Error()
-      await mutateRequests()
-      toast.success('ลบคำขอเพลงแล้ว')
+      });
+      if (!res.ok) throw new Error();
+      await mutateRequests();
+      toast.success("ลบคำขอเพลงแล้ว");
     } catch {
-      toast.error('ไม่สามารถลบคำขอได้')
+      toast.error("ไม่สามารถลบคำขอได้");
     } finally {
-      setIsDeleting(null)
+      setIsDeleting(null);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -62,19 +70,26 @@ export function QueueList() {
         <ListMusic className="w-5 h-5 text-primary" />
         <span className="font-semibold">คิวเพลง</span>
         {requests.length > 0 && (
-          <Badge variant="secondary" className="ml-2 text-xs px-2 h-6 bg-accent/10 text-accent border-accent/20">
+          <Badge
+            variant="secondary"
+            className="ml-2 text-xs px-2 h-6 bg-accent/10 text-accent border-accent/20"
+          >
             {requests.length}
           </Badge>
         )}
-        
+
         <SheetClose asChild>
-          <Button variant="ghost" size="icon" className="ml-auto w-8 h-8 rounded-full hover:bg-white/10">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-auto w-8 h-8 rounded-full hover:bg-white/10"
+          >
             <X className="w-4 h-4 text-muted-foreground" />
           </Button>
         </SheetClose>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-none">
+      <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-none bg-background/60">
         <div className="space-y-2 pr-1 pb-10">
           {/* Now Playing Highlight Section */}
           <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20 shadow-sm mb-4">
@@ -90,7 +105,9 @@ export function QueueList() {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate text-primary">{currentSong.title}</p>
+              <p className="text-sm font-semibold truncate text-primary">
+                {currentSong.title}
+              </p>
               <p className="text-xs text-primary/70 mt-0.5">กำลังเล่น</p>
             </div>
           </div>
@@ -99,16 +116,18 @@ export function QueueList() {
           {requests.length > 0 && (
             <>
               <div className="pt-2 pb-2">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">เพลงที่ขอเข้ามา</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">
+                  เพลงที่ขอเข้ามา
+                </p>
               </div>
               {requests.map((req, i) => (
-                <QueueItem 
-                  key={`req-${req.id}`} 
-                  title={req.title} 
-                  position={i + 1} 
-                  type="request" 
-                  badge={req.requested_by || 'ลูกค้า'}
-                  isActive={playMode === 'request' && i === 0}
+                <QueueItem
+                  key={`req-${req.id}`}
+                  title={req.title}
+                  position={i + 1}
+                  type="request"
+                  badge={req.requested_by || "ลูกค้า"}
+                  isActive={playMode === "request" && i === 0}
                   isPlaying={isPlaying}
                   isDeleting={isDeleting === req.id}
                   onDelete={() => handleRemoveRequest(req.id)}
@@ -119,18 +138,21 @@ export function QueueList() {
 
           {/* Playlist Section */}
           <div className="pt-4 pb-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Playlist ทั้งหมด</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">
+              Playlist ทั้งหมด
+            </p>
           </div>
 
           {playlistSongs
             .map((song, originalIndex) => ({ song, originalIndex }))
             .map(({ song, originalIndex }, i) => {
-              const isActive = playMode === 'playlist' && originalIndex === currentIndex
+              const isActive =
+                playMode === "playlist" && originalIndex === currentIndex;
               return (
-                <QueueItem 
-                  key={`pl-${song.id}-${originalIndex}`} 
-                  title={song.title} 
-                  position={originalIndex + 1} 
+                <QueueItem
+                  key={`pl-${song.id}-${originalIndex}`}
+                  title={song.title}
+                  position={originalIndex + 1}
                   type="playlist"
                   isActive={isActive}
                   isPlaying={isPlaying}
@@ -138,25 +160,35 @@ export function QueueList() {
                   onDelete={() => handleRemoveSong(song.playlist_id, song.id)}
                   onClick={() => playByIndex(originalIndex)}
                 />
-              )
+              );
             })}
 
           {requests.length === 0 && playlistSongs.length === 0 && (
-            <p className="text-center py-10 text-muted-foreground text-sm">ไม่มีเพลงในรายการ</p>
+            <p className="text-center py-10 text-muted-foreground text-sm">
+              ไม่มีเพลงในรายการ
+            </p>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-function QueueItem({ 
-  title, position, type, badge, onClick, isActive, isPlaying, onDelete, isDeleting 
+function QueueItem({
+  title,
+  position,
+  type,
+  badge,
+  onClick,
+  isActive,
+  isPlaying,
+  onDelete,
+  isDeleting,
 }: {
-  title: string; 
-  position: number; 
-  type: 'request' | 'playlist'; 
-  badge?: string; 
+  title: string;
+  position: number;
+  type: "request" | "playlist";
+  badge?: string;
   onClick?: () => void;
   isActive?: boolean;
   isPlaying?: boolean;
@@ -164,14 +196,14 @@ function QueueItem({
   isDeleting?: boolean;
 }) {
   return (
-    <div 
+    <div
       className={cn(
         "flex items-center gap-3 p-3 rounded-xl transition-all group relative",
-        isActive 
-          ? "bg-primary/20 border-primary/30 shadow-sm" 
+        isActive
+          ? "bg-primary/20 border-primary/30 shadow-sm"
           : "bg-card/60 hover:bg-card border-transparent hover:border-border/50",
         onClick && !isActive && "cursor-pointer",
-        isDeleting && "opacity-50 pointer-events-none"
+        isDeleting && "opacity-50 pointer-events-none",
       )}
       onClick={!isActive ? onClick : undefined}
     >
@@ -183,24 +215,34 @@ function QueueItem({
             <div className="playing-bar" />
           </div>
         ) : (
-          <span className={cn(
-            "text-xs font-medium tabular-nums",
-            isActive ? "text-primary" : "text-muted-foreground"
-          )}>
+          <span
+            className={cn(
+              "text-xs font-medium tabular-nums",
+              isActive ? "text-primary" : "text-muted-foreground",
+            )}
+          >
             {position}
           </span>
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={cn(
-          "text-sm font-medium truncate transition-colors mr-6",
-          isActive ? "text-primary font-bold" : "group-hover:text-primary"
-        )}>
+        <p
+          className={cn(
+            "text-sm font-medium truncate transition-colors mr-6",
+            isActive ? "text-primary font-bold" : "group-hover:text-primary",
+          )}
+        >
           {title}
         </p>
-        {badge && <p className="text-xs text-muted-foreground mt-0.5">ขอโดย: {badge}</p>}
-        {isActive && <p className="text-[10px] text-primary/70 font-bold uppercase tracking-tighter mt-0.5">กำลังเล่น</p>}
+        {badge && (
+          <p className="text-xs text-muted-foreground mt-0.5">ขอโดย: {badge}</p>
+        )}
+        {isActive && (
+          <p className="text-[10px] text-primary/70 font-bold uppercase tracking-tighter mt-0.5">
+            กำลังเล่น
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
@@ -210,22 +252,27 @@ function QueueItem({
             variant="ghost"
             className="w-8 h-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={(e) => {
-              e.stopPropagation()
-              onDelete()
+              e.stopPropagation();
+              onDelete();
             }}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         )}
-        
-        {type === 'request' && !isActive && (
-          <Badge variant="outline" className="text-[10px] h-5 px-2 bg-accent/5 border-accent/30 text-accent rounded-full">ขอ</Badge>
+
+        {type === "request" && !isActive && (
+          <Badge
+            variant="outline"
+            className="text-[10px] h-5 px-2 bg-accent/5 border-accent/30 text-accent rounded-full"
+          >
+            ขอ
+          </Badge>
         )}
-        
-        {type === 'playlist' && onClick && !isActive && (
+
+        {type === "playlist" && onClick && !isActive && (
           <Play className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         )}
       </div>
     </div>
-  )
+  );
 }
