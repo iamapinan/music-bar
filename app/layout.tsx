@@ -3,14 +3,16 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { ServiceWorkerRegistration } from '@/components/sw-registration'
+import { PlayerProvider } from '@/context/player-context'
+import { PersistentYouTubePlayer } from '@/components/persistent-player'
 import './globals.css'
 
-const geist = Geist({ 
+const geist = Geist({
   subsets: ['latin'],
   variable: '--font-geist-sans'
 })
 
-const geistMono = Geist_Mono({ 
+const geistMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-geist-mono'
 })
@@ -52,13 +54,19 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        {/* Allow autoplay in background for iOS */}
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased min-h-screen`}>
         <ServiceWorkerRegistration />
-        {children}
-        <Toaster 
-          position="top-center" 
-          richColors 
+        <PlayerProvider>
+          {/* Persistent player — ไม่ unmount เมื่อเปลี่ยนหน้า */}
+          <PersistentYouTubePlayer />
+          {children}
+        </PlayerProvider>
+        <Toaster
+          position="top-center"
+          richColors
           theme="dark"
           toastOptions={{
             style: {

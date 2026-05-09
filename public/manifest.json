@@ -1,12 +1,14 @@
 {
-  "name": "Restaurant Music",
-  "short_name": "Music",
-  "description": "ระบบจัดการเพลงสำหรับร้านอาหาร",
+  "name": "Music Bar",
+  "short_name": "Music Bar",
+  "description": "ระบบจัดการเพลงและขอเพลงสำหรับร้าน",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a1625",
+  "background_color": "#0d0d1a",
   "theme_color": "#1a1625",
   "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "th",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -22,5 +24,6 @@
     }
   ],
   "categories": ["music", "entertainment"],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "handle_links": "preferred"
 }

@@ -2,34 +2,9 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react'
 
-declare global {
-  interface Window {
-    YT: {
-      Player: new (
-        elementId: string,
-        config: {
-          videoId: string
-          playerVars?: Record<string, number | string>
-          events?: {
-            onReady?: (event: { target: YouTubePlayer }) => void
-            onStateChange?: (event: { data: number; target: YouTubePlayer }) => void
-            onError?: (event: { data: number }) => void
-          }
-        }
-      ) => YouTubePlayer
-      PlayerState: {
-        ENDED: number
-        PLAYING: number
-        PAUSED: number
-        BUFFERING: number
-        CUED: number
-      }
-    }
-    onYouTubeIframeAPIReady: () => void
-  }
-}
-
-interface YouTubePlayer {
+// Global YT types declared in persistent-player.tsx
+// Local player type used only in this legacy component
+interface LocalYTPlayer {
   playVideo: () => void
   pauseVideo: () => void
   stopVideo: () => void
@@ -52,6 +27,10 @@ interface YouTubePlayerProps {
   onError?: () => void
 }
 
+/**
+ * @deprecated Use PersistentYouTubePlayer + PlayerContext instead.
+ * Kept for backward compatibility only.
+ */
 export function YouTubePlayerComponent({
   videoId,
   autoplay = true,
@@ -61,41 +40,28 @@ export function YouTubePlayerComponent({
   onPause,
   onError,
 }: YouTubePlayerProps) {
-  const playerRef = useRef<YouTubePlayer | null>(null)
+  const playerRef = useRef<LocalYTPlayer | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isApiReady, setIsApiReady] = useState(false)
   const currentVideoRef = useRef(videoId)
 
-  // Load YouTube IFrame API
   useEffect(() => {
     if (window.YT && window.YT.Player) {
       setIsApiReady(true)
       return
     }
-
     const tag = document.createElement('script')
     tag.src = 'https://www.youtube.com/iframe_api'
     const firstScriptTag = document.getElementsByTagName('script')[0]
     firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag)
-
-    window.onYouTubeIframeAPIReady = () => {
-      setIsApiReady(true)
-    }
-
-    return () => {
-      window.onYouTubeIframeAPIReady = () => {}
-    }
+    window.onYouTubeIframeAPIReady = () => { setIsApiReady(true) }
+    return () => { window.onYouTubeIframeAPIReady = () => {} }
   }, [])
 
-  // Initialize player
   useEffect(() => {
     if (!isApiReady || !videoId) return
-
     const initPlayer = () => {
-      if (playerRef.current) {
-        playerRef.current.destroy()
-      }
-
+      if (playerRef.current) playerRef.current.destroy()
       playerRef.current = new window.YT.Player('youtube-player', {
         videoId,
         playerVars: {
@@ -110,43 +76,27 @@ export function YouTubePlayerComponent({
         events: {
           onReady: (event) => {
             event.target.setVolume(70)
-            if (autoplay) {
-              event.target.playVideo()
-            }
+            if (autoplay) event.target.playVideo()
             onReady?.()
           },
           onStateChange: (event) => {
-            if (event.data === window.YT.PlayerState.ENDED) {
-              onEnded?.()
-            } else if (event.data === window.YT.PlayerState.PLAYING) {
+            if (event.data === window.YT.PlayerState.ENDED) onEnded?.()
+            else if (event.data === window.YT.PlayerState.PLAYING) {
               onPlay?.()
-              // Update Media Session
-              if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing'
-              }
+              if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
             } else if (event.data === window.YT.PlayerState.PAUSED) {
               onPause?.()
-              if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'paused'
-              }
+              if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'
             }
           },
-          onError: () => {
-            onError?.()
-          },
+          onError: () => { onError?.() },
         },
-      })
+      }) as unknown as LocalYTPlayer
     }
-
-    // Small delay to ensure DOM is ready
     const timer = setTimeout(initPlayer, 100)
-
-    return () => {
-      clearTimeout(timer)
-    }
+    return () => { clearTimeout(timer) }
   }, [isApiReady, autoplay]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle video change
   useEffect(() => {
     if (playerRef.current && videoId && videoId !== currentVideoRef.current) {
       currentVideoRef.current = videoId
@@ -154,22 +104,15 @@ export function YouTubePlayerComponent({
     }
   }, [videoId])
 
-  const play = useCallback(() => {
-    playerRef.current?.playVideo()
-  }, [])
+  const play = useCallback(() => { playerRef.current?.playVideo() }, [])
+  const pause = useCallback(() => { playerRef.current?.pauseVideo() }, [])
+  const setVolume = useCallback((v: number) => { playerRef.current?.setVolume(v) }, [])
 
-  const pause = useCallback(() => {
-    playerRef.current?.pauseVideo()
-  }, [])
-
-  const setVolume = useCallback((volume: number) => {
-    playerRef.current?.setVolume(volume)
-  }, [])
-
-  // Expose methods via ref
   useEffect(() => {
     if (containerRef.current) {
-      (containerRef.current as HTMLDivElement & { playerMethods?: { play: () => void; pause: () => void; setVolume: (v: number) => void } }).playerMethods = { play, pause, setVolume }
+      (containerRef.current as HTMLDivElement & {
+        playerMethods?: { play: () => void; pause: () => void; setVolume: (v: number) => void }
+      }).playerMethods = { play, pause, setVolume }
     }
   }, [play, pause, setVolume])
 

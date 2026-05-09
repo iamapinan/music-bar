@@ -1,157 +1,28 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import useSWR from 'swr'
+import { useState } from 'react'
 import {
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX,
-  Music2, Shuffle, Maximize2, Minimize2, ListMusic, X, GripVertical
+  Music2, Shuffle, Maximize2, Minimize2, ListMusic
 } from 'lucide-react'
-import { YouTubePlayerComponent } from '@/components/youtube-player'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import type { PlaylistSong, SongRequest } from '@/lib/types'
-
-const fetcher = async (url: string) => {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`API error ${res.status}`)
-  return res.json()
-}
+import { usePlayer } from '@/context/player-context'
+import type { SongRequest } from '@/lib/types'
 
 export function PlayerView() {
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [volume, setVolume] = useState(70)
-  const [isMuted, setIsMuted] = useState(false)
-  const [isShuffle, setIsShuffle] = useState(false)
+  const {
+    isPlaying, currentSong, playMode, volume, isMuted, isShuffle,
+    requests, playlistSongs,
+    togglePlay, handleSkip, handlePrevious, handleVolumeChange,
+    toggleMute, toggleShuffle,
+  } = usePlayer()
+
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showQueue, setShowQueue] = useState(false)
-  const [playMode, setPlayMode] = useState<'playlist' | 'request'>('request')
-  const playerContainerRef = useRef<HTMLDivElement>(null)
-
-  // Fetch playlists
-  const { data: playlists } = useSWR('/api/playlists', fetcher, { refreshInterval: 10000 })
-  const defaultPlaylistId = playlists?.find((p: { is_default: boolean }) => p.is_default)?.id || 1
-
-  const { data: playlistSongs = [] } = useSWR<PlaylistSong[]>(
-    `/api/playlists/${defaultPlaylistId}/songs`,
-    fetcher,
-    { refreshInterval: 5000 }
-  )
-
-  // Fetch song requests
-  const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>(
-    '/api/requests',
-    fetcher,
-    { refreshInterval: 3000 }
-  )
-
-  // Current song: requests first, then playlist
-  const currentSong = playMode === 'request' && requests.length > 0
-    ? requests[0]
-    : playlistSongs[currentIndex]
-
-  // Auto-switch mode when requests arrive
-  useEffect(() => {
-    if (requests.length > 0 && playMode === 'playlist') {
-      setPlayMode('request')
-    }
-  }, [requests.length, playMode])
-
-  const handleSongEnd = useCallback(async () => {
-    if (playMode === 'request' && requests.length > 0) {
-      await fetch('/api/requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: requests[0].id, status: 'played' }),
-      })
-      mutateRequests()
-      if (requests.length <= 1) {
-        setPlayMode('playlist')
-      }
-    } else {
-      const nextIndex = isShuffle
-        ? Math.floor(Math.random() * playlistSongs.length)
-        : (currentIndex + 1) % playlistSongs.length
-      setCurrentIndex(nextIndex)
-    }
-  }, [playMode, requests, playlistSongs.length, currentIndex, isShuffle, mutateRequests])
-
-  const handlePrevious = () => {
-    if (playMode === 'playlist') {
-      const prevIndex = isShuffle
-        ? Math.floor(Math.random() * playlistSongs.length)
-        : (currentIndex - 1 + playlistSongs.length) % playlistSongs.length
-      setCurrentIndex(prevIndex)
-    }
-  }
-
-  const handleSkip = async () => {
-    if (playMode === 'request' && requests.length > 0) {
-      await fetch('/api/requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: requests[0].id, status: 'skipped' }),
-      })
-      mutateRequests()
-    } else {
-      handleSongEnd()
-    }
-  }
-
-  // Media Session API
-  useEffect(() => {
-    if ('mediaSession' in navigator && currentSong) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentSong.title,
-        artist: 'requested_by' in currentSong ? currentSong.requested_by || 'ลูกค้า' : 'Music Bar',
-        artwork: currentSong.thumbnail ? [{ src: currentSong.thumbnail, sizes: '512x512', type: 'image/jpeg' }] : [],
-      })
-      navigator.mediaSession.setActionHandler('play', () => setIsPlaying(true))
-      navigator.mediaSession.setActionHandler('pause', () => setIsPlaying(false))
-      navigator.mediaSession.setActionHandler('nexttrack', handleSongEnd)
-      navigator.mediaSession.setActionHandler('previoustrack', handlePrevious)
-    }
-  }, [currentSong, handleSongEnd, handlePrevious])
-
-  const callPlayerMethod = (method: string, ...args: unknown[]) => {
-    const container = playerContainerRef.current
-    if (!container) return
-    const el = container.querySelector('.youtube-player-container') as HTMLDivElement & {
-      playerMethods?: Record<string, (...a: unknown[]) => void>
-    }
-    el?.playerMethods?.[method]?.(...args)
-  }
-
-  const handleVolumeChange = (values: number[]) => {
-    const newVolume = values[0]
-    setVolume(newVolume)
-    setIsMuted(newVolume === 0)
-    callPlayerMethod('setVolume', newVolume)
-  }
-
-  const toggleMute = () => {
-    const newMuted = !isMuted
-    setIsMuted(newMuted)
-    callPlayerMethod('setVolume', newMuted ? 0 : volume)
-  }
-
-  const togglePlay = () => {
-    if (isPlaying) {
-      callPlayerMethod('pause')
-    } else {
-      callPlayerMethod('play')
-    }
-    setIsPlaying(!isPlaying)
-  }
-
-  // Queue items (requests first, then playlist continuation)
-  const queueItems = [
-    ...requests.slice(1).map(r => ({ type: 'request' as const, song: r })),
-    ...playlistSongs.map(s => ({ type: 'playlist' as const, song: s })),
-  ]
 
   if (!currentSong) {
     return (
@@ -168,8 +39,8 @@ export function PlayerView() {
     )
   }
 
-  const playerContent = (
-    <div ref={playerContainerRef} className={cn(
+  return (
+    <div className={cn(
       'flex flex-col h-full',
       isFullscreen && 'fixed inset-0 z-50 bg-background overflow-auto'
     )}>
@@ -188,24 +59,49 @@ export function PlayerView() {
         </div>
       )}
 
-      {/* Video + Info Section */}
       <div className={cn('p-4 space-y-4', isFullscreen && 'flex-1 flex flex-col')}>
-        {/* YouTube Player */}
-        <div className={cn('rounded-xl overflow-hidden', isFullscreen && 'flex-1')}>
-          <YouTubePlayerComponent
-            videoId={currentSong.youtube_id}
-            autoplay={true}
-            onEnded={handleSongEnd}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onError={handleSongEnd}
-          />
+        {/* Thumbnail + visual (แทน iframe ที่ถูก hide ไปแล้ว) */}
+        <div className={cn(
+          'relative rounded-xl overflow-hidden bg-card border border-border/30',
+          isFullscreen ? 'flex-1' : 'aspect-video'
+        )}>
+          {currentSong.thumbnail ? (
+            <img
+              src={currentSong.thumbnail}
+              alt={currentSong.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Music2 className="w-16 h-16 text-muted-foreground/40" />
+            </div>
+          )}
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          {/* Playing indicator */}
+          {isPlaying && (
+            <div className="absolute bottom-3 left-3">
+              <div className="playing-bars">
+                <div className="playing-bar" />
+                <div className="playing-bar" />
+                <div className="playing-bar" />
+                <div className="playing-bar" />
+              </div>
+            </div>
+          )}
+          {/* Fullscreen toggle */}
+          <button
+            className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/40 flex items-center justify-center hover:bg-black/60 transition-colors"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4 text-white" /> : <Maximize2 className="w-4 h-4 text-white" />}
+          </button>
         </div>
 
         {/* Song Info */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               {playMode === 'request' && (
                 <Badge className="bg-accent/20 text-accent border-accent/30 text-xs px-2 py-0.5">
                   คิวเพลงขอ
@@ -218,32 +114,21 @@ export function PlayerView() {
               )}
             </div>
             <h2 className="text-base font-semibold line-clamp-2 leading-snug">{currentSong.title}</h2>
-            {'requested_by' in currentSong && currentSong.requested_by && (
+            {'requested_by' in currentSong && (currentSong as SongRequest).requested_by && (
               <p className="text-sm text-muted-foreground mt-0.5">
-                ขอโดย: {currentSong.requested_by}
+                ขอโดย: {(currentSong as SongRequest).requested_by}
               </p>
             )}
           </div>
-          <div className="flex gap-1 flex-shrink-0">
-            <Button
-              size="icon"
-              variant="ghost"
-              className={cn('w-9 h-9', isShuffle && 'text-primary bg-primary/10')}
-              onClick={() => setIsShuffle(!isShuffle)}
-              title="สุ่มเพลง"
-            >
-              <Shuffle className="w-4 h-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="w-9 h-9"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              title="เต็มจอ"
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className={cn('w-9 h-9 flex-shrink-0', isShuffle && 'text-primary bg-primary/10')}
+            onClick={toggleShuffle}
+            title="สุ่มเพลง"
+          >
+            <Shuffle className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Controls */}
@@ -280,7 +165,10 @@ export function PlayerView() {
           {/* Volume */}
           <div className="flex items-center gap-3 px-2">
             <Button size="icon" variant="ghost" className="w-8 h-8" onClick={toggleMute}>
-              {isMuted ? <VolumeX className="w-4 h-4 text-muted-foreground" /> : <Volume2 className="w-4 h-4 text-muted-foreground" />}
+              {isMuted
+                ? <VolumeX className="w-4 h-4 text-muted-foreground" />
+                : <Volume2 className="w-4 h-4 text-muted-foreground" />
+              }
             </Button>
             <Slider
               value={[isMuted ? 0 : volume]}
@@ -298,7 +186,6 @@ export function PlayerView() {
 
       {/* Queue Section */}
       <div className="px-4 pb-24">
-        {/* Queue Header */}
         <button
           onClick={() => setShowQueue(!showQueue)}
           className="w-full flex items-center justify-between py-3 border-t border-border/50 text-left"
@@ -318,40 +205,37 @@ export function PlayerView() {
         {showQueue && (
           <ScrollArea className="h-64 mt-1">
             <div className="space-y-1.5 pr-2">
-              {requests.length === 0 && playlistSongs.length === 0 ? (
+              {/* Now Playing */}
+              <div className="flex items-center gap-3 p-2.5 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="flex-shrink-0 w-4 flex items-center">
+                  {isPlaying ? (
+                    <div className="playing-bars">
+                      <div className="playing-bar" />
+                      <div className="playing-bar" />
+                      <div className="playing-bar" />
+                    </div>
+                  ) : (
+                    <Music2 className="w-4 h-4 text-primary" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate text-primary">{currentSong.title}</p>
+                  <p className="text-xs text-primary/60">กำลังเล่น</p>
+                </div>
+              </div>
+
+              {/* Pending requests */}
+              {requests.slice(1).map((req, i) => (
+                <QueueItem key={req.id} title={req.title} position={i + 1} type="request" badge={req.requested_by || 'ลูกค้า'} />
+              ))}
+
+              {/* Playlist */}
+              {playlistSongs.map((song, i) => (
+                <QueueItem key={song.id} title={song.title} position={requests.length + i} type="playlist" />
+              ))}
+
+              {requests.length === 0 && playlistSongs.length === 0 && (
                 <p className="text-center py-6 text-muted-foreground text-sm">ไม่มีเพลงในคิว</p>
-              ) : (
-                <>
-                  {/* Now Playing */}
-                  <div className="flex items-center gap-3 p-2.5 rounded-lg bg-primary/10 border border-primary/20">
-                    <div className="playing-bars flex-shrink-0">
-                      {isPlaying ? (
-                        <>
-                          <div className="playing-bar" />
-                          <div className="playing-bar" />
-                          <div className="playing-bar" />
-                          <div className="playing-bar" />
-                        </>
-                      ) : (
-                        <Music2 className="w-4 h-4 text-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate text-primary">{currentSong.title}</p>
-                      <p className="text-xs text-primary/60">กำลังเล่น</p>
-                    </div>
-                  </div>
-
-                  {/* Queued requests */}
-                  {requests.slice(1).map((req, i) => (
-                    <QueueItem key={req.id} title={req.title} position={i + 1} type="request" badge={req.requested_by || 'ลูกค้า'} />
-                  ))}
-
-                  {/* Playlist continuation */}
-                  {playlistSongs.map((song, i) => (
-                    <QueueItem key={song.id} title={song.title} position={requests.length + i} type="playlist" />
-                  ))}
-                </>
               )}
             </div>
           </ScrollArea>
@@ -359,17 +243,10 @@ export function PlayerView() {
       </div>
     </div>
   )
-
-  return playerContent
 }
 
-function QueueItem({
-  title, position, type, badge
-}: {
-  title: string
-  position: number
-  type: 'request' | 'playlist'
-  badge?: string
+function QueueItem({ title, position, type, badge }: {
+  title: string; position: number; type: 'request' | 'playlist'; badge?: string
 }) {
   return (
     <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-card/60 hover:bg-card transition-colors">
@@ -379,9 +256,7 @@ function QueueItem({
         {badge && <p className="text-xs text-muted-foreground">ขอโดย: {badge}</p>}
       </div>
       {type === 'request' && (
-        <Badge variant="outline" className="text-xs h-5 px-1.5 border-accent/30 text-accent flex-shrink-0">
-          ขอ
-        </Badge>
+        <Badge variant="outline" className="text-xs h-5 px-1.5 border-accent/30 text-accent flex-shrink-0">ขอ</Badge>
       )}
     </div>
   )
