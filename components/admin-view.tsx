@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import {
   Plus, Search, Trash2, Music2, Loader2, List, Settings,
   Star, StarOff, Power, PowerOff, Download, Import, Youtube,
-  CheckSquare, Square, X, RefreshCw
+  CheckSquare, Square, X, RefreshCw, QrCode
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -38,6 +38,11 @@ export function AdminView({ onLogout }: AdminViewProps) {
   const [newPlaylistName, setNewPlaylistName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [selectedPlaylists, setSelectedPlaylists] = useState<Set<number>>(new Set())
+  
+  // QR Code States
+  const [showQR, setShowQR] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState('')
+  const [pageUrl, setPageUrl] = useState('')
 
   const { data: playlists = [], mutate: mutatePlaylists } = useSWR<Playlist[]>('/api/playlists', fetcher)
   const currentPlaylist = activePlaylistId
@@ -52,6 +57,31 @@ export function AdminView({ onLogout }: AdminViewProps) {
   const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>(
     '/api/requests', fetcher, { refreshInterval: 5000 }
   )
+
+  // Initialize QR Code URL
+  useEffect(() => {
+    setPageUrl(window.location.origin + '/request')
+  }, [])
+
+  useEffect(() => {
+    if (!showQR || !pageUrl) return
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pageUrl)}&bgcolor=0d0d1a&color=a78bfa&format=png&margin=20`
+    setQrDataUrl(qrUrl)
+  }, [showQR, pageUrl])
+
+  const handleDownloadQR = async () => {
+    try {
+      const res = await fetch(qrDataUrl)
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = 'music-bar-qr.png'
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch {
+      toast.error('ไม่สามารถดาวน์โหลดได้')
+    }
+  }
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
@@ -213,10 +243,46 @@ export function AdminView({ onLogout }: AdminViewProps) {
             <p className="text-xs text-muted-foreground">Admin Panel</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={onLogout} className="text-xs h-8">
-          ออกจากระบบ
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowQR(true)} className="text-xs h-8 gap-1.5 border-primary/30 text-primary hover:text-primary">
+            <QrCode className="w-3.5 h-3.5" />
+            QR
+          </Button>
+          <Button variant="outline" size="sm" onClick={onLogout} className="text-xs h-8">
+            ออกจากระบบ
+          </Button>
+        </div>
       </div>
+
+      {/* QR Code Modal */}
+      {showQR && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6" onClick={() => setShowQR(false)}>
+          <div className="bg-card rounded-2xl p-6 max-w-sm w-full border border-border/60 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-lg gradient-text">QR Code สำหรับลูกค้า</h2>
+              <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => setShowQR(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4 text-center">{pageUrl}</p>
+            {qrDataUrl ? (
+              <div className="flex flex-col items-center gap-4">
+                <div className="rounded-2xl overflow-hidden border border-border/40 p-2 bg-[#0d0d1a]">
+                  <img src={qrDataUrl} alt="QR Code" className="w-56 h-56 object-contain" />
+                </div>
+                <Button className="w-full gap-2" onClick={handleDownloadQR}>
+                  <Download className="w-4 h-4" />
+                  ดาวน์โหลด QR Code
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-56">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <Tabs defaultValue="playlists" className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="mx-4 mt-3 grid grid-cols-3 h-9">
