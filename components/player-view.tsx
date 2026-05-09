@@ -14,7 +14,11 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { PlaylistSong, SongRequest } from '@/lib/types'
 
-const fetcher = (url: string) => fetch(url).then(res => res.json())
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  return res.json()
+}
 
 export function PlayerView() {
   const [isPlaying, setIsPlaying] = useState(false)
