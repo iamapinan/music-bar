@@ -35,14 +35,17 @@ export function PlayerView() {
   return (
     <div 
       className={cn(
-        'flex flex-col overflow-hidden transition-all duration-300',
-        isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'h-[calc(100dvh-10rem)]',
-        (isFullscreen && !showControls) && 'cursor-none'
+        'flex flex-col h-[100dvh] overflow-hidden transition-all duration-300 bg-background',
+        isFullscreen && 'fixed inset-0 z-50'
       )}
+      onMouseMove={() => !showControls && setShowControls(true)}
     >
-      {/* Fullscreen header */}
+      {/* Fullscreen/Header bar (Optional: hide if desired, but good for title) */}
       {isFullscreen && (
-        <div className="flex items-center justify-between p-4 glass border-b border-border/10 shrink-0">
+        <div className={cn(
+          "flex items-center justify-between p-4 glass border-b border-border/10 shrink-0 transition-opacity z-[100]",
+          showControls ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
               <Music2 className="w-4 h-4 text-primary" />
@@ -55,8 +58,8 @@ export function PlayerView() {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 min-h-0 overflow-y-auto bg-gradient-to-b from-background to-background/50">
-        <div className="w-full max-w-5xl flex flex-col items-center">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 relative min-h-0">
+        <div className="w-full h-full max-w-5xl flex flex-col items-center justify-center relative">
           
           {/* Artwork / Thumbnail / Video Target Container */}
           <div className={cn(
@@ -132,6 +135,7 @@ export function PlayerView() {
             </div>
 
             {/* Permanent Small Mode Toggle for Video Mode (always visible but follows showControls) */}
+            {/* Permanent Small Mode Toggle for Video Mode (always visible but follows showControls) */}
             <button
               className={cn(
                 "absolute top-4 left-4 h-8 px-3 rounded-full bg-black/20 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all z-[90]",
@@ -146,34 +150,35 @@ export function PlayerView() {
               <div className={cn("w-1.5 h-1.5 rounded-full", isVideoMode ? "bg-red-500 animate-pulse" : "bg-white/40")} />
               <span className="text-[10px] font-bold text-white uppercase tracking-wider">{isVideoMode ? 'Video' : 'Audio'}</span>
             </button>
-          </div>
 
-          {/* Song Info (Main Stage) */}
-          {!isFullscreen && (
-            <div className="w-full text-center px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div className="flex items-center justify-center gap-2 mb-6">
+            {/* Song Info Overlay (Integrated into controls layer) */}
+            <div className={cn(
+              "absolute bottom-0 left-0 right-0 p-6 sm:p-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity pointer-events-none",
+              showControls ? "opacity-100" : "opacity-0"
+            )}>
+              <div className="flex items-center gap-3 mb-3">
                 {playMode === 'request' && (
-                  <Badge className="bg-accent/20 text-accent border-accent/30 text-[10px] uppercase tracking-widest px-4 py-1 rounded-full">
+                  <Badge className="bg-accent text-accent-foreground border-none text-[10px] uppercase tracking-widest px-3 py-0.5 rounded-full">
                     Song Request
                   </Badge>
                 )}
                 {isShuffle && (
-                  <Badge variant="outline" className="text-[10px] uppercase tracking-widest px-4 py-1 border-primary/40 text-primary rounded-full">
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-widest px-3 py-0.5 border-white/20 text-white rounded-full bg-white/5 backdrop-blur-sm">
                     Shuffle Mode
                   </Badge>
                 )}
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black line-clamp-2 leading-[1.1] tracking-tighter text-foreground mb-6 drop-shadow-sm">
+              <h2 className="text-2xl sm:text-4xl font-black line-clamp-2 leading-[1.1] tracking-tighter text-white drop-shadow-lg mb-2">
                 {currentSong.title}
               </h2>
-              <p className="text-xl sm:text-2xl text-muted-foreground font-medium opacity-80 max-w-2xl mx-auto">
+              <p className="text-lg sm:text-xl text-white/70 font-medium drop-shadow-md">
                 {'requested_by' in currentSong && (currentSong as SongRequest).requested_by 
                   ? `Requested by: ${(currentSong as SongRequest).requested_by}`
                   : 'Music Bar Selection'
                 }
               </p>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

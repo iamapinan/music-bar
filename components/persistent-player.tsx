@@ -216,7 +216,13 @@ export function PersistentYouTubePlayer() {
           videoId: currentSong.youtube_id,
           startSeconds: startSeconds > 0 ? startSeconds : undefined
         })
-        ytPlayerRef.current.playVideo()
+        
+        // Force play if autoplay is enabled
+        if (isAutoPlayEnabled) {
+          ytPlayerRef.current.playVideo()
+          setIsPlaying(true)
+        }
+        
         lastPlayedKeyRef.current = songKey
         currentVideoRef.current = currentSong.youtube_id
 
