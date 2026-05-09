@@ -48,6 +48,8 @@ interface PlayerContextValue {
   setShowControls: (v: boolean) => void
   setCurrentTime: (v: number) => void
   setDuration: (v: number) => void
+  mutatePlaylist: () => Promise<any>
+  mutateRequests: () => Promise<any>
   // Player ref for YouTube component
   playerRef: React.MutableRefObject<YouTubePlayerMethods | null>
 }
@@ -177,7 +179,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const { data: playlists } = useSWR('/api/playlists', fetcher, { refreshInterval: 15000 })
   const defaultPlaylistId = playlists?.find((p: { is_default: boolean }) => p.is_default)?.id || 1
 
-  const { data: playlistSongs = [] } = useSWR<PlaylistSong[]>(
+  const { data: playlistSongs = [], mutate: mutateSongs } = useSWR<PlaylistSong[]>(
     `/api/playlists/${defaultPlaylistId}/songs`,
     fetcher,
     { refreshInterval: 10000 }
@@ -413,6 +415,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
       toggleMute, toggleShuffle, handleSongEnd, playByIndex, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
       setIsFullscreen, setIsRequestsEnabled: handleSetIsRequestsEnabled, setCurrentTime, setDuration,
+      mutatePlaylist: mutateSongs, mutateRequests,
       playerRef, isRequestsEnabled, showControls, setShowControls
     }}>
       {children}
