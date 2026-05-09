@@ -86,7 +86,7 @@ export function PlayerView() {
             {!isVideoMode && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />}
             
             {/* Layered Controls on top of Video */}
-            <div className="absolute inset-0 flex items-start justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity z-[95] pointer-events-none">
+            <div className="absolute inset-0 flex items-start justify-between p-4 opacity-40 group-hover:opacity-100 transition-opacity z-[95] pointer-events-none">
               <button
                 className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all pointer-events-auto"
                 onClick={() => setIsVideoMode(!isVideoMode)}

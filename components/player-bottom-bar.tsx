@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX,
-  Music2, Shuffle, ListMusic, LayoutDashboard, Home
+  Music2, Shuffle, ListMusic, LayoutDashboard, Home, Tv, Maximize2, Minimize2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -26,7 +26,7 @@ export function PlayerBottomBar() {
     currentTime, duration, playerRef,
     togglePlay, handleSkip, handlePrevious, handleVolumeChange,
     toggleMute, toggleShuffle, isAutoPlayEnabled, setIsAutoPlayEnabled,
-    playMode
+    playMode, isVideoMode, setIsVideoMode, isFullscreen, setIsFullscreen
   } = usePlayer()
 
   const pathname = usePathname()
@@ -162,6 +162,34 @@ export function PlayerBottomBar() {
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Auto</span>
             </div>
 
+            {/* Video Mode Toggle */}
+            <Button
+              size="icon"
+              variant="ghost"
+              className={cn(
+                'w-10 h-10 rounded-full hidden sm:flex', 
+                isVideoMode ? 'text-primary bg-primary/10' : 'text-muted-foreground'
+              )}
+              onClick={() => setIsVideoMode(!isVideoMode)}
+              title={isVideoMode ? 'โหมดเพลง' : 'โหมดวิดีโอ'}
+            >
+              <Tv className="w-4 h-4" />
+            </Button>
+
+            {/* Fullscreen Toggle */}
+            <Button
+              size="icon"
+              variant="ghost"
+              className={cn(
+                'w-10 h-10 rounded-full hidden sm:flex', 
+                isFullscreen ? 'text-primary bg-primary/10' : 'text-muted-foreground'
+              )}
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              title={isFullscreen ? 'ย่อหน้าจอ' : 'ขยายเต็มจอ'}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
+
             {/* Shuffle Toggle */}
             <Button
               size="icon"
@@ -171,6 +199,7 @@ export function PlayerBottomBar() {
                 isShuffle ? 'text-primary bg-primary/10' : 'text-muted-foreground'
               )}
               onClick={toggleShuffle}
+              title="สุ่มเพลง"
             >
               <Shuffle className="w-4 h-4" />
             </Button>
@@ -190,6 +219,22 @@ export function PlayerBottomBar() {
 
             {/* Playlist Toggle */}
             <div className="flex items-center gap-1 ml-2 pl-2 border-l border-white/10 lg:hidden">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn("w-10 h-10 rounded-xl", isVideoMode && "text-primary bg-primary/10")}
+                onClick={() => setIsVideoMode(!isVideoMode)}
+              >
+                <Tv className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn("w-10 h-10 rounded-xl", isFullscreen && "text-primary bg-primary/10")}
+                onClick={() => setIsFullscreen(!isFullscreen)}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
               <Link href="/">
                 <Button variant="ghost" size="icon" className={cn("w-10 h-10 rounded-xl", pathname === '/' && "bg-primary/10 text-primary")}>
                   <Home className="w-4 h-4" />

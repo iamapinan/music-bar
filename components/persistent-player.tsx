@@ -9,6 +9,8 @@ declare global {
       Player: new (
         elementId: string,
         config: {
+          width?: string | number
+          height?: string | number
           videoId: string
           playerVars?: Record<string, number | string>
           events?: {
@@ -116,6 +118,8 @@ export function PersistentYouTubePlayer() {
     } catch {}
 
     ytPlayerRef.current = new window.YT.Player('yt-persistent-player', {
+      width: '100%',
+      height: '100%',
       videoId,
       playerVars: {
         autoplay: isAutoPlayEnabled ? 1 : 0,
