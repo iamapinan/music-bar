@@ -52,7 +52,6 @@ export function PersistentYouTubePlayer() {
   const isApiReadyRef = useRef(false)
   const currentVideoRef = useRef<string>('')
   const containerRef = useRef<HTMLDivElement>(null)
-  const isCrossfadingRef = useRef(false)
   const [videoRect, setVideoRect] = useState<DOMRect | null>(null)
 
   // Track video container rect for Video Mode
@@ -144,9 +143,7 @@ export function PersistentYouTubePlayer() {
         onStateChange: (event) => {
           const state = window.YT.PlayerState
           if (event.data === state.ENDED) {
-            if (!isCrossfadingRef.current) {
-              handleSongEnd()
-            }
+            handleSongEnd()
           } else if (event.data === state.PLAYING) {
             setIsPlaying(true)
             if ('mediaSession' in navigator) {
@@ -205,32 +202,14 @@ export function PersistentYouTubePlayer() {
           }
         } catch {}
         
-        // Prepare volume before playing
-        if (isCrossfadingRef.current) {
-          ytPlayerRef.current.setVolume(0)
-        } else {
-          ytPlayerRef.current.setVolume(volume)
-        }
-
+        // Set volume and play
+        ytPlayerRef.current.setVolume(volume)
         ytPlayerRef.current.loadVideoById({
           videoId: currentSong.youtube_id,
           startSeconds: startSeconds > 0 ? startSeconds : undefined
         })
         ytPlayerRef.current.playVideo()
         currentVideoRef.current = currentSong.youtube_id
-        
-        // FADE IN if crossfading
-        if (isCrossfadingRef.current) {
-          let fadeInVol = 0
-          const fadeInInterval = setInterval(() => {
-            fadeInVol = Math.min(volume, fadeInVol + (volume / 10))
-            if (ytPlayerRef.current) ytPlayerRef.current.setVolume(fadeInVol)
-            if (fadeInVol >= volume) {
-              clearInterval(fadeInInterval)
-              isCrossfadingRef.current = false
-            }
-          }, 300)
-        }
 
         exposeMethods()
       } else {
@@ -248,20 +227,6 @@ export function PersistentYouTubePlayer() {
         
         setCurrentTime(time)
         setDuration(duration)
-
-        // Crossfade trigger
-        if (duration > 0 && duration - time <= 3 && !isCrossfadingRef.current) {
-          isCrossfadingRef.current = true
-          let fadeOutVol = ytPlayerRef.current.getVolume?.() || volume
-          const fadeOutInterval = setInterval(() => {
-            fadeOutVol = Math.max(0, fadeOutVol - (volume / 10))
-            if (ytPlayerRef.current) ytPlayerRef.current.setVolume(fadeOutVol)
-            if (fadeOutVol <= 0) {
-              clearInterval(fadeOutInterval)
-              handleSongEnd() // Trigger next song early
-            }
-          }, 300)
-        }
 
         // Save seek time
         if (time > 0) {
