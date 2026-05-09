@@ -40,23 +40,28 @@ interface YTPlayer {
   destroy: () => void
 }
 
-/**
- * Persistent YouTube player yang hidup di root layout.
- * Tidak pernah unmount saat pindah halaman,
- * sehingga musik terus bermain di background.
- */
 export function PersistentYouTubePlayer() {
   const { 
     currentSong, handleSongEnd, setIsPlaying, playerRef, volume, 
     isVideoMode, isAutoPlayEnabled, setCurrentTime, setDuration, isFullscreen,
     playMode, currentIndex
   } = usePlayer()
+
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const isApiReadyRef = useRef(false)
   const currentVideoRef = useRef<string>('')
   const containerRef = useRef<HTMLDivElement>(null)
   const lastPlayedKeyRef = useRef<string>('')
   const [videoRect, setVideoRect] = useState<DOMRect | null>(null)
+
+  // Keep refs to latest callback values
+  const handleSongEndRef = useRef(handleSongEnd)
+  const isAutoPlayEnabledRef = useRef(isAutoPlayEnabled)
+  const volumeRef = useRef(volume)
+
+  useEffect(() => { handleSongEndRef.current = handleSongEnd }, [handleSongEnd])
+  useEffect(() => { isAutoPlayEnabledRef.current = isAutoPlayEnabled }, [isAutoPlayEnabled])
+  useEffect(() => { volumeRef.current = volume }, [volume])
 
   // Track video container rect for Video Mode
   useEffect(() => {
@@ -71,8 +76,6 @@ export function PersistentYouTubePlayer() {
     const el = document.getElementById('video-target-rect')
     if (el) observer.observe(el)
     window.addEventListener('resize', updateRect)
-    
-    // Interval for safety if layout shifts due to images loading
     const interval = setInterval(updateRect, 1000)
     
     return () => {
@@ -110,22 +113,12 @@ export function PersistentYouTubePlayer() {
       containerRef.current.appendChild(div)
     }
 
-    let startSeconds = 0
-    try {
-      const saved = localStorage.getItem('music_bar_seek_time')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (parsed.videoId === videoId) startSeconds = Math.floor(parsed.time)
-      }
-    } catch {}
-
     ytPlayerRef.current = new window.YT.Player('yt-persistent-player', {
       width: '100%',
       height: '100%',
       videoId,
       playerVars: {
-        autoplay: isAutoPlayEnabled ? 1 : 0,
-        start: startSeconds > 0 ? startSeconds : 0,
+        autoplay: 1, // Always autoplay when initializing a new player
         controls: 0,
         modestbranding: 1,
         rel: 0,
@@ -137,19 +130,16 @@ export function PersistentYouTubePlayer() {
       },
       events: {
         onReady: (event) => {
-          event.target.setVolume(volume)
-          if (isAutoPlayEnabled) {
-            event.target.playVideo()
-            setIsPlaying(true)
-          } else {
-            setIsPlaying(false)
-          }
+          event.target.setVolume(volumeRef.current)
+          // Always play when ready (the user chose to listen to music)
+          event.target.playVideo()
+          setIsPlaying(true)
           exposeMethods()
         },
         onStateChange: (event) => {
           const state = window.YT.PlayerState
           if (event.data === state.ENDED) {
-            handleSongEnd()
+            handleSongEndRef.current()
           } else if (event.data === state.PLAYING) {
             setIsPlaying(true)
             if ('mediaSession' in navigator) {
@@ -163,13 +153,13 @@ export function PersistentYouTubePlayer() {
           }
         },
         onError: () => {
-          // Skip on error
-          setTimeout(() => handleSongEnd(), 1000)
+          // Skip on error, move to next
+          setTimeout(() => handleSongEndRef.current(), 1000)
         },
       },
     })
     currentVideoRef.current = videoId
-  }, [handleSongEnd, setIsPlaying, exposeMethods, volume, isAutoPlayEnabled])
+  }, [setIsPlaying, exposeMethods])
 
   // Load YouTube IFrame API once
   useEffect(() => {
@@ -201,31 +191,16 @@ export function PersistentYouTubePlayer() {
     
     if (songKey !== lastPlayedKeyRef.current) {
       if (ytPlayerRef.current) {
-        let startSeconds = 0
-        try {
-          const saved = localStorage.getItem('music_bar_seek_time')
-          if (saved) {
-            const parsed = JSON.parse(saved)
-            if (parsed.videoId === currentSong.youtube_id) startSeconds = Math.floor(parsed.time)
-          }
-        } catch {}
-        
-        // Set volume and play
-        ytPlayerRef.current.setVolume(volume)
+        // Load the new video - loadVideoById auto-plays by default
+        ytPlayerRef.current.setVolume(volumeRef.current)
         ytPlayerRef.current.loadVideoById({
           videoId: currentSong.youtube_id,
-          startSeconds: startSeconds > 0 ? startSeconds : undefined
         })
-        
-        // Force play if autoplay is enabled
-        if (isAutoPlayEnabled) {
-          ytPlayerRef.current.playVideo()
-          setIsPlaying(true)
-        }
+        // loadVideoById starts playing automatically, update state
+        setIsPlaying(true)
         
         lastPlayedKeyRef.current = songKey
         currentVideoRef.current = currentSong.youtube_id
-
         exposeMethods()
       } else {
         initPlayer(currentSong.youtube_id)
@@ -239,7 +214,7 @@ export function PersistentYouTubePlayer() {
     (currentSong as any)?.id, 
     initPlayer, 
     exposeMethods, 
-    volume
+    setIsPlaying
   ])
 
   // Track playback progress & update context
@@ -247,25 +222,15 @@ export function PersistentYouTubePlayer() {
     const interval = setInterval(() => {
       if (currentVideoRef.current && ytPlayerRef.current) {
         const time = ytPlayerRef.current.getCurrentTime?.() || 0
-        const duration = ytPlayerRef.current.getDuration?.() || 0
-        
+        const dur = ytPlayerRef.current.getDuration?.() || 0
         setCurrentTime(time)
-        setDuration(duration)
-
-        // Save seek time
-        if (time > 0) {
-          localStorage.setItem('music_bar_seek_time', JSON.stringify({
-            videoId: currentVideoRef.current,
-            time
-          }))
-        }
+        setDuration(dur)
       }
     }, 500)
     return () => clearInterval(interval)
   }, [setCurrentTime, setDuration])
 
-  // Hidden player — อยู่นอกจอ ไม่ทำลาย layout
-  // YouTube ต้องการ DOM element จริงถึงจะเล่นได้
+  // Hidden player
   return (
     <div
       aria-hidden={!isVideoMode}

@@ -74,7 +74,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isMuted, setIsMuted] = useState(false)
   const [isShuffle, setIsShuffle] = useState(false)
   const [isVideoMode, setIsVideoMode] = useState(false)
-  const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(false)
+  const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(true) // Default: ON
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -94,7 +94,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (parsed.playMode) setPlayMode(parsed.playMode)
         if (parsed.isVideoMode !== undefined) setIsVideoMode(parsed.isVideoMode)
         if (parsed.isAutoPlayEnabled !== undefined) setIsAutoPlayEnabled(parsed.isAutoPlayEnabled)
-        if (parsed.isRequestsEnabled !== undefined) setIsRequestsEnabled(parsed.isRequestsEnabled)
       }
     } catch {}
     setIsInitialized(true)
@@ -112,18 +111,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [currentIndex, playMode, isVideoMode, isAutoPlayEnabled, isInitialized])
 
-  // Global Controls Auto-hide logic
+  // ===================== Auto-hide Controls =====================
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
   const isPlayingRef = useRef(isPlaying)
 
   useEffect(() => {
     isPlayingRef.current = isPlaying
-    // If we stop playing, show controls immediately
     if (!isPlaying) {
       setShowControls(true)
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
     } else {
-      // If we start playing, start the hide timer
       resetHideTimer()
     }
   }, [isPlaying])
@@ -131,27 +128,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const resetHideTimer = useCallback(() => {
     setShowControls(true)
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    
     hideTimerRef.current = setTimeout(() => {
-      // Only auto-hide if playing
-      if (isPlayingRef.current) {
-        setShowControls(false)
-      }
+      if (isPlayingRef.current) setShowControls(false)
     }, 3000)
   }, [])
 
   useEffect(() => {
-    const handleActivity = () => {
-      resetHideTimer()
-    }
-
+    const handleActivity = () => resetHideTimer()
     window.addEventListener('mousemove', handleActivity)
     window.addEventListener('mousedown', handleActivity)
     window.addEventListener('keydown', handleActivity)
     window.addEventListener('touchstart', handleActivity)
-
     resetHideTimer()
-
     return () => {
       window.removeEventListener('mousemove', handleActivity)
       window.removeEventListener('mousedown', handleActivity)
@@ -161,9 +149,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [resetHideTimer])
 
-  // Sync settings with DB
+  // ===================== Settings Sync =====================
   const { data: dbSettings, mutate: mutateSettings } = useSWR('/api/settings', fetcher, {
-    refreshInterval: 30000 // Refresh settings every 30s
+    refreshInterval: 30000
   })
 
   useEffect(() => {
@@ -184,7 +172,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [mutateSettings])
 
-  // Fetch playlists
+  // ===================== Data =====================
   const { data: playlists } = useSWR('/api/playlists', fetcher, { refreshInterval: 15000 })
   const defaultPlaylistId = playlists?.find((p: { is_default: boolean }) => p.is_default)?.id || 1
 
@@ -200,65 +188,105 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     { refreshInterval: 3000 }
   )
 
+  // ===================== Current Song =====================
   const currentSong: PlaylistSong | SongRequest | null =
     playMode === 'request' && requests.length > 0
       ? requests[0]
       : playlistSongs[currentIndex] ?? null
 
-  // Switch to request mode only if no song is playing (e.g. initial load or empty playlist)
+  // Auto-switch to request mode when requests arrive and no song is playing
   useEffect(() => {
     if (requests.length > 0 && playMode === 'playlist' && !currentSong && isInitialized) {
       setPlayMode('request')
     }
   }, [requests.length, playMode, currentSong, isInitialized])
 
+  // ===================== Song End / Skip / Previous =====================
+  // Use refs so callbacks always see latest values (no stale closure)
+  const playModeRef = useRef(playMode)
+  const requestsRef = useRef(requests)
+  const currentIndexRef = useRef(currentIndex)
+  const isShuffleRef = useRef(isShuffle)
+  const playlistSongsRef = useRef(playlistSongs)
+
+  useEffect(() => { playModeRef.current = playMode }, [playMode])
+  useEffect(() => { requestsRef.current = requests }, [requests])
+  useEffect(() => { currentIndexRef.current = currentIndex }, [currentIndex])
+  useEffect(() => { isShuffleRef.current = isShuffle }, [isShuffle])
+  useEffect(() => { playlistSongsRef.current = playlistSongs }, [playlistSongs])
+
   const handleSongEnd = useCallback(async () => {
-    if (playMode === 'request' && requests.length > 0) {
-      await fetch('/api/requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: requests[0].id, status: 'played' }),
-      })
+    const mode = playModeRef.current
+    const reqs = requestsRef.current
+    const idx = currentIndexRef.current
+    const shuffle = isShuffleRef.current
+    const songs = playlistSongsRef.current
+
+    if (mode === 'request' && reqs.length > 0) {
+      // Mark current request as played
+      try {
+        await fetch('/api/requests', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: reqs[0].id, status: 'played' }),
+        })
+      } catch {}
       await mutateRequests()
-      // Note: requests array here is still the old one in closure.
-      // If there was only 1 request, go back to playlist.
-      if (requests.length <= 1) setPlayMode('playlist')
+
+      // After mutation, if this was the last request, go back to playlist
+      if (reqs.length <= 1) {
+        setPlayMode('playlist')
+      }
+      // If more requests, the next one automatically becomes requests[0]
     } else {
-      // Playlist song ended. Prepare NEXT playlist song.
-      const next = isShuffle
-        ? Math.floor(Math.random() * playlistSongs.length)
-        : (currentIndex + 1) % (playlistSongs.length || 1)
+      // Playlist mode: advance to next song
+      if (songs.length === 0) return
+
+      const next = shuffle
+        ? Math.floor(Math.random() * songs.length)
+        : (idx + 1) % songs.length
       setCurrentIndex(next)
 
-      if (requests.length > 0) {
-        // Switch to request mode if any
+      // Check if there are pending requests to play next
+      if (reqs.length > 0) {
         setPlayMode('request')
       }
     }
-  }, [playMode, requests, playlistSongs.length, currentIndex, isShuffle, mutateRequests])
+  }, [mutateRequests])
 
   const handlePrevious = useCallback(() => {
-    if (playMode === 'playlist') {
-      const prev = isShuffle
-        ? Math.floor(Math.random() * playlistSongs.length)
-        : (currentIndex - 1 + playlistSongs.length) % (playlistSongs.length || 1)
+    if (playModeRef.current === 'playlist') {
+      const songs = playlistSongsRef.current
+      const idx = currentIndexRef.current
+      const shuffle = isShuffleRef.current
+      if (songs.length === 0) return
+      const prev = shuffle
+        ? Math.floor(Math.random() * songs.length)
+        : (idx - 1 + songs.length) % songs.length
       setCurrentIndex(prev)
     }
-  }, [playMode, currentIndex, playlistSongs.length, isShuffle])
+  }, [])
 
   const handleSkip = useCallback(async () => {
-    if (playMode === 'request' && requests.length > 0) {
-      await fetch('/api/requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: requests[0].id, status: 'skipped' }),
-      })
-      mutateRequests()
-    } else {
-      handleSongEnd()
-    }
-  }, [playMode, requests, handleSongEnd, mutateRequests])
+    const mode = playModeRef.current
+    const reqs = requestsRef.current
 
+    if (mode === 'request' && reqs.length > 0) {
+      try {
+        await fetch('/api/requests', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: reqs[0].id, status: 'skipped' }),
+        })
+      } catch {}
+      await mutateRequests()
+      if (reqs.length <= 1) setPlayMode('playlist')
+    } else {
+      await handleSongEnd()
+    }
+  }, [handleSongEnd, mutateRequests])
+
+  // ===================== Play Controls =====================
   const togglePlay = useCallback(() => {
     if (isPlaying) {
       playerRef.current?.pause()
@@ -284,7 +312,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const toggleShuffle = useCallback(() => setIsShuffle(s => !s), [])
 
-  // Media Session API — update on song change
+  // ===================== Media Session =====================
   useEffect(() => {
     if (!('mediaSession' in navigator) || !currentSong) return
 
@@ -325,17 +353,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && isPlaying) {
-        // Small delay to let browser settle
-        setTimeout(() => {
-          playerRef.current?.play()
-        }, 300)
+        setTimeout(() => playerRef.current?.play(), 300)
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [isPlaying])
 
-  // Wake Lock API — prevent screen from sleeping on player page
+  // Wake Lock API — prevent screen from sleeping
   useEffect(() => {
     let wakeLock: WakeLockSentinel | null = null
 
@@ -343,9 +368,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if ('wakeLock' in navigator && isPlaying) {
         try {
           wakeLock = await (navigator as Navigator & { wakeLock: { request: (type: string) => Promise<WakeLockSentinel> } }).wakeLock.request('screen')
-        } catch {
-          // Wake lock not supported or denied - continue without it
-        }
+        } catch {}
       }
     }
 
@@ -362,11 +385,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       releaseWakeLock()
     }
 
-    // Re-acquire after visibility change
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && isPlaying) {
-        requestWakeLock()
-      }
+      if (document.visibilityState === 'visible' && isPlaying) requestWakeLock()
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
