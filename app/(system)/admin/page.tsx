@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { BottomNav } from '@/components/bottom-nav'
 import { AdminView } from '@/components/admin-view'
 import { PinEntry } from '@/components/pin-entry'
 import { Loader2 } from 'lucide-react'
@@ -46,7 +45,6 @@ export default function AdminPage() {
     return (
       <main className="min-h-screen bg-background">
         <PinEntry onSuccess={handleLogin} />
-        <BottomNav />
       </main>
     )
   }
@@ -55,7 +53,6 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-background">
       <AdminView onLogout={handleLogout} />
-      <BottomNav />
     </main>
   )
 }
