@@ -8,7 +8,7 @@ import { usePlayer } from '@/context/player-context'
 import { cn } from '@/lib/utils'
 
 export function QueueList() {
-  const { isPlaying, currentSong, requests, playlistSongs, currentIndex, playByIndex } = usePlayer()
+  const { isPlaying, currentSong, requests, playlistSongs, currentIndex, playByIndex, playMode } = usePlayer()
 
   if (!currentSong) return null
 
@@ -32,8 +32,8 @@ export function QueueList() {
 
       <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-none">
         <div className="space-y-2 pr-1 pb-10">
-          {/* Now Playing */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20 shadow-sm">
+          {/* Now Playing Highlight Section */}
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20 shadow-sm mb-4">
             <div className="flex-shrink-0 w-6 flex items-center justify-center">
               {isPlaying ? (
                 <div className="playing-bars scale-75">
@@ -51,42 +51,50 @@ export function QueueList() {
             </div>
           </div>
 
-          {/* Pending requests (excluding now playing) */}
-          {requests
-            .filter(req => req.youtube_id !== currentSong.youtube_id)
-            .map((req, i) => (
-              <QueueItem 
-                key={`req-${req.id}`} 
-                title={req.title} 
-                position={i + 1} 
-                type="request" 
-                badge={req.requested_by || 'ลูกค้า'} 
-              />
-            ))}
+          {/* Pending requests */}
+          {requests.length > 0 && (
+            <>
+              <div className="pt-2 pb-2">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">เพลงที่ขอเข้ามา</p>
+              </div>
+              {requests.map((req, i) => (
+                <QueueItem 
+                  key={`req-${req.id}`} 
+                  title={req.title} 
+                  position={i + 1} 
+                  type="request" 
+                  badge={req.requested_by || 'ลูกค้า'}
+                  isActive={playMode === 'request' && i === 0}
+                  isPlaying={isPlaying}
+                />
+              ))}
+            </>
+          )}
 
-          {/* Up Next from Playlist (excluding now playing) */}
+          {/* Playlist Section */}
           <div className="pt-4 pb-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">ถัดไปจาก Playlist</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Playlist ทั้งหมด</p>
           </div>
 
           {playlistSongs
             .map((song, originalIndex) => ({ song, originalIndex }))
-            .filter(({ originalIndex }) => originalIndex !== currentIndex)
             .map(({ song, originalIndex }, i) => {
-              const pendingReqCount = requests.filter(req => req.youtube_id !== currentSong.youtube_id).length
+              const isActive = playMode === 'playlist' && originalIndex === currentIndex
               return (
                 <QueueItem 
                   key={`pl-${song.id}-${originalIndex}`} 
                   title={song.title} 
-                  position={pendingReqCount + i + 1} 
+                  position={originalIndex + 1} 
                   type="playlist"
+                  isActive={isActive}
+                  isPlaying={isPlaying}
                   onClick={() => playByIndex(originalIndex)}
                 />
               )
             })}
 
-          {requests.length <= 1 && playlistSongs.length <= 1 && !requests.some(r => r.youtube_id !== currentSong.youtube_id) && (
-            <p className="text-center py-10 text-muted-foreground text-sm">ไม่มีเพลงถัดไป</p>
+          {requests.length === 0 && playlistSongs.length === 0 && (
+            <p className="text-center py-10 text-muted-foreground text-sm">ไม่มีเพลงในรายการ</p>
           )}
         </div>
       </div>
@@ -94,26 +102,59 @@ export function QueueList() {
   )
 }
 
-function QueueItem({ title, position, type, badge, onClick }: {
-  title: string; position: number; type: 'request' | 'playlist'; badge?: string; onClick?: () => void
+function QueueItem({ title, position, type, badge, onClick, isActive, isPlaying }: {
+  title: string; 
+  position: number; 
+  type: 'request' | 'playlist'; 
+  badge?: string; 
+  onClick?: () => void;
+  isActive?: boolean;
+  isPlaying?: boolean;
 }) {
   return (
     <div 
       className={cn(
-        "flex items-center gap-3 p-3 rounded-xl bg-card/60 hover:bg-card border border-transparent hover:border-border/50 transition-all group",
-        onClick && "cursor-pointer"
+        "flex items-center gap-3 p-3 rounded-xl transition-all group",
+        isActive 
+          ? "bg-primary/20 border-primary/30 shadow-sm" 
+          : "bg-card/60 hover:bg-card border-transparent hover:border-border/50",
+        onClick && !isActive && "cursor-pointer"
       )}
-      onClick={onClick}
+      onClick={!isActive ? onClick : undefined}
     >
-      <span className="text-xs font-medium text-muted-foreground w-6 text-center tabular-nums">{position}</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{title}</p>
-        {badge && <p className="text-xs text-muted-foreground mt-0.5">ขอโดย: {badge}</p>}
+      <div className="flex-shrink-0 w-6 flex items-center justify-center">
+        {isActive && isPlaying ? (
+          <div className="playing-bars scale-50">
+            <div className="playing-bar" />
+            <div className="playing-bar" />
+            <div className="playing-bar" />
+          </div>
+        ) : (
+          <span className={cn(
+            "text-xs font-medium tabular-nums",
+            isActive ? "text-primary" : "text-muted-foreground"
+          )}>
+            {position}
+          </span>
+        )}
       </div>
-      {type === 'request' && (
+
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          "text-sm font-medium truncate transition-colors",
+          isActive ? "text-primary font-bold" : "group-hover:text-primary"
+        )}>
+          {title}
+        </p>
+        {badge && <p className="text-xs text-muted-foreground mt-0.5">ขอโดย: {badge}</p>}
+        {isActive && <p className="text-[10px] text-primary/70 font-bold uppercase tracking-tighter mt-0.5">กำลังเล่น</p>}
+      </div>
+
+      {type === 'request' && !isActive && (
         <Badge variant="outline" className="text-[10px] h-5 px-2 bg-accent/5 border-accent/30 text-accent flex-shrink-0 rounded-full">ขอ</Badge>
       )}
-      {type === 'playlist' && onClick && (
+      
+      {type === 'playlist' && onClick && !isActive && (
         <Play className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
       )}
     </div>
