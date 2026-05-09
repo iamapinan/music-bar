@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/', icon: Play, label: 'เล่นเพลง' },
-  { href: '/request', icon: Music, label: 'ขอเพลง' },
   { href: '/admin', icon: Settings, label: 'จัดการ' },
 ]
 
