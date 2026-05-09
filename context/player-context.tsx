@@ -114,15 +114,31 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   // Global Controls Auto-hide logic
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const isPlayingRef = useRef(isPlaying)
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying
+    // If we stop playing, show controls immediately
+    if (!isPlaying) {
+      setShowControls(true)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    } else {
+      // If we start playing, start the hide timer
+      resetHideTimer()
+    }
+  }, [isPlaying])
 
   const resetHideTimer = useCallback(() => {
     setShowControls(true)
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    
     hideTimerRef.current = setTimeout(() => {
-      // Only auto-hide if playing and in fullscreen video
-      if (isPlaying) setShowControls(false)
+      // Only auto-hide if playing
+      if (isPlayingRef.current) {
+        setShowControls(false)
+      }
     }, 3000)
-  }, [isPlaying])
+  }, [])
 
   useEffect(() => {
     const handleActivity = () => {

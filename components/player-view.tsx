@@ -35,7 +35,8 @@ export function PlayerView() {
     <div 
       className={cn(
         'flex flex-col overflow-hidden transition-all duration-300',
-        isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'h-[calc(100dvh-10rem)]'
+        isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'h-[calc(100dvh-10rem)]',
+        (isFullscreen && !showControls) && 'cursor-none'
       )}
     >
       {/* Fullscreen header */}
