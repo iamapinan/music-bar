@@ -48,12 +48,14 @@ interface YTPlayer {
 export function PersistentYouTubePlayer() {
   const { 
     currentSong, handleSongEnd, setIsPlaying, playerRef, volume, 
-    isVideoMode, isAutoPlayEnabled, setCurrentTime, setDuration, isFullscreen 
+    isVideoMode, isAutoPlayEnabled, setCurrentTime, setDuration, isFullscreen,
+    playMode, currentIndex
   } = usePlayer()
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const isApiReadyRef = useRef(false)
   const currentVideoRef = useRef<string>('')
   const containerRef = useRef<HTMLDivElement>(null)
+  const lastPlayedKeyRef = useRef<string>('')
   const [videoRect, setVideoRect] = useState<DOMRect | null>(null)
 
   // Track video container rect for Video Mode
@@ -195,7 +197,9 @@ export function PersistentYouTubePlayer() {
     if (!currentSong?.youtube_id) return
     if (!isApiReadyRef.current) return
 
-    if (currentSong.youtube_id !== currentVideoRef.current) {
+    const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
+    
+    if (songKey !== lastPlayedKeyRef.current) {
       if (ytPlayerRef.current) {
         let startSeconds = 0
         try {
@@ -213,14 +217,24 @@ export function PersistentYouTubePlayer() {
           startSeconds: startSeconds > 0 ? startSeconds : undefined
         })
         ytPlayerRef.current.playVideo()
+        lastPlayedKeyRef.current = songKey
         currentVideoRef.current = currentSong.youtube_id
 
         exposeMethods()
       } else {
         initPlayer(currentSong.youtube_id)
+        lastPlayedKeyRef.current = songKey
       }
     }
-  }, [currentSong?.youtube_id, initPlayer, exposeMethods])
+  }, [
+    currentSong?.youtube_id, 
+    playMode, 
+    currentIndex, 
+    (currentSong as any)?.id, 
+    initPlayer, 
+    exposeMethods, 
+    volume
+  ])
 
   // Track playback progress & update context
   useEffect(() => {
