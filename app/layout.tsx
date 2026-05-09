@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { ServiceWorkerRegistration } from '@/components/sw-registration'
+import { PlayerProvider } from '@/context/player-context'
 import './globals.css'
 
 const geist = Geist({
@@ -56,8 +57,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased min-h-screen`}>
-        <ServiceWorkerRegistration />
-        {children}
+        <PlayerProvider>
+          <ServiceWorkerRegistration />
+          {children}
+        </PlayerProvider>
         <Toaster
           position="top-center"
           richColors

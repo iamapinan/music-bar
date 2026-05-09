@@ -29,6 +29,8 @@ interface PlayerContextValue {
   currentIndex: number
   requests: SongRequest[]
   playlistSongs: PlaylistSong[]
+  isRequestsEnabled: boolean
+  showControls: boolean
   // Controls
   togglePlay: () => void
   handleSkip: () => void
@@ -41,6 +43,8 @@ interface PlayerContextValue {
   setIsVideoMode: (v: boolean) => void
   setIsAutoPlayEnabled: (v: boolean) => void
   setIsFullscreen: (v: boolean) => void
+  setIsRequestsEnabled: (v: boolean) => void
+  setShowControls: (v: boolean) => void
   setCurrentTime: (v: number) => void
   setDuration: (v: number) => void
   // Player ref for YouTube component
@@ -75,6 +79,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [playMode, setPlayMode] = useState<'playlist' | 'request'>('playlist')
+  const [isRequestsEnabled, setIsRequestsEnabled] = useState(true)
+  const [showControls, setShowControls] = useState(true)
   const [isInitialized, setIsInitialized] = useState(false)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
 
@@ -88,6 +94,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (parsed.playMode) setPlayMode(parsed.playMode)
         if (parsed.isVideoMode !== undefined) setIsVideoMode(parsed.isVideoMode)
         if (parsed.isAutoPlayEnabled !== undefined) setIsAutoPlayEnabled(parsed.isAutoPlayEnabled)
+        if (parsed.isRequestsEnabled !== undefined) setIsRequestsEnabled(parsed.isRequestsEnabled)
       }
     } catch {}
     setIsInitialized(true)
@@ -104,6 +111,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }))
     }
   }, [currentIndex, playMode, isVideoMode, isAutoPlayEnabled, isInitialized])
+
+  // Sync settings with DB
+  const { data: dbSettings, mutate: mutateSettings } = useSWR('/api/settings', fetcher, {
+    refreshInterval: 30000 // Refresh settings every 30s
+  })
+
+  useEffect(() => {
+    if (dbSettings?.is_requests_enabled !== undefined) {
+      setIsRequestsEnabled(JSON.parse(JSON.stringify(dbSettings.is_requests_enabled)))
+    }
+  }, [dbSettings])
+
+  const handleSetIsRequestsEnabled = useCallback(async (enabled: boolean) => {
+    setIsRequestsEnabled(enabled)
+    try {
+      await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'is_requests_enabled', value: enabled }),
+      })
+      mutateSettings()
+    } catch {}
+  }, [mutateSettings])
 
   // Fetch playlists
   const { data: playlists } = useSWR('/api/playlists', fetcher, { refreshInterval: 15000 })
@@ -307,8 +337,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       currentIndex, requests, playlistSongs,
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
       toggleMute, toggleShuffle, handleSongEnd, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
-      setIsFullscreen, setCurrentTime, setDuration,
-      playerRef,
+      setIsFullscreen, setIsRequestsEnabled: handleSetIsRequestsEnabled, setCurrentTime, setDuration,
+      playerRef, isRequestsEnabled, showControls, setShowControls
     }}>
       {children}
     </PlayerContext.Provider>

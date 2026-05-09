@@ -26,7 +26,8 @@ export function PlayerBottomBar() {
     currentTime, duration, playerRef,
     togglePlay, handleSkip, handlePrevious, handleVolumeChange,
     toggleMute, toggleShuffle, isAutoPlayEnabled, setIsAutoPlayEnabled,
-    playMode, isVideoMode, setIsVideoMode, isFullscreen, setIsFullscreen
+    playMode, isVideoMode, setIsVideoMode, isFullscreen, setIsFullscreen,
+    isRequestsEnabled, setIsRequestsEnabled, showControls
   } = usePlayer()
 
   const pathname = usePathname()
@@ -45,8 +46,11 @@ export function PlayerBottomBar() {
   if (!currentSong) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-4 pointer-events-none">
-      <div className="max-w-7xl mx-auto glass border border-white/10 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] rounded-2xl pointer-events-auto overflow-hidden">
+    <div className={cn(
+      "fixed bottom-0 left-0 right-0 z-[100] px-4 pb-4 transition-all duration-500",
+      (pathname === '/' && isVideoMode && isFullscreen && !showControls) ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-0 opacity-100 pointer-events-auto"
+    )}>
+      <div className="max-w-7xl mx-auto glass border border-white/10 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] rounded-2xl pointer-events-auto overflow-hidden bg-background/50">
         
         {/* Progress Bar (Integrated at top) */}
         <div className="absolute top-0 left-0 right-0 group px-6 h-1 hover:h-2 transition-all cursor-pointer">
@@ -152,6 +156,20 @@ export function PlayerBottomBar() {
           {/* Right: Extra Controls */}
           <div className="flex items-center justify-end gap-2 sm:gap-4 flex-1">
             
+            {/* Requests Toggle (Admin Only) */}
+            {pathname === '/admin' && (
+              <div className="flex items-center gap-2 mr-4 pr-4 border-r border-white/10">
+                <Switch 
+                  checked={isRequestsEnabled} 
+                  onCheckedChange={setIsRequestsEnabled}
+                  className="scale-75 data-[state=checked]:bg-accent"
+                />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                  {isRequestsEnabled ? 'เปิดรับเพลง' : 'ปิดรับเพลง'}
+                </span>
+              </div>
+            )}
+
             {/* Autoplay Switch (Desktop) */}
             <div className="hidden md:flex items-center gap-2 mr-2">
               <Switch 
@@ -257,7 +275,7 @@ export function PlayerBottomBar() {
                   <ListMusic className="w-5 h-5 sm:w-6 sm:h-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-md p-0 border-l border-white/10">
+              <SheetContent side="right" className="w-full sm:max-w-md p-0 border-l border-white/10 z-[110]">
                 <SheetTitle className="sr-only">คิวเพลง</SheetTitle>
                 <QueueList />
               </SheetContent>

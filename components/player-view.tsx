@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useCallback } from 'react'
 import {
   Music2, Maximize2, Minimize2
 } from 'lucide-react'
@@ -12,8 +13,25 @@ import type { SongRequest } from '@/lib/types'
 export function PlayerView() {
   const {
     isPlaying, currentSong, playMode, isShuffle, isVideoMode,
-    isFullscreen, setIsVideoMode, setIsFullscreen
+    isFullscreen, setIsVideoMode, setIsFullscreen, showControls, setShowControls
   } = usePlayer()
+
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const resetHideTimer = useCallback(() => {
+    setShowControls(true)
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    hideTimerRef.current = setTimeout(() => {
+      if (isPlaying) setShowControls(false)
+    }, 3000)
+  }, [isPlaying, setShowControls])
+
+  useEffect(() => {
+    resetHideTimer()
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    }
+  }, [resetHideTimer])
 
   if (!currentSong) {
     return (
@@ -31,10 +49,15 @@ export function PlayerView() {
   }
 
   return (
-    <div className={cn(
-      'flex flex-col overflow-hidden transition-all duration-300',
-      isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'h-[calc(100dvh-10rem)]'
-    )}>
+    <div 
+      className={cn(
+        'flex flex-col overflow-hidden transition-all duration-300',
+        isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'h-[calc(100dvh-10rem)]'
+      )}
+      onMouseMove={resetHideTimer}
+      onClick={resetHideTimer}
+      onTouchStart={resetHideTimer}
+    >
       {/* Fullscreen header */}
       {isFullscreen && (
         <div className="flex items-center justify-between p-4 glass border-b border-border/10 shrink-0">
@@ -86,31 +109,44 @@ export function PlayerView() {
             {!isVideoMode && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />}
             
             {/* Layered Controls on top of Video */}
-            <div className="absolute inset-0 flex items-start justify-between p-4 opacity-40 group-hover:opacity-100 transition-opacity z-[95] pointer-events-none">
+            <div className={cn(
+              "absolute inset-0 flex items-start justify-between p-4 transition-opacity z-[95] pointer-events-none",
+              showControls ? "opacity-100" : "opacity-0"
+            )}>
               <button
-                className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all pointer-events-auto"
-                onClick={() => setIsVideoMode(!isVideoMode)}
-                title={isVideoMode ? 'Switch to Music Mode' : 'Switch to Video Mode'}
+                className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all pointer-events-auto"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsVideoMode(!isVideoMode)
+                }}
+                title={isVideoMode ? 'โหมดเพลง' : 'โหมดวิดีโอ'}
               >
                 <div className={cn("w-2 h-2 rounded-full", isVideoMode ? "bg-red-500 animate-pulse" : "bg-white/40")} />
               </button>
 
               <button
-                className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition-all pointer-events-auto"
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                title={isFullscreen ? 'Minimize' : 'Fullscreen'}
+                className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition-all pointer-events-auto"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsFullscreen(!isFullscreen)
+                }}
+                title={isFullscreen ? 'ย่อหน้าจอ' : 'ขยายเต็มจอ'}
               >
                 {isFullscreen ? <Minimize2 className="w-5 h-5 text-white" /> : <Maximize2 className="w-5 h-5 text-white" />}
               </button>
             </div>
 
-            {/* Permanent Small Mode Toggle for Video Mode (always visible) */}
+            {/* Permanent Small Mode Toggle for Video Mode (always visible but follows showControls) */}
             <button
               className={cn(
-                "absolute top-4 left-4 h-8 px-3 rounded-full bg-black/40 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all z-[90]",
-                "opacity-100 sm:opacity-0 group-hover:opacity-100"
+                "absolute top-4 left-4 h-8 px-3 rounded-full bg-black/20 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all z-[90]",
+                "transition-opacity",
+                showControls ? "opacity-100" : "opacity-0"
               )}
-              onClick={() => setIsVideoMode(!isVideoMode)}
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsVideoMode(!isVideoMode)
+              }}
             >
               <div className={cn("w-1.5 h-1.5 rounded-full", isVideoMode ? "bg-red-500 animate-pulse" : "bg-white/40")} />
               <span className="text-[10px] font-bold text-white uppercase tracking-wider">{isVideoMode ? 'Video' : 'Audio'}</span>

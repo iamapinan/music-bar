@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import type { YouTubeSearchResult, SongRequest } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { usePlayer } from '@/context/player-context'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -28,6 +29,7 @@ function getOrCreateDeviceId(): string {
 }
 
 export function RequestView() {
+  const { isRequestsEnabled } = usePlayer()
   const [deviceId, setDeviceId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<YouTubeSearchResult[]>([])
@@ -136,6 +138,20 @@ export function RequestView() {
   const getQueuePosition = (youtubeId: string) => {
     const idx = allRequests.findIndex(r => r.youtube_id === youtubeId)
     return idx >= 0 ? idx + 1 : null
+  }
+
+  if (!isRequestsEnabled) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-4">
+        <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-2">
+          <Music2 className="w-10 h-10 text-muted-foreground/30" />
+        </div>
+        <h1 className="text-2xl font-bold gradient-text">ขออภัย! ขณะนี้ปิดรับขอเพลง</h1>
+        <p className="text-muted-foreground text-sm max-w-[250px]">
+          ทางร้านยังไม่เปิดรับคำขอเพลงในขณะนี้ กรุณาลองใหม่อีกครั้งในภายหลัง
+        </p>
+      </div>
+    )
   }
 
   return (
