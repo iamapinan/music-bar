@@ -16,23 +16,6 @@ export function PlayerView() {
     isFullscreen, setIsVideoMode, setIsFullscreen, showControls, setShowControls
   } = usePlayer()
 
-  const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
-
-  const resetHideTimer = useCallback(() => {
-    setShowControls(true)
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    hideTimerRef.current = setTimeout(() => {
-      if (isPlaying) setShowControls(false)
-    }, 3000)
-  }, [isPlaying, setShowControls])
-
-  useEffect(() => {
-    resetHideTimer()
-    return () => {
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    }
-  }, [resetHideTimer])
-
   if (!currentSong) {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100dvh-10rem)] text-center p-6">
@@ -54,9 +37,6 @@ export function PlayerView() {
         'flex flex-col overflow-hidden transition-all duration-300',
         isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'h-[calc(100dvh-10rem)]'
       )}
-      onMouseMove={resetHideTimer}
-      onClick={resetHideTimer}
-      onTouchStart={resetHideTimer}
     >
       {/* Fullscreen header */}
       {isFullscreen && (

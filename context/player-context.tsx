@@ -112,6 +112,39 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [currentIndex, playMode, isVideoMode, isAutoPlayEnabled, isInitialized])
 
+  // Global Controls Auto-hide logic
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const resetHideTimer = useCallback(() => {
+    setShowControls(true)
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    hideTimerRef.current = setTimeout(() => {
+      // Only auto-hide if playing and in fullscreen video
+      if (isPlaying) setShowControls(false)
+    }, 3000)
+  }, [isPlaying])
+
+  useEffect(() => {
+    const handleActivity = () => {
+      resetHideTimer()
+    }
+
+    window.addEventListener('mousemove', handleActivity)
+    window.addEventListener('mousedown', handleActivity)
+    window.addEventListener('keydown', handleActivity)
+    window.addEventListener('touchstart', handleActivity)
+
+    resetHideTimer()
+
+    return () => {
+      window.removeEventListener('mousemove', handleActivity)
+      window.removeEventListener('mousedown', handleActivity)
+      window.removeEventListener('keydown', handleActivity)
+      window.removeEventListener('touchstart', handleActivity)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    }
+  }, [resetHideTimer])
+
   // Sync settings with DB
   const { data: dbSettings, mutate: mutateSettings } = useSWR('/api/settings', fetcher, {
     refreshInterval: 30000 // Refresh settings every 30s
