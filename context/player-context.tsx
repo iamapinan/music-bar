@@ -17,6 +17,7 @@ interface PlayerContextValue {
   // State
   isPlaying: boolean
   currentSong: PlaylistSong | SongRequest | null
+  nextSong: PlaylistSong | SongRequest | null
   playMode: 'playlist' | 'request'
   volume: number
   isMuted: boolean
@@ -197,6 +198,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       ? requests[0]
       : playlistSongs[currentIndex] ?? null
 
+  const nextSong: PlaylistSong | SongRequest | null = (() => {
+    if (playMode === 'request') {
+      if (requests.length > 1) return requests[1]
+      return playlistSongs[currentIndex] || null
+    } else {
+      if (requests.length > 0) return requests[0]
+      if (playlistSongs.length === 0) return null
+      const nextIdx = isShuffle
+        ? Math.floor(Math.random() * playlistSongs.length)
+        : (currentIndex + 1) % playlistSongs.length
+      return playlistSongs[nextIdx] || null
+    }
+  })()
+
   // Auto-switch to request mode when requests arrive and no song is playing
   useEffect(() => {
     if (requests.length > 0 && playMode === 'playlist' && !currentSong && isInitialized) {
@@ -226,21 +241,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const songs = playlistSongsRef.current
 
     if (mode === 'request' && reqs.length > 0) {
-      // Mark current request as played
-      try {
-        await fetch('/api/requests', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: reqs[0].id, status: 'played' }),
-        })
-      } catch {}
-      await mutateRequests()
-
-      // After mutation, if this was the last request, go back to playlist
-      if (reqs.length <= 1) {
+      const finishedId = reqs[0].id
+      
+      // Optimistically update local state to next request immediately
+      const remainingReqs = reqs.slice(1)
+      mutateRequests(remainingReqs, false)
+      
+      if (remainingReqs.length === 0) {
         setPlayMode('playlist')
       }
-      // If more requests, the next one automatically becomes requests[0]
+
+      // Update backend in background
+      fetch('/api/requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: finishedId, status: 'played' }),
+      }).then(() => mutateRequests())
     } else {
       // Playlist mode: advance to next song
       if (songs.length === 0) return
@@ -408,7 +424,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   return (
     <PlayerContext.Provider value={{
-      isPlaying, currentSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
+      isPlaying, currentSong, nextSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
       isFullscreen,
       currentTime, duration,
       currentIndex, requests, playlistSongs,

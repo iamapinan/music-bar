@@ -107,7 +107,7 @@ export async function GET(request: Request) {
     }
     
     // Search for videos
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&maxResults=15&key=${apiKey}`
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&maxResults=10&key=${apiKey}`
     
     const response = await fetch(searchUrl)
     const data = await response.json()

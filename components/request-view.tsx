@@ -255,7 +255,7 @@ export function RequestView() {
         </div>
 
         {/* Results */}
-        <div className="px-4 pb-24">
+        <div className="px-4 pb-24 max-h-[60vh] overflow-y-auto scrollbar-thin">
           <div className="space-y-2 pr-1">
             {!isSearching && searchResults.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
