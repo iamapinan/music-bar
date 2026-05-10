@@ -56,7 +56,7 @@ export default function RootLayout({
         {/* Allow autoplay in background for iOS */}
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased min-h-screen overflow-hidden`}>
+      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased min-h-screen`}>
         <PlayerProvider>
           <ServiceWorkerRegistration />
           {children}

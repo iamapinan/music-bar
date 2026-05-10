@@ -234,7 +234,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
   const isInPlaylist = (youtubeId: string) => playlistSongs.some(s => s.youtube_id === youtubeId)
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-screen">
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-border/50 glass">
         <div className="flex items-center gap-3">
@@ -287,7 +287,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
         </div>
       )}
 
-      <Tabs defaultValue="playlists" className="flex-1 flex flex-col overflow-hidden">
+      <Tabs defaultValue="playlists" className="flex flex-col">
         <TabsList className="mx-4 mt-3 grid grid-cols-3 h-9">
           <TabsTrigger value="playlists" className="text-xs gap-1.5">
             <List className="w-3.5 h-3.5" />
@@ -307,7 +307,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
         </TabsList>
 
         {/* PLAYLISTS TAB */}
-        <TabsContent value="playlists" className="flex-1 flex flex-col overflow-hidden p-4 pb-0">
+        <TabsContent value="playlists" className="flex flex-col p-4 pb-0">
           {/* Create New */}
           <div className="flex gap-2 mb-3">
             <Input
@@ -332,7 +332,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
             </div>
           )}
 
-          <ScrollArea className="flex-1 pb-20">
+          <div className="pb-20">
             <div className="space-y-2 pr-1">
               {playlists.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
@@ -424,11 +424,11 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </TabsContent>
 
         {/* SEARCH TAB */}
-        <TabsContent value="search" className="flex-1 flex flex-col overflow-hidden p-4 pb-0">
+        <TabsContent value="search" className="flex flex-col p-4 pb-0">
           {/* Search type toggle */}
           <div className="flex gap-2 mb-3">
             <Button
@@ -477,7 +477,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
             </div>
           )}
 
-          <ScrollArea className="flex-1 pb-20">
+          <div className="pb-20">
             <div className="space-y-2 pr-1">
               {isSearching && (
                 <div className="text-center py-10"><Loader2 className="w-6 h-6 mx-auto animate-spin text-primary" /></div>
@@ -537,12 +537,12 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
         </TabsContent>
 
         {/* REQUESTS TAB */}
-        <TabsContent value="requests" className="flex-1 flex flex-col overflow-hidden p-4 pb-0">
-          <ScrollArea className="flex-1 pb-20">
+        <TabsContent value="requests" className="flex flex-col p-4 pb-0">
+          <div className="pb-20">
             <div className="space-y-2 pr-1">
               {requests.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
@@ -578,7 +578,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

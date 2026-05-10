@@ -155,7 +155,7 @@ export function RequestView() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-screen">
       {/* Header */}
       <div className="p-4 pb-3 border-b border-border/50">
         <div className="flex items-center justify-between mb-1">
@@ -205,7 +205,7 @@ export function RequestView() {
         </div>
       )}
 
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex flex-col">
         {/* My Queue (mini) */}
         {myRequests.length > 0 && (
           <div className="px-4 py-2.5 border-b border-border/40 bg-card/30">
@@ -255,7 +255,7 @@ export function RequestView() {
         </div>
 
         {/* Results */}
-        <ScrollArea className="flex-1 px-4 pb-24">
+        <div className="px-4 pb-24">
           <div className="space-y-2 pr-1">
             {!isSearching && searchResults.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
@@ -311,7 +311,7 @@ export function RequestView() {
               )
             })}
           </div>
-        </ScrollArea>
+        </div>
       </div>
     </div>
   )
