@@ -37,22 +37,21 @@ interface YTPlayer {
   getDuration: () => number
   seekTo: (seconds: number, allowSeekAhead: boolean) => void
   loadVideoById: (args: string | { videoId: string, startSeconds?: number }) => void
-  cueVideoById: (args: string | { videoId: string, startSeconds?: number }) => void
   destroy: () => void
 }
 
 export function PersistentYouTubePlayer() {
   const { 
-    currentSong, nextSong, handleSongEnd, setIsPlaying, playerRef, volume, 
+    currentSong, handleSongEnd, setIsPlaying, playerRef, volume, 
     isVideoMode, isAutoPlayEnabled, setCurrentTime, setDuration, isFullscreen,
     playMode, currentIndex
   } = usePlayer()
 
-  const [activeIndex, setActiveIndex] = useState(0)
-  const activeIndexRef = useRef(0)
-  const playersRef = useRef<Record<number, YTPlayer | null>>({ 0: null, 1: null })
+  const ytPlayerRef = useRef<YTPlayer | null>(null)
   const isApiReadyRef = useRef(false)
-  const lastLoadedVideoIds = useRef<Record<number, string>>({ 0: '', 1: '' })
+  const currentVideoRef = useRef<string>('')
+  const containerRef = useRef<HTMLDivElement>(null)
+  const lastPlayedKeyRef = useRef<string>('')
   const [videoRect, setVideoRect] = useState<DOMRect | null>(null)
 
   const handleSongEndRef = useRef(handleSongEnd)
@@ -60,11 +59,6 @@ export function PersistentYouTubePlayer() {
 
   useEffect(() => { handleSongEndRef.current = handleSongEnd }, [handleSongEnd])
   useEffect(() => { volumeRef.current = volume }, [volume])
-  
-  // Sync ref with state
-  useEffect(() => {
-    activeIndexRef.current = activeIndex
-  }, [activeIndex])
 
   // Track video container rect for Video Mode
   useEffect(() => {
@@ -91,42 +85,36 @@ export function PersistentYouTubePlayer() {
   // Expose methods to context
   const exposeMethods = useCallback(() => {
     const methods: YouTubePlayerMethods = {
-      play: () => playersRef.current[activeIndexRef.current]?.playVideo(),
-      pause: () => playersRef.current[activeIndexRef.current]?.pauseVideo(),
-      setVolume: (v: number) => {
-        playersRef.current[0]?.setVolume(v)
-        playersRef.current[1]?.setVolume(v)
-      },
-      loadVideo: (id: string) => playersRef.current[activeIndexRef.current]?.loadVideoById(id),
-      seekTo: (seconds: number) => playersRef.current[activeIndexRef.current]?.seekTo(seconds, true),
+      play: () => ytPlayerRef.current?.playVideo(),
+      pause: () => ytPlayerRef.current?.pauseVideo(),
+      setVolume: (v: number) => ytPlayerRef.current?.setVolume(v),
+      loadVideo: (id: string) => ytPlayerRef.current?.loadVideoById(id),
+      seekTo: (seconds: number) => ytPlayerRef.current?.seekTo(seconds, true),
     }
     playerRef.current = methods
   }, [playerRef])
 
-  useEffect(() => {
-    exposeMethods()
-  }, [activeIndex, exposeMethods])
+  const initPlayer = useCallback((videoId: string) => {
+    if (!isApiReadyRef.current || !videoId) return
 
-  const createPlayer = useCallback((index: number, videoId: string) => {
-    if (!isApiReadyRef.current) return
-
-    if (playersRef.current[index]) {
-      playersRef.current[index]?.destroy()
-      playersRef.current[index] = null
+    if (ytPlayerRef.current) {
+      ytPlayerRef.current.destroy()
+      ytPlayerRef.current = null
     }
 
-    const containerId = `yt-player-${index}`
-    const container = document.getElementById(`${containerId}-container`)
-    if (container) {
-      container.innerHTML = `<div id="${containerId}"></div>`
+    if (containerRef.current) {
+      const div = document.createElement('div')
+      div.id = 'yt-persistent-player'
+      containerRef.current.innerHTML = ''
+      containerRef.current.appendChild(div)
     }
 
-    playersRef.current[index] = new window.YT.Player(containerId, {
+    ytPlayerRef.current = new window.YT.Player('yt-persistent-player', {
       width: '100%',
       height: '100%',
-      videoId: videoId || '',
+      videoId,
       playerVars: {
-        autoplay: index === activeIndexRef.current ? 1 : 0,
+        autoplay: 1,
         controls: 0,
         modestbranding: 1,
         rel: 0,
@@ -139,34 +127,28 @@ export function PersistentYouTubePlayer() {
       events: {
         onReady: (event) => {
           event.target.setVolume(volumeRef.current)
-          if (index === activeIndexRef.current && videoId) {
-            event.target.playVideo()
-            setIsPlaying(true)
-          }
+          event.target.playVideo()
+          setIsPlaying(true)
           exposeMethods()
         },
         onStateChange: (event) => {
           const state = window.YT.PlayerState
-          if (index === activeIndexRef.current) {
-            if (event.data === state.ENDED) {
-              handleSongEndRef.current()
-            } else if (event.data === state.PLAYING) {
-              setIsPlaying(true)
-              if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
-            } else if (event.data === state.PAUSED) {
-              setIsPlaying(false)
-              if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'
-            }
+          if (event.data === state.ENDED) {
+            handleSongEndRef.current()
+          } else if (event.data === state.PLAYING) {
+            setIsPlaying(true)
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
+          } else if (event.data === state.PAUSED) {
+            setIsPlaying(false)
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'
           }
         },
         onError: () => {
-          if (index === activeIndexRef.current) {
-            setTimeout(() => handleSongEndRef.current(), 1000)
-          }
+          setTimeout(() => handleSongEndRef.current(), 1000)
         },
       },
     })
-    lastLoadedVideoIds.current[index] = videoId
+    currentVideoRef.current = videoId
   }, [setIsPlaying, exposeMethods])
 
   // Load YouTube IFrame API once
@@ -174,8 +156,7 @@ export function PersistentYouTubePlayer() {
     if (window._ytApiLoaded) {
       if (window.YT?.Player) {
         isApiReadyRef.current = true
-        if (currentSong?.youtube_id) createPlayer(0, currentSong.youtube_id)
-        createPlayer(1, '')
+        if (currentSong?.youtube_id) initPlayer(currentSong.youtube_id)
       }
       return
     }
@@ -187,70 +168,37 @@ export function PersistentYouTubePlayer() {
 
     window.onYouTubeIframeAPIReady = () => {
       isApiReadyRef.current = true
-      if (currentSong?.youtube_id) createPlayer(0, currentSong.youtube_id)
-      createPlayer(1, '')
+      if (currentSong?.youtube_id) initPlayer(currentSong.youtube_id)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Combined Sync and Swap Effect
+  // Switch video when currentSong changes
   useEffect(() => {
     if (!currentSong?.youtube_id || !isApiReadyRef.current) return
+
+    const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
     
-    const curIndex = activeIndex
-    const nextIndex = 1 - curIndex
-    const songId = currentSong.youtube_id
-    
-    // Check if the song is already loaded/cued in either player
-    if (lastLoadedVideoIds.current[curIndex] === songId) {
-      // Already active, ensure it's playing if needed
-      // (Sometimes it might be paused or newly loaded)
-      return 
-    }
-    
-    if (lastLoadedVideoIds.current[nextIndex] === songId) {
-      // It's in the other player! Swap.
-      setActiveIndex(nextIndex)
-      playersRef.current[nextIndex]?.playVideo()
-      setIsPlaying(true)
-      // Stop the old player
-      playersRef.current[curIndex]?.pauseVideo()
-    } else {
-      // Not in either player, load it into the active one
-      const activePlayer = playersRef.current[curIndex]
-      if (activePlayer) {
-        activePlayer.loadVideoById(songId)
-        lastLoadedVideoIds.current[curIndex] = songId
+    if (songKey !== lastPlayedKeyRef.current) {
+      if (ytPlayerRef.current) {
+        ytPlayerRef.current.setVolume(volumeRef.current)
+        ytPlayerRef.current.loadVideoById(currentSong.youtube_id)
         setIsPlaying(true)
+        lastPlayedKeyRef.current = songKey
+        currentVideoRef.current = currentSong.youtube_id
+        exposeMethods()
       } else {
-        createPlayer(curIndex, songId)
+        initPlayer(currentSong.youtube_id)
+        lastPlayedKeyRef.current = songKey
       }
     }
-  }, [currentSong?.youtube_id, activeIndex, createPlayer, setIsPlaying])
-
-  // Preload Next Song in Inactive Player
-  useEffect(() => {
-    const inactiveIndex = 1 - activeIndex
-    if (!nextSong?.youtube_id || !isApiReadyRef.current) return
-    
-    // Don't preload if the inactive player already has this song
-    if (lastLoadedVideoIds.current[inactiveIndex] === nextSong.youtube_id) return
-    
-    const inactivePlayer = playersRef.current[inactiveIndex]
-    if (inactivePlayer) {
-      inactivePlayer.cueVideoById(nextSong.youtube_id)
-      lastLoadedVideoIds.current[inactiveIndex] = nextSong.youtube_id
-    } else {
-      createPlayer(inactiveIndex, nextSong.youtube_id)
-    }
-  }, [nextSong?.youtube_id, activeIndex, createPlayer])
+  }, [currentSong?.youtube_id, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying])
 
   // Track playback progress
   useEffect(() => {
     const interval = setInterval(() => {
-      const activePlayer = playersRef.current[activeIndexRef.current]
-      if (activePlayer) {
-        const time = activePlayer.getCurrentTime?.() || 0
-        const dur = activePlayer.getDuration?.() || 0
+      if (currentVideoRef.current && ytPlayerRef.current) {
+        const time = ytPlayerRef.current.getCurrentTime?.() || 0
+        const dur = ytPlayerRef.current.getDuration?.() || 0
         setCurrentTime(time)
         setDuration(dur)
       }
@@ -258,47 +206,38 @@ export function PersistentYouTubePlayer() {
     return () => clearInterval(interval)
   }, [setCurrentTime, setDuration])
 
-  const getPlayerStyle = (index: number) => {
-    const isActive = index === activeIndex
-    if (isVideoMode && videoRect) {
-      return {
-        position: 'fixed' as const,
-        top: (isFullscreen && isVideoMode) ? 0 : videoRect.top,
-        left: (isFullscreen && isVideoMode) ? 0 : videoRect.left,
-        width: (isFullscreen && isVideoMode) ? '100vw' : videoRect.width,
-        height: (isFullscreen && isVideoMode) ? '100dvh' : videoRect.height,
-        zIndex: isActive ? 65 : 60,
-        opacity: isActive ? 1 : 0,
-        pointerEvents: isActive ? 'auto' as const : 'none' as const,
-        borderRadius: (isFullscreen && isVideoMode) ? '0' : (window.innerWidth >= 640 ? '2rem' : '1rem'),
-        overflow: 'hidden',
-        transition: 'opacity 0.3s ease-in-out'
-      }
-    }
-    return {
-      position: 'fixed' as const,
-      width: '1px',
-      height: '1px',
-      opacity: 0,
-      pointerEvents: 'none' as const,
-      bottom: 0,
-      right: 0,
-      zIndex: isActive ? -1 : -2,
-    }
-  }
-
   return (
-    <>
-      <div style={getPlayerStyle(0)}>
-        <div id="yt-player-0-container" style={{ width: '100%', height: '100%' }}>
-          <div id="yt-player-0" />
-        </div>
+    <div
+      aria-hidden={!isVideoMode}
+      style={
+        isVideoMode && videoRect
+          ? {
+              position: 'fixed',
+              top: (isFullscreen && isVideoMode) ? 0 : videoRect.top,
+              left: (isFullscreen && isVideoMode) ? 0 : videoRect.left,
+              width: (isFullscreen && isVideoMode) ? '100vw' : videoRect.width,
+              height: (isFullscreen && isVideoMode) ? '100dvh' : videoRect.height,
+              zIndex: (isFullscreen && isVideoMode) ? 65 : 5,
+              opacity: 1,
+              pointerEvents: 'auto',
+              borderRadius: (isFullscreen && isVideoMode) ? '0' : (window.innerWidth >= 640 ? '2rem' : '1rem'),
+              overflow: 'hidden'
+            }
+          : {
+              position: 'fixed',
+              width: '1px',
+              height: '1px',
+              opacity: 0,
+              pointerEvents: 'none',
+              bottom: 0,
+              right: 0,
+              zIndex: -1,
+            }
+      }
+    >
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+        <div id="yt-persistent-player" style={{ width: '100%', height: '100%' }} />
       </div>
-      <div style={getPlayerStyle(1)}>
-        <div id="yt-player-1-container" style={{ width: '100%', height: '100%' }}>
-          <div id="yt-player-1" />
-        </div>
-      </div>
-    </>
+    </div>
   )
 }
