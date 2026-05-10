@@ -49,6 +49,7 @@ export function PersistentYouTubePlayer() {
   } = usePlayer()
 
   const [activeIndex, setActiveIndex] = useState(0)
+  const activeIndexRef = useRef(0)
   const playersRef = useRef<Record<number, YTPlayer | null>>({ 0: null, 1: null })
   const isApiReadyRef = useRef(false)
   const lastLoadedVideoIds = useRef<Record<number, string>>({ 0: '', 1: '' })
@@ -59,6 +60,11 @@ export function PersistentYouTubePlayer() {
 
   useEffect(() => { handleSongEndRef.current = handleSongEnd }, [handleSongEnd])
   useEffect(() => { volumeRef.current = volume }, [volume])
+  
+  // Sync ref with state
+  useEffect(() => {
+    activeIndexRef.current = activeIndex
+  }, [activeIndex])
 
   // Track video container rect for Video Mode
   useEffect(() => {
@@ -84,19 +90,18 @@ export function PersistentYouTubePlayer() {
 
   // Expose methods to context
   const exposeMethods = useCallback(() => {
-    const activePlayer = playersRef.current[activeIndex]
     const methods: YouTubePlayerMethods = {
-      play: () => playersRef.current[activeIndex]?.playVideo(),
-      pause: () => playersRef.current[activeIndex]?.pauseVideo(),
+      play: () => playersRef.current[activeIndexRef.current]?.playVideo(),
+      pause: () => playersRef.current[activeIndexRef.current]?.pauseVideo(),
       setVolume: (v: number) => {
         playersRef.current[0]?.setVolume(v)
         playersRef.current[1]?.setVolume(v)
       },
-      loadVideo: (id: string) => playersRef.current[activeIndex]?.loadVideoById(id),
-      seekTo: (seconds: number) => playersRef.current[activeIndex]?.seekTo(seconds, true),
+      loadVideo: (id: string) => playersRef.current[activeIndexRef.current]?.loadVideoById(id),
+      seekTo: (seconds: number) => playersRef.current[activeIndexRef.current]?.seekTo(seconds, true),
     }
     playerRef.current = methods
-  }, [activeIndex, playerRef])
+  }, [playerRef])
 
   useEffect(() => {
     exposeMethods()
@@ -121,7 +126,7 @@ export function PersistentYouTubePlayer() {
       height: '100%',
       videoId: videoId || '',
       playerVars: {
-        autoplay: index === activeIndex ? 1 : 0,
+        autoplay: index === activeIndexRef.current ? 1 : 0,
         controls: 0,
         modestbranding: 1,
         rel: 0,
@@ -134,7 +139,7 @@ export function PersistentYouTubePlayer() {
       events: {
         onReady: (event) => {
           event.target.setVolume(volumeRef.current)
-          if (index === activeIndex && videoId) {
+          if (index === activeIndexRef.current && videoId) {
             event.target.playVideo()
             setIsPlaying(true)
           }
@@ -142,7 +147,7 @@ export function PersistentYouTubePlayer() {
         },
         onStateChange: (event) => {
           const state = window.YT.PlayerState
-          if (index === activeIndex) {
+          if (index === activeIndexRef.current) {
             if (event.data === state.ENDED) {
               handleSongEndRef.current()
             } else if (event.data === state.PLAYING) {
@@ -155,14 +160,14 @@ export function PersistentYouTubePlayer() {
           }
         },
         onError: () => {
-          if (index === activeIndex) {
+          if (index === activeIndexRef.current) {
             setTimeout(() => handleSongEndRef.current(), 1000)
           }
         },
       },
     })
     lastLoadedVideoIds.current[index] = videoId
-  }, [activeIndex, setIsPlaying, exposeMethods])
+  }, [setIsPlaying, exposeMethods])
 
   // Load YouTube IFrame API once
   useEffect(() => {
@@ -170,7 +175,7 @@ export function PersistentYouTubePlayer() {
       if (window.YT?.Player) {
         isApiReadyRef.current = true
         if (currentSong?.youtube_id) createPlayer(0, currentSong.youtube_id)
-        createPlayer(1, '') // Empty second player
+        createPlayer(1, '')
       }
       return
     }
@@ -187,17 +192,38 @@ export function PersistentYouTubePlayer() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync Active Player with currentSong
+  // Combined Sync and Swap Effect
   useEffect(() => {
     if (!currentSong?.youtube_id || !isApiReadyRef.current) return
     
-    const activePlayer = playersRef.current[activeIndex]
-    if (activePlayer && lastLoadedVideoIds.current[activeIndex] !== currentSong.youtube_id) {
-      activePlayer.loadVideoById(currentSong.youtube_id)
-      lastLoadedVideoIds.current[activeIndex] = currentSong.youtube_id
+    const curIndex = activeIndex
+    const nextIndex = 1 - curIndex
+    const songId = currentSong.youtube_id
+    
+    // Check if the song is already loaded/cued in either player
+    if (lastLoadedVideoIds.current[curIndex] === songId) {
+      // Already active, ensure it's playing if needed
+      // (Sometimes it might be paused or newly loaded)
+      return 
+    }
+    
+    if (lastLoadedVideoIds.current[nextIndex] === songId) {
+      // It's in the other player! Swap.
+      setActiveIndex(nextIndex)
+      playersRef.current[nextIndex]?.playVideo()
       setIsPlaying(true)
-    } else if (!activePlayer) {
-      createPlayer(activeIndex, currentSong.youtube_id)
+      // Stop the old player
+      playersRef.current[curIndex]?.pauseVideo()
+    } else {
+      // Not in either player, load it into the active one
+      const activePlayer = playersRef.current[curIndex]
+      if (activePlayer) {
+        activePlayer.loadVideoById(songId)
+        lastLoadedVideoIds.current[curIndex] = songId
+        setIsPlaying(true)
+      } else {
+        createPlayer(curIndex, songId)
+      }
     }
   }, [currentSong?.youtube_id, activeIndex, createPlayer, setIsPlaying])
 
@@ -206,33 +232,22 @@ export function PersistentYouTubePlayer() {
     const inactiveIndex = 1 - activeIndex
     if (!nextSong?.youtube_id || !isApiReadyRef.current) return
     
+    // Don't preload if the inactive player already has this song
+    if (lastLoadedVideoIds.current[inactiveIndex] === nextSong.youtube_id) return
+    
     const inactivePlayer = playersRef.current[inactiveIndex]
-    if (inactivePlayer && lastLoadedVideoIds.current[inactiveIndex] !== nextSong.youtube_id) {
+    if (inactivePlayer) {
       inactivePlayer.cueVideoById(nextSong.youtube_id)
       lastLoadedVideoIds.current[inactiveIndex] = nextSong.youtube_id
-    } else if (!inactivePlayer) {
+    } else {
       createPlayer(inactiveIndex, nextSong.youtube_id)
     }
   }, [nextSong?.youtube_id, activeIndex, createPlayer])
 
-  // Swap logic when handleSongEnd is called
-  // We detect if currentSong changed and if it matches what we preloaded
-  useEffect(() => {
-    if (!currentSong?.youtube_id) return
-    
-    const inactiveIndex = 1 - activeIndex
-    if (lastLoadedVideoIds.current[inactiveIndex] === currentSong.youtube_id) {
-      // The song we preloaded is now the current song!
-      setActiveIndex(inactiveIndex)
-      playersRef.current[inactiveIndex]?.playVideo()
-      setIsPlaying(true)
-    }
-  }, [currentSong?.youtube_id]) // Only depends on song change
-
   // Track playback progress
   useEffect(() => {
     const interval = setInterval(() => {
-      const activePlayer = playersRef.current[activeIndex]
+      const activePlayer = playersRef.current[activeIndexRef.current]
       if (activePlayer) {
         const time = activePlayer.getCurrentTime?.() || 0
         const dur = activePlayer.getDuration?.() || 0
@@ -241,7 +256,7 @@ export function PersistentYouTubePlayer() {
       }
     }, 500)
     return () => clearInterval(interval)
-  }, [activeIndex, setCurrentTime, setDuration])
+  }, [setCurrentTime, setDuration])
 
   const getPlayerStyle = (index: number) => {
     const isActive = index === activeIndex
