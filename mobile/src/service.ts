@@ -1,3 +1,3 @@
 import { PlaybackService } from './data/services/playback-service';
 
-module.exports = PlaybackService;
+export default PlaybackService;

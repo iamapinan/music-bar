@@ -3,9 +3,7 @@ import TrackPlayer, {
   usePlaybackState as useRNPlaybackState, 
   useProgress,
   State,
-  useActiveTrack,
-  Event,
-  useTrackPlayerEvents
+  useActiveTrack
 } from 'react-native-track-player';
 import { useKeepAwake } from 'react-native-keep-awake';
 

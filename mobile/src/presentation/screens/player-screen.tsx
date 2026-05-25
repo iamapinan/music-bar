@@ -5,9 +5,12 @@ import {
   StyleSheet, 
   Image, 
   TouchableOpacity, 
-  Dimensions,
-  SafeAreaView,
-  StatusBar
+  Dimensions, 
+  SafeAreaView, 
+  StatusBar,
+  Platform,
+  PermissionsAndroid,
+  NativeModules
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Play, Pause, SkipForward, SkipBack, ListMusic } from 'lucide-react-native';
@@ -20,6 +23,15 @@ import { MusicRepositoryImpl } from '../../data/repositories/music-repository-im
 const { width } = Dimensions.get('window');
 const ARTWORK_SIZE = width * 0.8;
 const musicRepo = new MusicRepositoryImpl();
+const { BackgroundOptimization } = NativeModules;
+
+const FALLBACK_TRACK = {
+  id: 'fallback',
+  url: '',
+  title: 'ไม่มีเพลงที่กำลังเล่น',
+  artist: 'กรุณาเลือกเพลงจากรายการเพื่อเริ่มต้น',
+  artwork: 'https://picsum.photos/800/800',
+};
 
 export const PlayerScreen = () => {
   const { 
@@ -32,9 +44,52 @@ export const PlayerScreen = () => {
   } = usePlayback();
   
   const [isReady, setIsReady] = useState(false);
+  const [isBatteryIgnored, setIsBatteryIgnored] = useState(true);
+
+  const requestNotificationPermission = async () => {
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      try {
+        await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          {
+            title: 'ขอสิทธิ์การแจ้งเตือน',
+            message: 'แอปต้องการสิทธิ์การแจ้งเตือนเพื่อแสดงตัวควบคุมเพลงในขณะเล่นเบื้องหลัง',
+            buttonNeutral: 'ถามภายหลัง',
+            buttonNegative: 'ปฏิเสธ',
+            buttonPositive: 'อนุญาต',
+          }
+        );
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+  };
+
+  const checkBatteryStatus = async () => {
+    if (Platform.OS === 'android' && BackgroundOptimization) {
+      try {
+        const ignored = await BackgroundOptimization.isBatteryOptimizationIgnored();
+        setIsBatteryIgnored(ignored);
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+  };
+
+  const handleRequestIgnoreBattery = () => {
+    if (Platform.OS === 'android' && BackgroundOptimization) {
+      BackgroundOptimization.requestIgnoreBatteryOptimization();
+      // แนะนำให้ผู้ใช้ทราบ และกดตรวจสอบอีกครั้งหลังจากเปิดใช้งานแล้ว
+      setTimeout(() => {
+        checkBatteryStatus();
+      }, 5000);
+    }
+  };
 
   useEffect(() => {
     const init = async () => {
+      await requestNotificationPermission();
+      await checkBatteryStatus();
       const ready = await setupPlayer();
       if (ready) {
         await loadInitialData();
@@ -98,13 +153,32 @@ export const PlayerScreen = () => {
             <ListMusic color={Colors.textSecondary} size={24} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Now Playing</Text>
-          <View style={{ width: 24 }} />
+          <View style={styles.headerSpacer} />
         </View>
+
+        {!isBatteryIgnored && (
+          <View style={styles.batteryWarningBanner}>
+            <View style={styles.batteryWarningTextContainer}>
+              <Text style={styles.batteryWarningTitle}>
+                เปิดใช้งานการทำงานเบื้องหลัง
+              </Text>
+              <Text style={styles.batteryWarningDescription}>
+                กรุณาปิดระบบประหยัดพลังงานแบตเตอรี่เพื่อการเล่นเพลงต่อเนื่องไม่ขาดตอนเมื่อล็อกหน้าจอ
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.batteryWarningButton}
+              onPress={handleRequestIgnoreBattery}
+            >
+              <Text style={styles.batteryWarningButtonText}>ตั้งค่า</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.content}>
           <View style={styles.artworkContainer}>
             <Image
-              source={{ uri: activeTrack?.artwork || MOCK_TRACKS[0].artwork }}
+              source={{ uri: activeTrack?.artwork || FALLBACK_TRACK.artwork }}
               style={styles.artwork}
               resizeMode="cover"
             />
@@ -112,10 +186,10 @@ export const PlayerScreen = () => {
 
           <View style={styles.trackInfo}>
             <Text style={styles.title} numberOfLines={1}>
-              {activeTrack?.title || MOCK_TRACKS[0].title}
+              {activeTrack?.title || FALLBACK_TRACK.title}
             </Text>
             <Text style={styles.artist}>
-              {activeTrack?.artist || MOCK_TRACKS[0].artist}
+              {activeTrack?.artist || FALLBACK_TRACK.artist}
             </Text>
           </View>
 
@@ -124,7 +198,7 @@ export const PlayerScreen = () => {
               <View 
                 style={[
                   styles.progressBarFill, 
-                  { width: `${(progress.position / progress.duration) * 100}%` }
+                  { width: `${progress.duration > 0 ? (progress.position / progress.duration) * 100 : 0}%` }
                 ]} 
               />
             </View>
@@ -146,7 +220,7 @@ export const PlayerScreen = () => {
               {isPlaying ? (
                 <Pause color="#FFF" size={40} fill="#FFF" />
               ) : (
-                <Play color="#FFF" size={40} fill="#FFF" style={{ marginLeft: 4 }} />
+                <Play color="#FFF" size={40} fill="#FFF" style={styles.playIcon} />
               )}
             </TouchableOpacity>
 
@@ -181,6 +255,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1,
     textTransform: 'uppercase',
+  },
+  batteryWarningBanner: {
+    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+    borderColor: 'rgba(244, 63, 94, 0.3)',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  batteryWarningTextContainer: {
+    flex: 1,
+    marginRight: Spacing.md,
+  },
+  batteryWarningTitle: {
+    color: '#F43F5E',
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  batteryWarningDescription: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  batteryWarningButton: {
+    backgroundColor: '#F43F5E',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 8,
+  },
+  batteryWarningButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
   content: {
     flex: 1,
@@ -263,5 +375,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
+  },
+  headerSpacer: {
+    width: 24,
+  },
+  playIcon: {
+    marginLeft: 4,
   },
 });

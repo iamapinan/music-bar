@@ -13,17 +13,17 @@ export const PlaybackService = async () => {
   TrackPlayer.addEventListener(Event.RemotePause, () => TrackPlayer.pause());
   TrackPlayer.addEventListener(Event.RemoteNext, () => TrackPlayer.skipToNext());
   TrackPlayer.addEventListener(Event.RemotePrevious, () => TrackPlayer.skipToPrevious());
-  TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.destroy());
+  TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.stop());
 
   // เมื่อเพลงเปลี่ยน ให้ตรวจสอบและอัปเดตสถานะใน API
   TrackPlayer.addEventListener(Event.PlaybackTrackChanged, async (event) => {
-    if (event.nextTrack === undefined && event.track !== undefined) {
+    if (event.nextTrack === undefined && event.track !== undefined && event.track !== null) {
       // เพลงจบและไม่มีเพลงถัดไป (หรือจบรายการ)
       const track = await TrackPlayer.getTrack(event.track);
       if (track) {
         await musicRepo.updateRequestStatus(track.id, 'played');
       }
-    } else if (event.track !== undefined) {
+    } else if (event.track !== undefined && event.track !== null) {
       // เพลงเปลี่ยนเป็นเพลงใหม่
       const track = await TrackPlayer.getTrack(event.track);
       if (track) {
@@ -42,7 +42,7 @@ export const setupPlayer = async () => {
     await TrackPlayer.setupPlayer();
     await TrackPlayer.updateOptions({
       android: {
-        appKilledPlaybackBehavior: AppKilledPlaybackBehavior.StopPlaybackAndRemoveNotification,
+        appKilledPlaybackBehavior: AppKilledPlaybackBehavior.ContinuePlayback,
       },
       capabilities: [
         Capability.Play,
