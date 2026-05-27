@@ -1,18 +1,15 @@
-# Task List - Background Playback & Native Optimization
+# Task List - Build Android APK
 
-- [x] **Android Native Configuration & Module**
-  - [x] Add permissions and service configuration to [AndroidManifest.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/AndroidManifest.xml)
-  - [x] Create [BackgroundOptimizationModule.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/com/musicbarmobile/BackgroundOptimizationModule.kt) to handle Android PowerManager APIs
-  - [x] Create [BackgroundOptimizationPackage.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/com/musicbarmobile/BackgroundOptimizationPackage.kt)
-  - [x] Register the new package in [MainApplication.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/com/musicbarmobile/MainApplication.kt)
+- [x] **Environment Verification**
+  - [x] ตรวจสอบความพร้อมของ SDK, Node.js และ JDK เวอร์ชันในระบบ
+  - [x] ตรวจสอบสิทธิ์การทำงานของ `gradlew` ในโฟลเดอร์ `mobile/android`
 
-- [x] **Audio Engine & Services**
-  - [x] Update [playback-service.ts](file:///Users/apinan/Developments/music-bar/mobile/src/data/services/playback-service.ts) to keep background playback active (`ContinuePlayback`)
+- [x] **Execution of Build Commands**
+  - [x] รันการล้างแคชเก่าด้วย `./gradlew clean`
+  - [x] รันการสร้าง Debug APK ด้วย `./gradlew assembleDebug`
+  - [x] รันการสร้าง Release APK ด้วย `./gradlew assembleRelease`
 
-- [x] **UI & Permissions Integration**
-  - [x] Fix `MOCK_TRACKS` crash and implement Android 13+ Notification permission request in [player-screen.tsx](file:///Users/apinan/Developments/music-bar/mobile/src/presentation/screens/player-screen.tsx)
-  - [x] Add Battery Optimization whitelist checking and request action on the playback UI
-
-- [x] **Testing & Verification**
-  - [x] Verify Gradle build and compile success
-  - [x] Verify Native Module links successfully to JS side
+- [/] **Verification & Validation**
+  - [x] ยืนยันความสมบูรณ์และพิกัดของไฟล์ APK ที่สร้างสำเร็จ
+  - [/] เพิ่มประวัติการทำงานลงใน `CHANGELOG.md` และส่งมอบผลลัพธ์
+  - [ ] ทำการ Git commit หลังการสร้างเอกสารและไฟล์ระบบ

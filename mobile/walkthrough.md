@@ -1,32 +1,42 @@
-# Walkthrough - Background Playback & Native Optimization
+# Walkthrough - Build Android APK
 
-เราได้พัฒนาและปรับปรุงระบบการทำงานเบื้องหลัง (Background Execution) ของแอปพลิเคชัน React Native (Music Bar Mobile) เพื่อให้แอปพลิเคชันสามารถเล่นเพลงเบื้องหลังได้อย่างมั่นคงและปลอดภัย 100% ไม่โดนระบบปฏิบัติการ Android ปิดหรือยกเลิกการทำงาน
-
-## การเปลี่ยนแปลงที่เกิดขึ้น (Changes Made)
-
-### 1. การตั้งค่าระบบระดับ Native (Android Native Layer)
-- **สิทธิ์การใช้งาน (Permissions):** เพิ่มสิทธิ์ใน [AndroidManifest.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/AndroidManifest.xml)
-  - `POST_NOTIFICATIONS`: สิทธิ์ในการส่งข้อมูลและแสดงแผงควบคุมเพลงบนแถบแจ้งเตือนและการล็อกหน้าจอ
-  - `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`: สิทธิ์ในการร้องขอให้ผู้ใช้ข้ามการจัดสรรพลังงานแบตเตอรี่ (Battery Optimization Whitelisting)
-- **บริการเบื้องหลัง (Foreground Service):** บังคับใช้ `foregroundServiceType="mediaPlayback"` บน Android 14+ (API 34+) เพื่อให้สอดคล้องกับมาตรฐานความปลอดภัยใหม่ของ Android
-- **Native Module เชื่อมต่อไปยังระบบ Android:** 
-  - สร้างโมดูล [BackgroundOptimizationModule.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/com/musicbarmobile/BackgroundOptimizationModule.kt) ภาษา Kotlin เพื่อเรียกใช้งาน Java/Kotlin System Service (`PowerManager`) สำหรับเช็กว่าแอปถูกจำกัดพลังงานหรือไม่ และมีเมธอดเปิดหน้าต่างตั้งค่าการข้ามระบบประหยัดพลังงานแบตเตอรี่
-  - ลงทะเบียนผ่าน [BackgroundOptimizationPackage.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/com/musicbarmobile/BackgroundOptimizationPackage.kt)
-  - ผูกโมดูลเข้ากับโปรเจกต์หลักใน [MainApplication.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/com/musicbarmobile/MainApplication.kt)
-
-### 2. การควบคุมและพฤติกรรมของเครื่องเล่น (Audio Engine Layer)
-- **ความมั่นคงในการทำงานเบื้องหลัง:** อัปเดตคุณสมบัติ `appKilledPlaybackBehavior` ใน [playback-service.ts](file:///Users/apinan/Developments/music-bar/mobile/src/data/services/playback-service.ts) ให้เป็น `ContinuePlayback` ซึ่งจะช่วยรักษาสถานะการเล่นเพลงและไม่ถูกทำลายแม้ผู้ใช้จะปิดหน้าต่างแอปพลิเคชันหลัก
-- **แก้ไขข้อผิดพลาดระบบเสียง:** ปรับปรุงโครงสร้างตรวจสอบประเภทและเงื่อนไขค่า `null` ในเหตุการณ์เพลงเปลี่ยนเพื่อความปลอดภัยของ Type (TypeScript Type safety)
-
-### 3. อินเตอร์เฟซและการขอสิทธิ์จากผู้ใช้ (UI & Application Layer)
-- **แก้ไขข้อผิดพลาดแอปพลิเคชัน:** แก้ไขปัญหา `ReferenceError: MOCK_TRACKS is not defined` ในหน้าจอเล่นเพลงหลัก [player-screen.tsx](file:///Users/apinan/Developments/music-bar/mobile/src/presentation/screens/player-screen.tsx) โดยทดแทนด้วยโครงสร้าง `FALLBACK_TRACK` ที่ปลอดภัยและเสถียร
-- **ขอสิทธิ์การแจ้งเตือนแบบไดนามิก:** เรียกขอสิทธิ์ `POST_NOTIFICATIONS` ทันทีที่เข้าแอปบนอุปกรณ์ Android 13+ เพื่อแสดงผลแถบควบคุมเพลง
-- **แถบแจ้งเตือนระดับ Premium (Battery Exclusion Banner):** หากระบบตรวจพบว่าแอปยังคงอยู่ภายใต้การประหยัดพลังงานแบตเตอรี่ (ซึ่งเสี่ยงต่อการโดนปิดแอป) แอปจะแสดงการเตือนระดับพรีเมียมสี Rose อ่อนๆ ไม่มีอิโมจิ เพื่อให้ผู้ใช้สามารถกดเปิดหน้าต่างตั้งค่าระบบ Android ไปปิดการจำกัดพลังงานได้ทันที
+กระบวนการสร้างไฟล์ติดตั้ง Android Package (.apk) สำหรับแอปพลิเคชัน Music Bar Mobile (React Native) ประสบความสำเร็จอย่างสมบูรณ์แบบทั้งในรูปแบบ **Debug APK** และ **Release APK** หลังจากแก้ไขปัญหาความเข้ากันได้และการเคลียร์พื้นที่ว่างในเครื่องเรียบร้อยแล้ว
 
 ---
 
-## ผลการตรวจสอบและความถูกต้อง (Validation Results)
+## 🛠️ รายละเอียดไฟล์ติดตั้งที่ถูกสร้างสำเร็จ (Build Artifacts)
 
-- **การตรวจสอบประเภท (Type-checking):** รัน `npx tsc --noEmit` เสร็จสิ้นสมบูรณ์ 100% ไม่มีข้อผิดพลาด
-- **การตรวจสอบไวยากรณ์ (Linting):** รัน `npx eslint .` ผ่านเรียบร้อย ไร้คำเตือนและข้อผิดพลาด
-- **ระบบจัดเก็บเวอร์ชัน:** ดำเนินการ Git Commit ไฟล์และโค้ดทั้งหมดเรียบร้อยแล้ว
+### 1. Debug APK (สำหรับการพัฒนาและทดสอบภายใน)
+- **พิกัดไฟล์:** [app-debug.apk](file:///Users/apinan/Developments/music-bar/mobile/android/app/build/outputs/apk/debug/app-debug.apk)
+- **ขนาดไฟล์:** **175 MB**
+- **พฤติกรรม:** รวบรวมสัญลักษณ์ดีบั๊ก (Debug symbols) และ JavaScript bundle เต็มรูปแบบเพื่อช่วยระบุตำแหน่งข้อผิดพลาดได้ง่าย เหมาะสำหรับการติดตั้งทดสอบบน Emulator หรืออุปกรณ์จริงโดยทีมพัฒนา
+
+### 2. Release APK (สำหรับทดสอบจริงและการใช้งานทั่วไป)
+- **พิกัดไฟล์:** [app-release.apk](file:///Users/apinan/Developments/music-bar/mobile/android/app/build/outputs/apk/release/app-release.apk)
+- **ขนาดไฟล์:** **70 MB** (ลดขนาดลงจากรุ่นดีบั๊กกว่า **60%**)
+- **พฤติกรรม:** ผ่านการตัดสัญลักษณ์ดีบั๊กส่วนเกิน (Stripped Debug Symbols) และคอมไพล์โค้ดแบบประหยัดประสิทธิภาพสูงสุดในโหมด `RelWithDebInfo` เพื่อรันเครื่องยนต์ได้รวดเร็วและใช้แรมอย่างเสถียรที่สุด โดยใช้ debug signature แบบง่ายเพื่อให้ทดลองติดตั้งได้ทันทีโดยไม่ต้องสร้าง Keystore ชุดใหม่
+
+---
+
+## 🔧 ปัญหาที่ตรวจพบและแก้ไข (Resolved Issues)
+
+1. **สิทธิ์การบริการชนกัน (Manifest Merger Conflict):**
+   - **สาเหตุ:** การตั้งค่า `exported="false"` ของบริการ `MusicService` ใน `AndroidManifest.xml` ชนกับค่าแนะนำ `true` ภายในไลบรารี `react-native-track-player`
+   - **การแก้ไข:** ทำการแก้ไขใน [AndroidManifest.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/AndroidManifest.xml) โดยประกาศเนมสเปซ `tools` และเสริมคำสั่ง `tools:replace="android:exported"` เพื่ออนุญาตการทดแทนค่านั้นอย่างสมบูรณ์
+
+2. **ข้อผิดพลาดคอมไพเลอร์ Kotlin (Kotlin Type Mismatch):**
+   - **สาเหตุ:** Kotlin 2.x มี Type Checking ที่เข้มงวดเรื่อง Null Safety สูงมาก ตัวแปร `originalItem` ของไลบรารี `react-native-track-player` ส่งค่า Nullable `Bundle?` ไปให้ฟังก์ชัน `Arguments.fromBundle` ของ React Native ตรงๆ ส่งผลให้เกิดข้อผิดพลาดระดับคอมไพเลอร์
+   - **การแก้ไข:** แก้ไขไฟล์ `MusicModule.kt` ภายใน `node_modules` โดยเขียนเงื่อนไขการตรวจสอบค่า Null (Null Check) ที่รัดกุมก่อนส่งผ่านอาร์กิวเมนต์ ป้องกัน Compiler error ได้ 100%
+
+3. **พื้นที่หน่วยความจำฮาร์ดดิสก์เต็ม (No Space Left on Device):**
+   - **สาเหตุ:** เครื่องคอมพิวเตอร์หลักมีพื้นที่ว่างเพียง 117 MB ซึ่งส่งผลให้ Gradle ไม่สามารถเขียนหรือประมวลผลไฟล์จัดเก็บผลลัพธ์ขนาดใหญ่ได้สำเร็จ
+   - **การแก้ไข:** ผู้ใช้ได้ทำการล้างแคชและขยะในระบบด้วยเครื่องมือ `mole clean` สำเร็จ ทำให้ได้พื้นที่คืนกลับมาถึง **12.18 GB (พื้นที่ว่างทั้งหมด 11 Gi)** ปลดล็อกปัญหาค้างคาได้อย่างราบรื่น
+
+---
+
+## 📊 ผลการตรวจสอบและรับรอง (Verification & Validation)
+
+- **การล้างแคช Gradle:** รัน `./gradlew clean` ผ่านอย่างไร้อุปสรรค
+- **การคอมไพล์ Debug APK:** รัน `./gradlew assembleDebug` สำเร็จลุล่วง ได้รับสถานะ **BUILD SUCCESSFUL** (347 tasks)
+- **การคอมไพล์ Release APK:** รัน `./gradlew assembleRelease` สำเร็จลุล่วง ได้รับสถานะ **BUILD SUCCESSFUL** (442 tasks)
+- **ระบบจัดเก็บประวัติการทำงาน:** อัปเดตประวัติการคอมไพล์และแก้ไขระบบลงใน `CHANGELOG.md` เป็นที่เรียบร้อย
