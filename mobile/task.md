@@ -9,7 +9,7 @@
   - [x] รันการสร้าง Debug APK ด้วย `./gradlew assembleDebug`
   - [x] รันการสร้าง Release APK ด้วย `./gradlew assembleRelease`
 
-- [/] **Verification & Validation**
+- [x] **Verification & Validation**
   - [x] ยืนยันความสมบูรณ์และพิกัดของไฟล์ APK ที่สร้างสำเร็จ
-  - [/] เพิ่มประวัติการทำงานลงใน `CHANGELOG.md` และส่งมอบผลลัพธ์
-  - [ ] ทำการ Git commit หลังการสร้างเอกสารและไฟล์ระบบ
+  - [x] เพิ่มประวัติการทำงานลงใน `CHANGELOG.md` และส่งมอบผลลัพธ์
+  - [x] ทำการ Git commit หลังการสร้างเอกสารและไฟล์ระบบ
