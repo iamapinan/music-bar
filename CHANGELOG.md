@@ -17,3 +17,9 @@
   - **Kotlin 2.x Type Mismatch:** ทำการเพิ่มเงื่อนไขการตรวจสอบค่า Null (Null Safety Checking) ให้แก่ตัวแปร `originalItem` ในโมดูลเครื่องเล่นเพลงของ `react-native-track-player` ภายใน `node_modules` ป้องกันปัญหา Type Mismatch ระดับคอมไพเลอร์
   - **Gradle Dependencies & Storage:** ติดตั้งโมดูล `react-native-worklets` คู่กับ `react-native-reanimated` v4 และแก้ไขปัญหาพื้นที่ดิสก์เต็มสำเร็จร่วมกับเครื่องมือล้างข้อมูลระบบ (`mole clean`)
 
+### Fixed
+- แก้ไขบั๊กหน้าเครื่องเล่นเพลงหลัก (`/`) ค้างที่สถานะ "ยังไม่มีเพลง" (Player Stuck on "No Songs"):
+  - ปรับเปลี่ยนตรรกะการหาเพลย์ลิสต์เริ่มต้นให้มี Playlist Fallback เป็นเพลย์ลิสต์แรกของรายการ `playlists?.[0]?.id` ป้องกันความล้มเหลวหากไม่พบเพลย์ลิสต์รหัส `1`
+  - เพิ่มระบบตรวจสอบดัชนีเพลงข้ามขอบเขต (Index Out of Bounds Protection) เมื่อสลับเพลย์ลิสต์หรือลบเพลงในเพลย์ลิสต์ โดยจะทำการรีเซ็ตดัชนีเป็น `0` อัตโนมัติ ป้องกันสถานะดนตรีกลายเป็น `null` ถาวร
+
+

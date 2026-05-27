@@ -178,7 +178,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   // ===================== Data =====================
   const { data: playlists } = useSWR('/api/playlists', fetcher, { refreshInterval: 15000 })
-  const defaultPlaylistId = playlists?.find((p: { is_default: boolean }) => p.is_default)?.id || 1
+  const defaultPlaylistId = playlists?.find((p: { is_default: boolean }) => p.is_default)?.id || playlists?.[0]?.id || 1
 
   const { data: playlistSongs = [], mutate: mutateSongs } = useSWR<PlaylistSong[]>(
     `/api/playlists/${defaultPlaylistId}/songs`,
@@ -218,6 +218,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setPlayMode('request')
     }
   }, [requests.length, playMode, currentSong, isInitialized])
+
+  // Keep currentIndex within bounds when playlistSongs changes
+  useEffect(() => {
+    if (playlistSongs.length > 0 && currentIndex >= playlistSongs.length) {
+      setCurrentIndex(0)
+    }
+  }, [playlistSongs.length, currentIndex])
 
   // ===================== Song End / Skip / Previous =====================
   // Use refs so callbacks always see latest values (no stale closure)
