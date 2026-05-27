@@ -1,9 +1,23 @@
-# รายการงานสำหรับการแก้ไขบักหน้าเครื่องเล่น (Tasks)
+# รายการงานสำหรับสร้างแอป Android (Tasks)
 
-- [x] แก้ไขไฟล์ `context/player-context.tsx`
-  - [x] ปรับปรุงการกำหนดค่า `defaultPlaylistId` ให้ปลอดภัยยิ่งขึ้น
-  - [x] เพิ่ม `useEffect` เพื่อตรวจสอบและรีเซ็ต `currentIndex` เมื่อค่าดัชนีหลุดขอบเขต
-- [ ] ทดสอบความถูกต้อง
-  - [x] ตรวจสอบว่าระบบคอมไพล์ผ่านไม่มีข้อผิดพลาด (Run lint)
-  - [x] บันทึกการเปลี่ยนแปลงใน `CHANGELOG.md`
-  - [x] ทำการ Git commit เพื่อจัดเก็บเวอร์ชันการพัฒนาล่าสุด
+- [x] เตรียมโครงสร้างโปรเจกต์ Android ในโฟลเดอร์ `mobile/android`
+  - [x] สร้างไฟล์ `settings.gradle.kts`
+  - [x] สร้างไฟล์ `build.gradle.kts` (ระดับ Project)
+  - [x] สร้างไฟล์ `gradle.properties`
+  - [x] สร้างไฟล์ `app/build.gradle.kts` (ระดับ App)
+- [x] สร้างไฟล์และทรัพยากรการแสดงผล (Android Manifest & Resources)
+  - [x] สร้างไฟล์ `AndroidManifest.xml` ขอสิทธิ์และลงทะเบียน Service
+  - [x] สร้างไฟล์ข้อความระบบ `strings.xml`
+  - [x] สร้างไฟล์จานสี `colors.xml`
+  - [x] สร้างไฟล์สไตล์ `themes.xml`
+  - [x] สร้างหน้าจอ UI ด้วย `activity_main.xml` (จัดวาง WebView)
+- [x] เขียนโค้ดระบบภาษา Kotlin
+  - [x] สร้างไฟล์บริการเบื้องหน้า `BackgroundAudioService.kt` เพื่อเล่นเพลงในพื้นหลังต่อเนื่อง
+  - [x] สร้างหน้าหลัก `MainActivity.kt` จัดการสิทธิ์และควบคุม WebView
+- [x] ตั้งค่า Gradle Wrapper และคอมไพล์โปรเจกต์
+  - [x] สร้างโฟลเดอร์และตั้งค่า `gradle-wrapper` ด้วย Gradle เวอร์ชันที่เหมาะสม
+  - [x] รันคำสั่งคอมไพล์เพื่อสร้างไฟล์ APK (`./gradlew assembleDebug`)
+- [x] ทดสอบและปิดงานระบบ
+  - [x] ตรวจสอบว่าไฟล์ APK ถูกสร้างสำเร็จและพร้อมใช้งาน
+  - [x] บันทึกงานทั้งหมดลงใน `CHANGELOG.md`
+  - [x] ทำการ Git commit เพื่ออัปโหลดโค้ดเวอร์ชันล่าสุด

@@ -1,36 +1,92 @@
-# แผนการแก้ไขบั๊กหน้าเครื่องเล่นเพลงค้างสถานะ "ยังไม่มีเพลง" (Player Stuck on "No Songs")
+# แผนการพัฒนา Android App ด้วย Kotlin สำหรับเปิด WebView และเล่นเพลงในเบื้องหลังต่อเนื่อง
 
-## ปัญหาที่พบ (Problem Description)
-เมื่อเปิดหน้าเว็บเครื่องเล่นเพลง (`/`) บางครั้งระบบจะแสดงข้อความ **"ยังไม่มีเพลง"** ค้างอยู่ตลอดเวลา ทั้งที่มีเพลงอยู่ในเพลย์ลิสต์และระบบหลังบ้านแสดงเพลงปกติ ปัญหานี้เกิดขึ้นจาก 2 สาเหตุหลักใน `context/player-context.tsx`:
-
-1. **การตกหล่นของคีย์เริ่มต้นของเพลย์ลิสต์ (Playlist Default Fallback):**
-   - เมื่อเริ่มต้นโหลดหน้าจอ ตัวแปร `playlists` ยังมีค่าเป็น `undefined` (กำลังโหลดจาก SWR) ทำให้ `defaultPlaylistId` มีค่าเริ่มต้นเป็น `1`
-   - หากผู้ใช้ลบเพลย์ลิสต์ ID `1` ไปแล้ว หรือไม่มีเพลย์ลิสต์ ID `1` ในระบบ, API `/api/playlists/1/songs` จะส่งค่ากลับมาเป็นอาเรย์ว่าง `[]`
-   - เมื่อโหลด `playlists` สำเร็จและสลับไปยังเพลย์ลิสต์เริ่มต้นจริง (เช่น ID `6`) SWR จะยังคงดึงข้อมูลอยู่ แต่บางกรณีหากไม่ได้ตั้งค่าคีย์ที่ปลอดภัยหรือไม่ได้กำหนดตัวเลือกให้ถูกต้อง ตัวแปร `defaultPlaylistId` จะไม่สลับไปใช้เพลย์ลิสต์แรกของรายการหากไม่มีการตั้งค่า `is_default` ไว้
-   - **แนวทางแก้ไข:** ปรับปรุงค่า `defaultPlaylistId` ให้ค้นหาเพลย์ลิสต์เริ่มต้นก่อน หากไม่พบให้ใช้เพลย์ลิสต์แรกของรายการ `playlists?.[0]?.id` และหากไม่พบจริงๆ จึงค่อยใช้ค่าเริ่มต้น `1`
-
-2. **ดัชนีเพลงปัจจุบันหลุดขอบเขต (Index Out of Bounds):**
-   - ดัชนีเพลง `currentIndex` ถูกโหลดและจัดเก็บใน `localStorage` (เช่น เล่นเพลงที่ 50 ในเพลย์ลิสต์ขนาดใหญ่)
-   - เมื่อผู้ใช้สลับมาเล่นเพลย์ลิสต์ใหม่ที่มีจำนวนเพลงน้อยกว่าดัชนีเดิม (เช่น เพลย์ลิสต์ใหม่มี 30 เพลง) ค่า `currentIndex` (50) จะหลุดขอบเขตความยาวของอาเรย์ `playlistSongs`
-   - ส่งผลให้ `playlistSongs[currentIndex]` มีค่าเป็น `undefined` และ `currentSong` กลายเป็น `null`
-   - เมื่อ `currentSong` เป็น `null` หน้าจอจะแสดง **"ยังไม่มีเพลง"** และจะไม่แสดงปุ่มควบคุมการเล่นใดๆ ทำให้ระบบค้างอยู่ในสถานะนั้นอย่างถาวร
-   - **แนวทางแก้ไข:** เพิ่ม `useEffect` เพื่อตรวจสอบและรีเซ็ต `currentIndex` กลับไปเป็น `0` เสมอหากจำนวนเพลงในเพลย์ลิสต์เปลี่ยนไปและค่าดัชนีเดิมหลุดขอบเขตความยาวอาเรย์
+แผนงานนี้กำหนดขึ้นเพื่อสร้างแอปพลิเคชัน Android เนทีฟ (Native APK) ด้วยภาษา Kotlin โดยมีจุดประสงค์หลักเพื่อเปิดเว็บแอปพลิเคชัน `https://musicbar.gracer.ai` ผ่าน WebView และทำให้สามารถเล่นเพลงได้อย่างต่อเนื่องโดยไม่ถูกระบบปฏิบัติการ Android ปิดการทำงาน (Background Task Kill) แม้จะปิดหน้าจอหรือสลับแอปพลิเคชันไปทำงานอื่น
 
 ---
 
-## รายการไฟล์ที่จะแก้ไข (Proposed Changes)
+## สรุปแนวทางการแก้ปัญหา (Proposed Approach)
 
-### [Component] Player Context
-
-#### [MODIFY] [player-context.tsx](file:///Users/apinan/Developments/music-bar/context/player-context.tsx)
-- ปรับปรุงการหา `defaultPlaylistId` ให้ยืดหยุ่นและปลอดภัยขึ้น
-- เพิ่มการเฝ้าสังเกต (Effect) เพื่อรีเซ็ต `currentIndex` หากหลุดขอบเขตความยาวของ `playlistSongs`
+เพื่อไม่ให้แอปพลิเคชันถูกบีบให้หยุดทำงาน (Killed) หรือแชร์ทรัพยากรเสียงหยุดทำงานในเบื้องหลัง เราจะใช้กลไกต่อไปนี้ร่วมกัน:
+1. **Foreground Service (ประเภท `mediaPlayback`):** รันเซอร์วิสเบื้องหน้าพร้อมไอคอนแจ้งเตือน (Persistent Notification) เพื่อระบุให้ Android OS ทราบว่าแอปพลิเคชันนี้กำลังทำงานที่สำคัญอยู่และห้ามเคลียร์หน่วยความจำ
+2. **WakeLock และ WifiLock:** ป้องกัน CPU หลับ (Deep Sleep) และป้องกันการตัดสัญญาณ Wi-Fi ขณะที่ปิดหน้าจอ เพื่อให้ WebView ทำงานและสตรีมมิ่งเพลงได้ต่อเนื่อง
+3. **การกำหนดค่า WebView เฉพาะตัว:** ปลดล็อกข้อจำกัดของการเล่นไฟล์มีเดียเบื้องหลัง, เปิดใช้งาน DOM Storage/JS, และควบคุมการเปิด/ปิดเสียงอย่างระมัดระวัง (หลีกเลี่ยงการเรียก `webView.onPause()` เมื่อแอปเข้าสู่เบื้องหลัง)
+4. **Runtime Permission:** รองรับการขอสิทธิ์ในยุคใหม่ เช่น `POST_NOTIFICATIONS` บน Android 13+ (API 33+) เพื่อให้แน่ใจว่าระบบสามารถรัน Foreground Service ได้อย่างสมบูรณ์
 
 ---
 
-## แผนการทดสอบ (Verification Plan)
-1. **การทดสอบอัตโนมัติ/การตรวจสอบโครงสร้างโค้ด:**
-   - รันการตรวจสอบ Lint และความถูกต้องของโค้ดด้วย `bun run lint` หรือ `bun run build` เพื่อความมั่นใจว่าไม่มีข้อผิดพลาดทางไวยากรณ์
+## รายการไฟล์ที่จะสร้างและแก้ไข (Proposed Changes)
 
-2. **การทดสอบจริง (Manual Verification):**
-   - ตรวจสอบว่าแอปพลิเคชันหน้าแรก (`/`) โหลดเพลงแรกของเพลย์ลิสต์เริ่มต้นขึ้นมาเล่นได้อย่างถูกต้องโดยไม่ค้างที่สถานะ "ยังไม่มีเพลง"
+เราจะสร้างโครงสร้างโปรเจกต์ Android ในโฟลเดอร์ `mobile/android` ใหม่ทั้งหมด โดยมีไฟล์สำคัญดังนี้:
+
+### โครงสร้าง Gradle & Settings
+
+#### [NEW] [settings.gradle.kts](file:///Users/apinan/Developments/music-bar/mobile/android/settings.gradle.kts)
+- ตั้งชื่อโปรเจกต์และเชื่อมต่อแอปโมดูล (`:app`)
+
+#### [NEW] [build.gradle.kts](file:///Users/apinan/Developments/music-bar/mobile/android/build.gradle.kts)
+- ไฟล์ Gradle ระดับโปรเจกต์เพื่อนำเข้า Android Gradle Plugin และ Kotlin Plugin
+
+#### [NEW] [gradle.properties](file:///Users/apinan/Developments/music-bar/mobile/android/gradle.properties)
+- ตั้งค่าคุณสมบัติสำหรับคอมไพล์ เช่น เปิดใช้งาน AndroidX และจัดสรรหน่วยความจำ JVM
+
+#### [NEW] [app/build.gradle.kts](file:///Users/apinan/Developments/music-bar/mobile/android/app/build.gradle.kts)
+- ไฟล์ Gradle ระดับแอปโมดูล กำหนด SDK (Compile SDK: 35, Target SDK: 34, Min SDK: 26) และตั้งค่า Dependency สำหรับ AndroidX, WebView, และ Material Components
+
+---
+
+### โครงสร้าง Android Manifest & Assets
+
+#### [NEW] [AndroidManifest.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/AndroidManifest.xml)
+- ขอสิทธิ์การใช้งานที่จำเป็น (`INTERNET`, `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `POST_NOTIFICATIONS`)
+- ประกาศ `MainActivity` และ `BackgroundAudioService`
+
+#### [NEW] [strings.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/res/values/strings.xml)
+- กำหนดค่า Resource ข้อความของแอป
+
+#### [NEW] [colors.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/res/values/colors.xml)
+- กำหนดจานสีของแอปพลิเคชัน (โทนสีมืดเข้ากับหน้าเว็บของ Music Bar)
+
+#### [NEW] [themes.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/res/values/themes.xml)
+- กำหนดสไตล์ของแอปเป็น `Theme.MaterialComponents.DayNight.NoActionBar`
+
+#### [NEW] [activity_main.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/res/layout/activity_main.xml)
+- เลย์เอาต์หลักที่มีเฉพาะ `WebView` แบบเต็มหน้าจอ
+
+---
+
+### โค้ดโปรแกรมเมอร์ (Kotlin Source Files)
+
+#### [NEW] [BackgroundAudioService.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/ai/gracer/musicbar/BackgroundAudioService.kt)
+- เซอร์วิสเบื้องหน้าที่รับผิดชอบเรื่องความต่อเนื่องในการเปิดเพลง
+- สร้าง Notification Channel และ persistent notification พร้อมปุ่มปิดแอป (Exit)
+- จัดการและถือครอง `WakeLock` และ `WifiLock` เพื่อป้องกันไม่ให้โทรศัพท์นอนหลับ
+- รันตัวเองแบบ `START_STICKY` เพื่อให้มั่นใจว่าจะถูกเปิดใช้งานใหม่ทันทีถ้าเกิดขัดข้อง
+
+#### [NEW] [MainActivity.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/ai/gracer/musicbar/MainActivity.kt)
+- เริ่มต้นและเชื่อมต่อ (Bind) กับ `BackgroundAudioService`
+- จัดการเรื่องการขอสิทธิ์แจ้งเตือน (`POST_NOTIFICATIONS`) ที่ระดับ runtime สำหรับ Android 13 ขึ้นไป
+- โหลดและควบคุม WebView ด้วยการอนุญาตพิเศษ เช่น
+  - `mediaPlaybackRequiresUserGesture = false` (เปิดมีเดียได้อัตโนมัติ)
+  - ไม่ทำลายหรือหยุด WebView เมื่อแอปถูกย่อหน้าต่าง (ไม่เรียก `webView.onPause()`)
+- รองรับปุ่มกดย้อนกลับภายใน WebView (WebView Back History Support)
+
+---
+
+## แผนการทดสอบและการรันเพื่อสร้าง APK (Verification & Build Plan)
+
+### ขั้นตอนสร้างและคอมไพล์แอปพลิเคชัน
+1. เราจะทำการดาวน์โหลดไฟล์ Gradle Wrapper ผ่านเครื่องมือ `gradle wrapper` เวอร์ชันที่รองรับการคอมไพล์
+2. รันคำสั่งตรวจสอบและคอมไพล์โปรเจกต์:
+   ```bash
+   ./gradlew assembleDebug
+   ```
+3. เมื่อสร้างสำเร็จแล้ว ไฟล์ APK จะถูกบันทึกอยู่ที่:
+   `/Users/apinan/Developments/music-bar/mobile/android/app/build/outputs/apk/debug/app-debug.apk`
+
+### แผนการทดสอบการใช้งานจริง (Manual Verification)
+1. ติดตั้ง APK ลงในเครื่องจริงหรือ Emulator
+2. เปิดแอปและยอมรับสิทธิ์การส่งการแจ้งเตือน (Notifications)
+3. ตรวจสอบว่าเปิดเว็บ `https://musicbar.gracer.ai` ขึ้นมาได้ปกติ
+4. ทดลองเลือกและเริ่มเล่นเพลง
+5. ทดสอบปัดแอปพลิเคชันไปที่พื้นหลัง (Background) หรือทำการกดปุ่มล็อกหน้าจอ เพื่อยืนยันว่าเสียงเพลงยังเล่นต่อโดยสมบูรณ์ไม่มีการหยุดค้าง
+6. เปิดแผงควบคุมแจ้งเตือน ตรวจสอบว่า Notification ของแอป "Music Bar" แสดงปุ่มสั่งการ "ปิดแอป" และทำงานได้ถูกต้อง

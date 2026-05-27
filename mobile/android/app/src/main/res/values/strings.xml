@@ -1,3 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MusicBarMobile</string>
+    <string name="app_name">Music Bar</string>
+    <string name="notification_title">Music Bar</string>
+    <string name="notification_description">กำลังเล่นเพลงในเบื้องหลังอย่างต่อเนื่อง</string>
+    <string name="exit_action">ปิดแอป</string>
 </resources>
