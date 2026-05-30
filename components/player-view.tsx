@@ -1,11 +1,14 @@
 "use client";
 
-import { AudioLines, Clock3, Disc3, Maximize2, Minimize2, Music2, Play, Radio } from "lucide-react";
+import { useState } from "react";
+
+import { AudioLines, Clock3, Disc3, Maximize2, Minimize2, Music2, Play, Radio, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/context/player-context";
 import type { SongRequest } from "@/lib/types";
+import { forceUpdateApp } from "@/lib/app-update";
 
 export function PlayerView() {
   const {
@@ -28,6 +31,11 @@ export function PlayerView() {
     togglePlay,
     playSong,
   } = usePlayer();
+
+  const [isUpdating, setIsUpdating] = useState(false);
+  const handleForceUpdate = () => {
+    forceUpdateApp(setIsUpdating);
+  };
 
   const formatTime = (seconds: number) => {
     if (!seconds || Number.isNaN(seconds)) return "0:00";
@@ -139,9 +147,21 @@ export function PlayerView() {
               <p className="mt-0.5 text-xs text-white/50">Now playing</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55 backdrop-blur">
-            <Radio className="h-3 w-3 text-primary" />
-            Live
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleForceUpdate}
+              disabled={isUpdating}
+              className="h-7 gap-1.5 rounded-full border-white/10 bg-white/5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/80 backdrop-blur transition-all hover:bg-white/10 hover:text-white"
+            >
+              <RefreshCw className={cn("w-3 h-3", isUpdating && "animate-spin")} />
+              อัปเดตแอป
+            </Button>
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55 backdrop-blur">
+              <Radio className="h-3 w-3 text-primary" />
+              Live
+            </div>
           </div>
         </header>
       )}

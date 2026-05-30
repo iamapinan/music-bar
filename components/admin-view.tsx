@@ -47,6 +47,7 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/context/player-context";
+import { forceUpdateApp } from "@/lib/app-update";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -135,6 +136,12 @@ export function AdminView({ onLogout }: AdminViewProps) {
   const [showQR, setShowQR] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [pageUrl, setPageUrl] = useState("");
+
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleForceUpdate = () => {
+    forceUpdateApp(setIsUpdating);
+  };
 
   const { data: playlists = [], mutate: mutatePlaylists } = useSWR<Playlist[]>(
     "/api/playlists",
@@ -413,6 +420,16 @@ export function AdminView({ onLogout }: AdminViewProps) {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleForceUpdate}
+              disabled={isUpdating}
+              className="h-8 gap-1.5 rounded-full border-border bg-background text-xs text-foreground transition-all hover:bg-black/5"
+            >
+              <RefreshCw className={cn("w-3.5 h-3.5", isUpdating && "animate-spin")} />
+              บังคับอัปเดตแอป
+            </Button>
             <Button
               variant="outline"
               size="sm"

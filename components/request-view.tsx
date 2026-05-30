@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import useSWR from 'swr'
-import { Search, Plus, Music2, Loader2, Check, QrCode, Download, X } from 'lucide-react'
+import { Search, Plus, Music2, Loader2, Check, QrCode, Download, X, RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import type { YouTubeSearchResult, SongRequest } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { usePlayer } from '@/context/player-context'
+import { forceUpdateApp } from '@/lib/app-update'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -41,6 +42,11 @@ export function RequestView() {
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [pageUrl, setPageUrl] = useState('')
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  const handleForceUpdate = () => {
+    forceUpdateApp(setIsUpdating)
+  }
 
   // All requests for queue position
   const { data: allRequests = [] } = useSWR<SongRequest[]>('/api/requests', fetcher, { refreshInterval: 3000 })
@@ -163,15 +169,27 @@ export function RequestView() {
             <h1 className="text-xl font-bold gradient-text">ขอเพลง</h1>
             <p className="text-muted-foreground text-xs">ค้นหาและเพิ่มเพลงที่คุณอยากฟัง</p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 gap-1.5 text-xs"
-            onClick={() => setShowQR(true)}
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            QR Code
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 text-xs rounded-lg border-border"
+              onClick={handleForceUpdate}
+              disabled={isUpdating}
+            >
+              <RefreshCw className={cn("w-3.5 h-3.5", isUpdating && "animate-spin")} />
+              อัปเดตแอป
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => setShowQR(true)}
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              QR Code
+            </Button>
+          </div>
         </div>
       </div>
 
