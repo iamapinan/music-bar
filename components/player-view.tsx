@@ -241,7 +241,7 @@ export function PlayerView() {
               <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:p-6">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(110,231,183,0.12),transparent_42%)]" />
                 <div className="relative grid gap-5 sm:grid-cols-[minmax(11rem,0.82fr)_minmax(0,1.18fr)] sm:items-center">
-                  <div className="relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-black/30 shadow-2xl">
+                  <div className="relative aspect-square overflow-hidden rounded border border-white/10 bg-black/30 shadow-2xl">
                     {currentSong.thumbnail ? (
                       <img
                         src={currentSong.thumbnail}
@@ -314,7 +314,7 @@ export function PlayerView() {
                   </div>
                   {nextSong ? (
                     <div className="mt-4 flex items-center gap-3">
-                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded border border-white/10 bg-white/5">
                         {nextSong.thumbnail ? <img src={nextSong.thumbnail} alt={nextSong.title} className="h-full w-full object-cover" /> : <Music2 className="m-5 h-6 w-6 text-white/30" />}
                       </div>
                       <div className="min-w-0">
@@ -344,7 +344,7 @@ export function PlayerView() {
                           className="group flex w-full items-center gap-3 py-2.5 text-left transition-colors hover:text-primary"
                         >
                           <span className="w-4 text-[10px] font-medium tabular-nums text-white/30">{index + 1}</span>
-                          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-md border border-white/10 bg-white/5">
+                          <div className="h-9 w-9 shrink-0 overflow-hidden rounded border border-white/10 bg-white/5">
                             {song.thumbnail ? <img src={song.thumbnail} alt={song.title} className="h-full w-full object-cover" /> : <Music2 className="m-2.5 h-4 w-4 text-white/30" />}
                           </div>
                           <p className="line-clamp-2 text-xs font-medium leading-snug text-white/70 transition-colors group-hover:text-primary">{song.title}</p>

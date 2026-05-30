@@ -27,7 +27,7 @@ export function SongItem({ song, isPlaying, showRequestedBy, onClick, actions }:
       )}
     >
       {/* Thumbnail */}
-      <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+      <div className="relative w-14 h-14 rounded overflow-hidden flex-shrink-0 bg-muted">
         {song.thumbnail ? (
           <img
             src={song.thumbnail}

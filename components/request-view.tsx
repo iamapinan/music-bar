@@ -216,7 +216,7 @@ export function RequestView() {
                 return (
                   <div key={req.id} className="relative flex-shrink-0">
                     {req.thumbnail && (
-                      <img src={req.thumbnail} alt={req.title} className="w-10 h-10 rounded-lg object-cover" />
+                      <img src={req.thumbnail} alt={req.title} className="w-10 h-10 rounded object-cover" />
                     )}
                     {pos !== null && (
                       <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-bold leading-none">
@@ -285,7 +285,7 @@ export function RequestView() {
                   )}
                 >
                   {result.thumbnail && (
-                    <img src={result.thumbnail} alt={result.title} className="w-16 h-12 rounded-lg object-cover flex-shrink-0" />
+                    <img src={result.thumbnail} alt={result.title} className="w-16 h-12 rounded object-cover flex-shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm line-clamp-2 leading-snug">{result.title}</p>

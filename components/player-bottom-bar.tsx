@@ -88,10 +88,10 @@ export function PlayerBottomBar() {
                 <img
                   src={playlist.cover_thumbnail}
                   alt=""
-                  className="w-4 h-4 rounded-full object-cover shrink-0 border border-white/10"
+                  className="w-4 h-4 rounded object-cover shrink-0 border border-white/10"
                 />
               ) : (
-                <div className={cn('w-4 h-4 rounded-full bg-gradient-to-br flex items-center justify-center text-[7px] font-bold shrink-0', gradClass)}>
+                <div className={cn('w-4 h-4 rounded bg-gradient-to-br flex items-center justify-center text-[7px] font-bold shrink-0', gradClass)}>
                   {firstLetter}
                 </div>
               )}
@@ -161,7 +161,7 @@ export function PlayerBottomBar() {
             </div>
 
             <div className="relative group shrink-0">
-              <div className="h-10 w-10 overflow-hidden rounded-lg border border-white/10 bg-muted sm:h-16 sm:w-16">
+              <div className="h-10 w-10 overflow-hidden rounded border border-white/10 bg-muted sm:h-16 sm:w-16">
                 {currentSong.thumbnail ? (
                   <img src={currentSong.thumbnail} alt="" className="w-full h-full object-cover" />
                 ) : (
