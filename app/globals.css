@@ -210,6 +210,35 @@
   }
 }
 
+.player-glass-card {
+  background: oklch(0.08 0.012 165 / 0.78);
+  border: 1px solid oklch(1 0 0 / 0.12);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.055),
+    0 24px 70px oklch(0.01 0.004 165 / 0.5);
+  backdrop-filter: blur(28px) saturate(1.08);
+  -webkit-backdrop-filter: blur(28px) saturate(1.08);
+  transition:
+    transform 320ms ease,
+    border-color 320ms ease,
+    background-color 320ms ease,
+    box-shadow 320ms ease;
+}
+
+.player-glass-card:hover {
+  transform: translateY(-4px);
+  background: oklch(0.105 0.018 165 / 0.86);
+  border-color: oklch(0.72 0.14 158 / 0.38);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.085),
+    0 28px 86px oklch(0.01 0.004 165 / 0.62),
+    0 0 32px oklch(0.62 0.14 158 / 0.12);
+}
+
+.player-glass-card-featured:hover {
+  transform: translateY(-5px) scale(1.005);
+}
+
 /* YouTube player container */
 .youtube-player-container {
   position: relative;
