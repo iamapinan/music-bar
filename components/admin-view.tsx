@@ -945,14 +945,14 @@ export function AdminView({ onLogout }: AdminViewProps) {
 
             {/* TAB CONTENT: PLAYLIST TRACKS (Full Div Height enabled) */}
             {activeWorkspaceTab === "tracks" && (
-              <div className="flex-1 min-h-0 flex flex-col h-[calc(100vh-220px)]">
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <div className="flex items-center justify-between shrink-0 mb-1.5">
                   <p className="text-xs text-muted-foreground">
                     รายการเพลงทั้งหมดในแผง ({playlistSongs.length} แทร็ก)
                   </p>
                 </div>
 
-                <ScrollArea className="flex-1 min-h-0 pr-1">
+                <ScrollArea className="flex-1 min-h-0 h-0 pr-1">
                   {playlistSongs.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground text-center">
                       <Music2 className="w-12 h-12 mb-3 opacity-20" />
@@ -1053,7 +1053,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
 
             {/* TAB CONTENT: SEARCH YOUTUBE (Full Div Height enabled) */}
             {activeWorkspaceTab === "search" && (
-              <div className="flex-1 min-h-0 flex flex-col h-[calc(100vh-220px)] gap-3">
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden gap-3">
                 {/* Search Type controls */}
                 <div className="flex gap-2 shrink-0">
                   <Button
@@ -1138,7 +1138,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 )}
 
                 {/* Scrollable list/grid of search results */}
-                <ScrollArea className="flex-1 min-h-0 pr-1">
+                <ScrollArea className="flex-1 min-h-0 h-0 pr-1">
                   {isSearching ? (
                     <div className="flex flex-col items-center justify-center py-20">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -1360,7 +1360,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
 
             {/* TAB CONTENT: CUSTOMER SONG REQUESTS (Full Div Height enabled) */}
             {activeWorkspaceTab === "requests" && (
-              <div className="flex-1 min-h-0 flex flex-col h-[calc(100vh-220px)]">
+              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <div className="flex items-center justify-between shrink-0 mb-1.5">
                   <p className="text-xs text-muted-foreground">
                     รายการแทร็กเพลงที่มีผู้ยื่นขอระบบคิว ({requests.length}{" "}
@@ -1368,7 +1368,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                   </p>
                 </div>
 
-                <ScrollArea className="flex-1 min-h-0 pr-1">
+                <ScrollArea className="flex-1 min-h-0 h-0 pr-1">
                   {requests.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground text-center">
                       <Radio className="w-12 h-12 mb-3 opacity-20 text-muted-foreground" />
