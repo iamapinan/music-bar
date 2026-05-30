@@ -5,6 +5,13 @@
 ## [Unreleased]
 
 ### Added
+- แยกการแสดงผลรูปปกเพลย์ลิสต์ตามมุมมอง (Playlist Cover View-Specific Sizing):
+  - มุมมอง Cards Grid: รูปปกแสดงผลแบบ `aspect-square` เต็มการ์ด สัดส่วนสี่เหลี่ยมจัตุรัสสมบูรณ์
+  - มุมมอง Table/List: รูปปกแสดงผลขนาดกะทัดรัด `w-8 h-8` ไม่รบกวนสัดส่วนตารางรายการ
+- ปรับระดับความโค้งมนของกล่องคอนโซลควบคุมทุกกล่อง (Admin Containers) เป็น `rounded-lg` เพื่อความสม่ำเสมอของดีไซน์ SaaS พรีเมียม:
+  - กล่องสถิติ Stats Bar, กล่องจัดการ Playlist Manager, กล่องพื้นที่ทำงาน Workspace
+  - กล่องกรอก PIN ล็อกอิน (Pin Entry Modal) เปลี่ยนจาก `rounded-2xl` เป็น `rounded-lg`
+- รีแฟคเตอร์ `PlaylistCover` component ให้รับพารามิเตอร์ `className` เพื่อรองรับการปรับแต่งขนาดตามบริบทการใช้งาน (Context-Aware Sizing)
 - ปรับปรุงและบังคับใช้ระบบธีมสว่างสำหรับหน้าผู้ดูแลระบบ (/admin) ให้สมบูรณ์แบบ 100% (Complete Light Theme Enforcement):
   - ใช้กลไกสลับการถอดคลาส `dark` และกำหนดคลาส `admin-mode` บนอิลิเมนต์ `<html>` แบบไดนามิกผ่าน `useEffect` เพื่อให้โครงสร้างนอกแอป (Radix Portals, Modals, Selects) กลายเป็นสีขาวสว่างได้อย่างทั่วถึง
   - เขียนทับการตั้งค่าสไตล์ของกล่องแจ้งเตือน Sonner Toasts ด้วย `body.admin-mode [data-sonner-toast]` ให้ใช้สีพื้นหลังและสีขอบของธีมสว่าง

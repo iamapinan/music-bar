@@ -59,13 +59,22 @@ interface AdminViewProps {
 }
 
 // Beautiful Premium Playlist Cover Component (Standard rounded roundness)
-const PlaylistCover = ({ playlist }: { playlist: Playlist }) => {
+const PlaylistCover = ({
+  playlist,
+  className,
+}: {
+  playlist: Playlist;
+  className?: string;
+}) => {
   if (playlist.cover_thumbnail) {
     return (
       <img
         src={playlist.cover_thumbnail}
         alt={playlist.name}
-        className="w-auto h-auto rounded object-cover shadow-sm border border-black/5 shrink-0"
+        className={cn(
+          "rounded object-cover shadow-sm border border-black/5 shrink-0",
+          className,
+        )}
       />
     );
   }
@@ -83,8 +92,9 @@ const PlaylistCover = ({ playlist }: { playlist: Playlist }) => {
   return (
     <div
       className={cn(
-        "w-12 h-12 rounded bg-gradient-to-br border flex items-center justify-center font-bold text-xs tracking-wider shrink-0 shadow-sm",
+        "rounded bg-gradient-to-br border flex items-center justify-center font-bold tracking-wider shrink-0 shadow-sm",
         gradientClass,
+        className,
       )}
     >
       {firstLetters}
@@ -439,7 +449,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
               }}
             >
               {/* Stats Bar */}
-              <div className="admin-surface rounded p-3 flex flex-col gap-2">
+              <div className="admin-surface rounded-lg p-3 flex flex-col gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-primary/10 text-primary border border-primary/20">
                     <LibraryBig className="h-4 w-4" />
@@ -485,7 +495,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
               </div>
 
               {/* Playlist Manager */}
-              <div className="admin-surface rounded p-3 flex-1 flex flex-col gap-3 min-h-0">
+              <div className="admin-surface rounded-lg p-3 flex-1 flex flex-col gap-3 min-h-0">
                 <div className="flex items-center justify-between">
                   <h2 className="text-[10px] font-bold uppercase tracking-wider text-foreground">
                     เพลย์ลิสต์ของคุณ
@@ -600,9 +610,9 @@ export function AdminView({ onLogout }: AdminViewProps) {
                               )}
                               onClick={() => setActivePlaylistId(pl.id)}
                             >
-                              {/* Playlist Cover on Top */}
-                              <div className="relative w-full rounded overflow-hidden shadow-inner bg-muted shrink-0">
-                                <PlaylistCover playlist={pl} />
+                              {/* Playlist Cover on Top - Square fill for grid cards */}
+                              <div className="relative w-full aspect-square rounded overflow-hidden shadow-inner bg-muted shrink-0">
+                                <PlaylistCover playlist={pl} className="w-full h-full text-lg" />
 
                                 {/* Overlay Checkbox for continuous playback */}
                                 <button
@@ -746,7 +756,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                                 </TableCell>
                                 <TableCell className="p-1 min-w-0">
                                   <div className="flex items-center gap-1.5">
-                                    <PlaylistCover playlist={pl} />
+                                    <PlaylistCover playlist={pl} className="w-8 h-8 text-[10px]" />
                                     <div className="truncate">
                                       <p className="font-bold text-xs text-foreground truncate">
                                         {pl.name}
@@ -832,7 +842,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
           )}
 
           {/* RIGHT COLUMN: Active Workspace (List / Grid View for tracks) */}
-          <div className="admin-surface rounded p-4 flex-1 flex flex-col gap-4 min-h-0">
+          <div className="admin-surface rounded-lg p-4 flex-1 flex flex-col gap-4 min-h-0">
             {/* Header Area inside Workspace */}
             <div className="border-b border-border/40 pb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
               <div>

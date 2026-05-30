@@ -47,7 +47,7 @@ export function PinEntry({ onSuccess }: PinEntryProps) {
 
   return (
     <div className="admin-shell flex min-h-[100dvh] flex-col items-center justify-center p-6">
-      <div className="admin-surface w-full max-w-sm rounded-2xl p-6 text-center sm:p-8">
+      <div className="admin-surface w-full max-w-sm rounded-lg p-6 text-center sm:p-8">
         {/* Icon */}
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10">
           <Lock className="h-7 w-7 text-primary" />

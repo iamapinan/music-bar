@@ -1,14 +1,14 @@
-# รายการงานสำหรับการปรับปรุงธีมสว่างส่วนผู้ดูแลระบบแบบสมบูรณ์ (Tasks)
+# รายการงานสำหรับการจัดปรับความกว้างปกและระดับความโค้งมนของกล่อง (Tasks)
 
-- `[x]` จัดตั้งกลไกการสลับคลาส `dark` และกำหนดคลาส `admin-mode` ใน `app/(system)/admin/page.tsx` ผ่าน `useEffect`
-- `[x]` อัปเดตไฟล์สไตล์ส่วนกลาง `app/globals.css`:
-  - `[x]` ประกาศค่าตัวแปร CSS ของธีมสว่างให้กับคลาส `html.admin-mode` และ `body.admin-mode`
-  - `[x]` เพิ่มเฉดสีพื้นหลังแบบสว่างและลวดลายสำหรับ `html.admin-mode` และ `body.admin-mode`
-  - `[x]` เพิ่มการควบคุมกล่องแจ้งเตือน Toasts ในธีมสว่างด้วย `body.admin-mode [data-sonner-toast]`
-  - `[x]` เพิ่มการกำหนดค่าแถบเลื่อนหน้าจอ Scrollbars ในธีมสว่างด้วย `body.admin-mode ::-webkit-scrollbar-thumb`
-- `[x]` รันตรวจสอบความถูกต้อง Next.js Build เพื่อเช็ค TypeScript
-- `[x]` บันทึกประวัติการพัฒนาลงใน `CHANGELOG.md`
-- `[x]` ดำเนินการ Git commit โค้ดที่ได้รับการแก้ไขอย่างเป็นระบบ
+- `[x]` ปรับปรุงฟังก์ชัน `PlaylistCover` ใน `components/admin-view.tsx` ให้รองรับพารามิเตอร์ `className`
+- `[x]` ปรับการเรียกใช้งาน `PlaylistCover` ในมุมมองตาราง (Cards View) ให้ใช้อัตราส่วน `aspect-square w-full h-full text-lg`
+- `[x]` ปรับการเรียกใช้งาน `PlaylistCover` ในมุมมองรายการ (Table View) ให้บังคับขนาดเป็น `className="w-8 h-8 text-[10px]"`
+- `[x]` ปรับความโค้งมนของกล่องคอนโซลผู้ดูแลระบบหลักทั้ง 3 ตัว ใน `components/admin-view.tsx` เป็น `rounded-lg`
+- `[x]` ปรับความโค้งมนของกล่องกรอก PIN ใน `components/pin-entry.tsx` จาก `rounded-2xl` เป็น `rounded-lg`
+- `[x]` รันคำสั่ง `bun run build` เพื่อตรวจสอบ TypeScript และความสมบูรณ์ของระบบแปลภาษา
+- `[ ]` บันทึกรายละเอียดการปรับแต่งลงใน `CHANGELOG.md`
+- `[ ]` ดำเนินการ Git commit ข้อมูลและรหัสโค้ดเข้าระบบอย่างเป็นสากล
+
 
 
 
