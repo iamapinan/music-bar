@@ -5,12 +5,22 @@ import {
   useCallback, useRef, ReactNode
 } from 'react'
 import useSWR from 'swr'
-import type { PlaylistSong, SongRequest } from '@/lib/types'
+import type { Playlist, PlaylistSong, SongRequest } from '@/lib/types'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return res.json()
+}
+
+const parseSetting = <T,>(value: unknown, fallback: T): T => {
+  if (value === undefined || value === null) return fallback
+  if (typeof value !== 'string') return value as T
+  try {
+    return JSON.parse(value) as T
+  } catch {
+    return value as T
+  }
 }
 
 interface PlayerContextValue {
@@ -30,6 +40,8 @@ interface PlayerContextValue {
   currentIndex: number
   requests: SongRequest[]
   playlistSongs: PlaylistSong[]
+  playlists: Playlist[]
+  activePlaylistIds: number[]
   isRequestsEnabled: boolean
   showControls: boolean
   // Controls
@@ -41,6 +53,8 @@ interface PlayerContextValue {
   toggleShuffle: () => void
   handleSongEnd: () => void
   playByIndex: (index: number) => void
+  playSong: (song: PlaylistSong) => void
+  setActivePlaylistIds: (ids: number[]) => Promise<void>
   setIsPlaying: (v: boolean) => void
   setIsVideoMode: (v: boolean) => void
   setIsAutoPlayEnabled: (v: boolean) => void
@@ -85,6 +99,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [playMode, setPlayMode] = useState<'playlist' | 'request'>('playlist')
   const [isRequestsEnabled, setIsRequestsEnabled] = useState(true)
   const [showControls, setShowControls] = useState(true)
+  const [activePlaylistIds, setActivePlaylistIdsState] = useState<number[]>([])
   const [isInitialized, setIsInitialized] = useState(false)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
 
@@ -160,7 +175,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (dbSettings?.is_requests_enabled !== undefined) {
-      setIsRequestsEnabled(JSON.parse(JSON.stringify(dbSettings.is_requests_enabled)))
+      setIsRequestsEnabled(parseSetting(dbSettings.is_requests_enabled, true))
+    }
+    const storedPlaylistIds = parseSetting<unknown[]>(dbSettings?.active_playlist_ids, [])
+    if (Array.isArray(storedPlaylistIds)) {
+      setActivePlaylistIdsState(storedPlaylistIds.map(Number).filter(Boolean))
     }
   }, [dbSettings])
 
@@ -176,13 +195,36 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [mutateSettings])
 
+  const setActivePlaylistIds = useCallback(async (ids: number[]) => {
+    const nextIds = [...new Set(ids.map(Number).filter(Boolean))]
+    setActivePlaylistIdsState(nextIds)
+    setCurrentIndex(0)
+    setPlayMode('playlist')
+    try {
+      await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'active_playlist_ids', value: nextIds }),
+      })
+      mutateSettings()
+    } catch {}
+  }, [mutateSettings])
+
   // ===================== Data =====================
-  const { data: playlists } = useSWR('/api/playlists', fetcher, { refreshInterval: 15000 })
-  const defaultPlaylistId = playlists?.find((p: { is_default: boolean }) => p.is_default)?.id || 1
+  const { data: playlists = [] } = useSWR<Playlist[]>('/api/playlists', fetcher, { refreshInterval: 15000 })
+  const defaultPlaylistId = playlists?.find((p: { is_default: boolean }) => p.is_default)?.id || playlists?.[0]?.id || 1
+  const enabledPlaylistIds = activePlaylistIds.filter(id => playlists.some(playlist => playlist.id === id && playlist.is_enabled))
+  const playbackPlaylistIds = enabledPlaylistIds.length > 0 ? enabledPlaylistIds : [defaultPlaylistId]
+  const playlistSongsKey = playbackPlaylistIds.join(',')
 
   const { data: playlistSongs = [], mutate: mutateSongs } = useSWR<PlaylistSong[]>(
-    `/api/playlists/${defaultPlaylistId}/songs`,
-    fetcher,
+    playlistSongsKey ? `playlist-songs:${playlistSongsKey}` : null,
+    async () => {
+      const songGroups = await Promise.all(
+        playbackPlaylistIds.map(id => fetcher(`/api/playlists/${id}/songs`) as Promise<PlaylistSong[]>)
+      )
+      return songGroups.flat()
+    },
     { refreshInterval: 10000 }
   )
 
@@ -218,6 +260,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setPlayMode('request')
     }
   }, [requests.length, playMode, currentSong, isInitialized])
+
+  // Keep currentIndex within bounds when playlistSongs changes
+  useEffect(() => {
+    if (playlistSongs.length > 0 && currentIndex >= playlistSongs.length) {
+      setCurrentIndex(0)
+    }
+  }, [playlistSongs.length, currentIndex])
 
   // ===================== Song End / Skip / Previous =====================
   // Use refs so callbacks always see latest values (no stale closure)
@@ -420,6 +469,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCurrentIndex(index)
   }, [])
 
+  const playSong = useCallback((song: PlaylistSong) => {
+    const index = playlistSongsRef.current.findIndex(item => item.id === song.id && item.playlist_id === song.playlist_id)
+    if (index >= 0) {
+      setPlayMode('playlist')
+      setCurrentIndex(index)
+    }
+  }, [])
+
   if (!isInitialized) return null
 
   return (
@@ -427,9 +484,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       isPlaying, currentSong, nextSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
       isFullscreen,
       currentTime, duration,
-      currentIndex, requests, playlistSongs,
+      currentIndex, requests, playlistSongs, playlists, activePlaylistIds: playbackPlaylistIds,
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
-      toggleMute, toggleShuffle, handleSongEnd, playByIndex, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
+      toggleMute, toggleShuffle, handleSongEnd, playByIndex, playSong, setActivePlaylistIds, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
       setIsFullscreen, setIsRequestsEnabled: handleSetIsRequestsEnabled, setCurrentTime, setDuration,
       mutatePlaylist: mutateSongs, mutateRequests,
       playerRef, isRequestsEnabled, showControls, setShowControls

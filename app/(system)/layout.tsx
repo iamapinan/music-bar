@@ -10,7 +10,7 @@ export default function SystemLayout({
     <>
       {/* Persistent player — ไม่ unmount เมื่อสลับหน้าระหว่าง / และ /admin */}
       <PersistentYouTubePlayer />
-      <div className="pb-24 sm:pb-32">
+      <div>
         {children}
       </div>
       <PlayerBottomBar />

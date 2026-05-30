@@ -46,15 +46,16 @@ export function PinEntry({ onSuccess }: PinEntryProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-sm text-center">
+    <div className="admin-shell flex min-h-[100dvh] flex-col items-center justify-center p-6">
+      <div className="admin-surface w-full max-w-sm rounded-2xl p-6 text-center sm:p-8">
         {/* Icon */}
-        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6">
-          <Lock className="w-10 h-10 text-primary" />
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10">
+          <Lock className="h-7 w-7 text-primary" />
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold mb-2">Admin Access</h1>
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-primary">Music bar</p>
+        <h1 className="mb-2 text-2xl font-semibold tracking-tight">Admin access</h1>
         <p className="text-muted-foreground mb-8">กรุณากรอก PIN เพื่อเข้าสู่ระบบ</p>
 
         {/* PIN Input */}
@@ -64,12 +65,13 @@ export function PinEntry({ onSuccess }: PinEntryProps) {
             value={pin}
             onChange={setPin}
             onComplete={handleSubmit}
+            containerClassName="gap-2"
           >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} className="w-14 h-14 text-xl" />
-              <InputOTPSlot index={1} className="w-14 h-14 text-xl" />
-              <InputOTPSlot index={2} className="w-14 h-14 text-xl" />
-              <InputOTPSlot index={3} className="w-14 h-14 text-xl" />
+            <InputOTPGroup className="gap-2">
+              <InputOTPSlot index={0} className="h-14 w-14 rounded-xl border-slate-300! bg-white! text-xl text-slate-900! shadow-sm data-[active=true]:border-primary! data-[active=true]:ring-primary/20" />
+              <InputOTPSlot index={1} className="h-14 w-14 rounded-xl border-slate-300! bg-white! text-xl text-slate-900! shadow-sm data-[active=true]:border-primary! data-[active=true]:ring-primary/20" />
+              <InputOTPSlot index={2} className="h-14 w-14 rounded-xl border-slate-300! bg-white! text-xl text-slate-900! shadow-sm data-[active=true]:border-primary! data-[active=true]:ring-primary/20" />
+              <InputOTPSlot index={3} className="h-14 w-14 rounded-xl border-slate-300! bg-white! text-xl text-slate-900! shadow-sm data-[active=true]:border-primary! data-[active=true]:ring-primary/20" />
             </InputOTPGroup>
           </InputOTP>
         </div>
@@ -78,7 +80,7 @@ export function PinEntry({ onSuccess }: PinEntryProps) {
         <Button
           onClick={handleSubmit}
           disabled={pin.length < 4 || isLoading}
-          className="w-full h-12"
+          className="h-12 w-full font-semibold"
         >
           {isLoading ? (
             <>

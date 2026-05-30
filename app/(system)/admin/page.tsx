@@ -34,7 +34,7 @@ export default function AdminPage() {
   // Loading state
   if (isAuthenticated === null) {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
+      <main className="admin-shell flex min-h-[100dvh] items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </main>
     )
@@ -43,7 +43,7 @@ export default function AdminPage() {
   // Not authenticated
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen bg-background">
+      <main className="admin-shell min-h-[100dvh]">
         <PinEntry onSuccess={handleLogin} />
       </main>
     )
@@ -51,7 +51,7 @@ export default function AdminPage() {
 
   // Authenticated
   return (
-    <main className="min-h-screen bg-background">
+    <main className="admin-shell min-h-[100dvh]">
       <AdminView onLogout={handleLogout} />
     </main>
   )
