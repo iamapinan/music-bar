@@ -1,92 +1,72 @@
-# แผนการพัฒนา Android App ด้วย Kotlin สำหรับเปิด WebView และเล่นเพลงในเบื้องหลังต่อเนื่อง
+# แผนการปรับปรุงอินเตอร์เฟสผู้ดูแลระบบ (Admin Redesign) และการแสดงรูปภาพเพลย์ลิสต์
 
-แผนงานนี้กำหนดขึ้นเพื่อสร้างแอปพลิเคชัน Android เนทีฟ (Native APK) ด้วยภาษา Kotlin โดยมีจุดประสงค์หลักเพื่อเปิดเว็บแอปพลิเคชัน `https://musicbar.gracer.ai` ผ่าน WebView และทำให้สามารถเล่นเพลงได้อย่างต่อเนื่องโดยไม่ถูกระบบปฏิบัติการ Android ปิดการทำงาน (Background Task Kill) แม้จะปิดหน้าจอหรือสลับแอปพลิเคชันไปทำงานอื่น
+แผนการปรับปรุงนี้ถูกกำหนดขึ้นเพื่อยกระดับความสวยงามและประสิทธิภาพของหน้าผู้ดูแลระบบ (/admin) ของระบบ Music Bar ให้มีความหรูหรา ทันสมัย มีระดับ ในรูปแบบคอนโซลควบคุมระดับพรีเมียม (Premium Music Console) รองรับการแสดงผลรูปภาพเพลย์ลิสต์ และแก้ไขปัญหาการยกเลิกการเลือกเพลย์ลิสต์
 
 ---
 
-## สรุปแนวทางการแก้ปัญหา (Proposed Approach)
+## หัวข้อที่ต้องการการรีวิวจากผู้ใช้งาน (User Review Required)
 
-เพื่อไม่ให้แอปพลิเคชันถูกบีบให้หยุดทำงาน (Killed) หรือแชร์ทรัพยากรเสียงหยุดทำงานในเบื้องหลัง เราจะใช้กลไกต่อไปนี้ร่วมกัน:
-1. **Foreground Service (ประเภท `mediaPlayback`):** รันเซอร์วิสเบื้องหน้าพร้อมไอคอนแจ้งเตือน (Persistent Notification) เพื่อระบุให้ Android OS ทราบว่าแอปพลิเคชันนี้กำลังทำงานที่สำคัญอยู่และห้ามเคลียร์หน่วยความจำ
-2. **WakeLock และ WifiLock:** ป้องกัน CPU หลับ (Deep Sleep) และป้องกันการตัดสัญญาณ Wi-Fi ขณะที่ปิดหน้าจอ เพื่อให้ WebView ทำงานและสตรีมมิ่งเพลงได้ต่อเนื่อง
-3. **การกำหนดค่า WebView เฉพาะตัว:** ปลดล็อกข้อจำกัดของการเล่นไฟล์มีเดียเบื้องหลัง, เปิดใช้งาน DOM Storage/JS, และควบคุมการเปิด/ปิดเสียงอย่างระมัดระวัง (หลีกเลี่ยงการเรียก `webView.onPause()` เมื่อแอปเข้าสู่เบื้องหลัง)
-4. **Runtime Permission:** รองรับการขอสิทธิ์ในยุคใหม่ เช่น `POST_NOTIFICATIONS` บน Android 13+ (API 33+) เพื่อให้แน่ใจว่าระบบสามารถรัน Foreground Service ได้อย่างสมบูรณ์
+> [!NOTE]
+> - **การปรับเปลี่ยนธีมหน้าผู้ดูแลระบบ:** ทางเราจะปรับปรุงหน้า `/admin` จากเดิมที่เป็นธีมสว่าง ให้เป็นธีมสีเข้มสไตล์กระจกหรูหรา (Premium Dark Glassmorphism) เพื่อให้สอดคล้องกับธีมหลักของเว็บไซต์และบรรยากาศร้านอาหาร/บาร์
+> - **การตัดการใช้ Emojis ใน UI ทั้งหมด:** เพื่อรักษาความสุภาพและความเป็นมืออาชีพตามกฎข้อบังคับของโครงการ จะไม่มีการใช้สัญลักษณ์ Emoji ใดๆ ในหน้าอินเตอร์เฟสผู้ดูแลระบบ
 
 ---
 
 ## รายการไฟล์ที่จะสร้างและแก้ไข (Proposed Changes)
 
-เราจะสร้างโครงสร้างโปรเจกต์ Android ในโฟลเดอร์ `mobile/android` ใหม่ทั้งหมด โดยมีไฟล์สำคัญดังนี้:
+### 1. โครงสร้างประเภทข้อมูล (Data Structure)
 
-### โครงสร้าง Gradle & Settings
-
-#### [NEW] [settings.gradle.kts](file:///Users/apinan/Developments/music-bar/mobile/android/settings.gradle.kts)
-- ตั้งชื่อโปรเจกต์และเชื่อมต่อแอปโมดูล (`:app`)
-
-#### [NEW] [build.gradle.kts](file:///Users/apinan/Developments/music-bar/mobile/android/build.gradle.kts)
-- ไฟล์ Gradle ระดับโปรเจกต์เพื่อนำเข้า Android Gradle Plugin และ Kotlin Plugin
-
-#### [NEW] [gradle.properties](file:///Users/apinan/Developments/music-bar/mobile/android/gradle.properties)
-- ตั้งค่าคุณสมบัติสำหรับคอมไพล์ เช่น เปิดใช้งาน AndroidX และจัดสรรหน่วยความจำ JVM
-
-#### [NEW] [app/build.gradle.kts](file:///Users/apinan/Developments/music-bar/mobile/android/app/build.gradle.kts)
-- ไฟล์ Gradle ระดับแอปโมดูล กำหนด SDK (Compile SDK: 35, Target SDK: 34, Min SDK: 26) และตั้งค่า Dependency สำหรับ AndroidX, WebView, และ Material Components
+#### [MODIFY] [types.ts](file:///Users/apinan/Developments/music-bar/lib/types.ts)
+- เพิ่มฟิลด์ `cover_thumbnail?: string | null` ในอินเตอร์เฟส `Playlist` เพื่อรองรับการเก็บและส่งข้อมูลรูปภาพหน้าปกเพลย์ลิสต์ที่ดึงมาจากเพลงแรกของเพลย์ลิสต์นั้นๆ
 
 ---
 
-### โครงสร้าง Android Manifest & Assets
+### 2. บริการเชื่อมต่อฐานข้อมูล (API Layer)
 
-#### [NEW] [AndroidManifest.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/AndroidManifest.xml)
-- ขอสิทธิ์การใช้งานที่จำเป็น (`INTERNET`, `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `POST_NOTIFICATIONS`)
-- ประกาศ `MainActivity` และ `BackgroundAudioService`
-
-#### [NEW] [strings.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/res/values/strings.xml)
-- กำหนดค่า Resource ข้อความของแอป
-
-#### [NEW] [colors.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/res/values/colors.xml)
-- กำหนดจานสีของแอปพลิเคชัน (โทนสีมืดเข้ากับหน้าเว็บของ Music Bar)
-
-#### [NEW] [themes.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/res/values/themes.xml)
-- กำหนดสไตล์ของแอปเป็น `Theme.MaterialComponents.DayNight.NoActionBar`
-
-#### [NEW] [activity_main.xml](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/res/layout/activity_main.xml)
-- เลย์เอาต์หลักที่มีเฉพาะ `WebView` แบบเต็มหน้าจอ
+#### [MODIFY] [route.ts (playlists)](file:///Users/apinan/Developments/music-bar/app/api/playlists/route.ts)
+- ปรับปรุงการสืบค้นข้อมูลในเมธอด `GET` เพื่อดึงรูปภาพของเพลงแรกในแต่ละเพลย์ลิสต์มาเป็นภาพหน้าปก:
+  ```sql
+  SELECT p.*, 
+    (SELECT COUNT(*) FROM playlist_songs WHERE playlist_id = p.id) as song_count,
+    (SELECT thumbnail FROM playlist_songs WHERE playlist_id = p.id ORDER BY position ASC, created_at ASC LIMIT 1) as cover_thumbnail
+  FROM playlists p 
+  ORDER BY p.is_default DESC, p.created_at DESC
+  ```
 
 ---
 
-### โค้ดโปรแกรมเมอร์ (Kotlin Source Files)
+### 3. ส่วนควบคุมอินเตอร์เฟสและดีไซน์ (Frontend Layout & Aesthetics)
 
-#### [NEW] [BackgroundAudioService.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/ai/gracer/musicbar/BackgroundAudioService.kt)
-- เซอร์วิสเบื้องหน้าที่รับผิดชอบเรื่องความต่อเนื่องในการเปิดเพลง
-- สร้าง Notification Channel และ persistent notification พร้อมปุ่มปิดแอป (Exit)
-- จัดการและถือครอง `WakeLock` และ `WifiLock` เพื่อป้องกันไม่ให้โทรศัพท์นอนหลับ
-- รันตัวเองแบบ `START_STICKY` เพื่อให้มั่นใจว่าจะถูกเปิดใช้งานใหม่ทันทีถ้าเกิดขัดข้อง
+#### [MODIFY] [globals.css](file:///Users/apinan/Developments/music-bar/app/globals.css)
+- เปลี่ยนค่าตัวแปรสไตล์ของ `.admin-shell` ให้เป็นระบบสีเข้ม (Dark Scheme) ที่หรูหราเข้ากับหน้าหลักของแอปพลิเคชัน
+- ปรับปรุง `.admin-glass` และ `.admin-surface` ให้เป็นกระจกสีเข้มกึ่งโปร่งแสงระดับพรีเมียม (Dark Glassmorphism) ร่วมกับการเรืองแสงสีมรกตอ่อนๆ (Emerald Glow) และเส้นขอบที่บางเบาคมชัด
 
-#### [NEW] [MainActivity.kt](file:///Users/apinan/Developments/music-bar/mobile/android/app/src/main/java/ai/gracer/musicbar/MainActivity.kt)
-- เริ่มต้นและเชื่อมต่อ (Bind) กับ `BackgroundAudioService`
-- จัดการเรื่องการขอสิทธิ์แจ้งเตือน (`POST_NOTIFICATIONS`) ที่ระดับ runtime สำหรับ Android 13 ขึ้นไป
-- โหลดและควบคุม WebView ด้วยการอนุญาตพิเศษ เช่น
-  - `mediaPlaybackRequiresUserGesture = false` (เปิดมีเดียได้อัตโนมัติ)
-  - ไม่ทำลายหรือหยุด WebView เมื่อแอปถูกย่อหน้าต่าง (ไม่เรียก `webView.onPause()`)
-- รองรับปุ่มกดย้อนกลับภายใน WebView (WebView Back History Support)
+#### [MODIFY] [admin-view.tsx](file:///Users/apinan/Developments/music-bar/components/admin-view.tsx)
+- **การปรับผังหน้าจอ (Layout Redesign):** 
+  - บนหน้าจอขนาดใหญ่ (Desktop/Tablet) หน้าจอจะถูกปรับเป็นระบบสองฝั่ง (Split Panel / Console Layout):
+    - **ฝั่งซ้าย (Sidebar Console):** รวบรวมหัวข้อการควบคุมสถานะ, สถิติรวมของบาร์, การสร้างและแสดงรายการเพลย์ลิสต์ทั้งหมดพร้อมหน้าปก โดยใช้สไตล์การ์ดเพลย์ลิสต์ระดับพรีเมียม
+    - **ฝั่งขวา (Active Workspace):** ทำหน้าที่เป็นพื้นที่จัดการข้อมูลของเพลย์ลิสต์ที่กำลังเลือก โดยมีแถบสลับสำหรับ "เพลงในเพลย์ลิสต์", "ค้นหาเพื่อเพิ่มเพลงจาก YouTube", และ "รายการคำขอจากลูกค้า"
+  - บนหน้าจอขนาดเล็ก (Mobile) จะแสดงผลแบบแนวตั้งเดียวที่ไหลลื่นและปัดเลือกดูข้อมูลได้ง่าย
+- **การแสดงรูปภาพเพลย์ลิสต์:** 
+  - เพลย์ลิสต์ทุกตัวจะแสดงรูปภาพหน้าปก (`cover_thumbnail`) หากยังไม่มีเพลงหรือไม่มีรูปหน้าปก ระบบจะวาดหน้าปกไล่สี (Premium Gradient Background Art) ที่มีตัวย่อภาษาอังกฤษตัวแรกของชื่อเพลย์ลิสต์วางไว้ตรงกลางอย่างสวยงาม
+- **การแก้ไขปัญหาการยกเลิกการเลือกเพลย์ลิสต์:**
+  - แก้ไขเงื่อนไขในฟังก์ชัน `handleApplySelectedPlaylists` โดยยกเลิกการจำกัดการเลือกเป็นศูนย์ (`selectedPlaylists.size === 0`) เพื่อให้ผู้ใช้สามารถเคลียร์ตัวเลือกเพลย์ลิสต์ทั้งหมดกลับเป็นค่าเริ่มต้นได้อย่างราบรื่น
+
+#### [MODIFY] [player-bottom-bar.tsx](file:///Users/apinan/Developments/music-bar/components/player-bottom-bar.tsx)
+- แก้ไขปัญหาการยกเลิกการเลือกเพลย์ลิสต์ในแถบเครื่องเล่นด้านล่าง:
+  - เมื่อผู้ใช้กดที่เพลย์ลิสต์ที่กำลังเล่นอยู่ซ้ำอีกครั้ง ระบบจะสลับเป็นการยกเลิกการเลือก (Deselect / Clear) เพื่อให้ตัวเครื่องเล่นกลับมาใช้เพลย์ลิสต์หลัก (Default) หรือล้างข้อมูลตัวเลือก
+- เพิ่มการแสดงรูปภาพของเพลย์ลิสต์พร้อมเอฟเฟกต์การเคลื่อนไหวที่นุ่มนวลแทนไอคอนดิสก์หมุนทั่วไป
 
 ---
 
-## แผนการทดสอบและการรันเพื่อสร้าง APK (Verification & Build Plan)
+## แผนการตรวจสอบความถูกต้อง (Verification Plan)
 
-### ขั้นตอนสร้างและคอมไพล์แอปพลิเคชัน
-1. เราจะทำการดาวน์โหลดไฟล์ Gradle Wrapper ผ่านเครื่องมือ `gradle wrapper` เวอร์ชันที่รองรับการคอมไพล์
-2. รันคำสั่งตรวจสอบและคอมไพล์โปรเจกต์:
-   ```bash
-   ./gradlew assembleDebug
-   ```
-3. เมื่อสร้างสำเร็จแล้ว ไฟล์ APK จะถูกบันทึกอยู่ที่:
-   `/Users/apinan/Developments/music-bar/mobile/android/app/build/outputs/apk/debug/app-debug.apk`
+### การตรวจสอบเชิงโปรแกรม (Automated Verification)
+- ทำการรันตรวจสอบการคอมไพล์โค้ด Next.js และ TypeScript เพื่อรับรองว่าไม่มีการสะดุดหรือบั๊กประเภทข้อมูลผิดพลาด (Type Mismatch)
 
-### แผนการทดสอบการใช้งานจริง (Manual Verification)
-1. ติดตั้ง APK ลงในเครื่องจริงหรือ Emulator
-2. เปิดแอปและยอมรับสิทธิ์การส่งการแจ้งเตือน (Notifications)
-3. ตรวจสอบว่าเปิดเว็บ `https://musicbar.gracer.ai` ขึ้นมาได้ปกติ
-4. ทดลองเลือกและเริ่มเล่นเพลง
-5. ทดสอบปัดแอปพลิเคชันไปที่พื้นหลัง (Background) หรือทำการกดปุ่มล็อกหน้าจอ เพื่อยืนยันว่าเสียงเพลงยังเล่นต่อโดยสมบูรณ์ไม่มีการหยุดค้าง
-6. เปิดแผงควบคุมแจ้งเตือน ตรวจสอบว่า Notification ของแอป "Music Bar" แสดงปุ่มสั่งการ "ปิดแอป" และทำงานได้ถูกต้อง
+### การทดสอบด้วยระบบคนทำงาน (Manual Verification)
+1. เปิดหน้า `/admin` และตรวจสอบว่าหน้าจอปรับเปลี่ยนเป็นรูปแบบคอนโซลสีเข้มหรูหราอย่างสมบูรณ์แบบ
+2. ทดลองดูว่าเพลย์ลิสต์ทุกตัวมีหน้าปกแสดงขึ้นมาหรือไม่ (ทดสอบกับเพลย์ลิสต์ที่มีเพลง และเพลย์ลิสต์สร้างใหม่ที่ยังไม่มีเพลง)
+3. ตรวจสอบการยกเลิกการเลือกเพลย์ลิสต์:
+   - ทดสอบยกเลิกการเช็กเลือกทั้งหมดในหน้า Admin แล้วกดปุ่มเพื่อใช้ชุดเพลงเล่น ตรวจสอบว่าระบบยอมรับการล้างข้อมูล
+   - ทดสอบกดที่ปุ่มเพลย์ลิสต์ในแถบเครื่องเล่นด้านล่าง (Bottom Bar) ซ้ำตัวเดิม และสังเกตว่าสลับไปใช้รายการเริ่มต้นได้ถูกต้อง

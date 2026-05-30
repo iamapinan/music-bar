@@ -56,19 +56,45 @@ export function PlayerBottomBar() {
         <span className="mr-1 hidden shrink-0 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35 sm:inline">Playlists</span>
         {playlists.filter(playlist => playlist.is_enabled).map(playlist => {
           const isActive = activePlaylistIds.includes(playlist.id)
+          const firstLetter = playlist.name.slice(0, 1).toUpperCase()
+          const gradients = [
+            'from-emerald-500 to-teal-700 text-emerald-100',
+            'from-cyan-500 to-blue-700 text-cyan-100',
+            'from-indigo-500 to-purple-700 text-indigo-100',
+            'from-violet-500 to-fuchsia-700 text-violet-100',
+            'from-rose-500 to-orange-700 text-rose-100',
+          ]
+          const gradClass = gradients[playlist.id % gradients.length]
+
           return (
             <button
               key={playlist.id}
               type="button"
-              onClick={() => setActivePlaylistIds([playlist.id])}
+              onClick={() => {
+                if (isActive) {
+                  setActivePlaylistIds([])
+                } else {
+                  setActivePlaylistIds([playlist.id])
+                }
+              }}
               className={cn(
                 'flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.98]',
                 isActive
-                  ? 'border-primary/35 bg-primary/15 text-primary'
+                  ? 'border-primary/35 bg-primary/15 text-primary shadow-[0_2px_10px_rgba(110,231,183,0.1)]'
                   : 'border-white/10 bg-white/[0.035] text-white/55 hover:border-white/20 hover:bg-white/[0.07] hover:text-white/85'
               )}
             >
-              <Disc3 className="h-3.5 w-3.5" />
+              {playlist.cover_thumbnail ? (
+                <img
+                  src={playlist.cover_thumbnail}
+                  alt=""
+                  className="w-4 h-4 rounded-full object-cover shrink-0 border border-white/10"
+                />
+              ) : (
+                <div className={cn('w-4 h-4 rounded-full bg-gradient-to-br flex items-center justify-center text-[7px] font-bold shrink-0', gradClass)}>
+                  {firstLetter}
+                </div>
+              )}
               <span className="max-w-44 truncate">{playlist.name}</span>
             </button>
           )

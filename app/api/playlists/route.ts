@@ -5,7 +5,8 @@ export async function GET() {
   try {
     const playlists = await sql`
       SELECT p.*, 
-        (SELECT COUNT(*) FROM playlist_songs WHERE playlist_id = p.id) as song_count
+        (SELECT COUNT(*) FROM playlist_songs WHERE playlist_id = p.id) as song_count,
+        (SELECT thumbnail FROM playlist_songs WHERE playlist_id = p.id ORDER BY position ASC, created_at ASC LIMIT 1) as cover_thumbnail
       FROM playlists p 
       ORDER BY p.is_default DESC, p.created_at DESC
     `

@@ -5,6 +5,7 @@ export interface Playlist {
   is_default: boolean
   is_enabled: boolean
   song_count?: number
+  cover_thumbnail?: string | null
   created_at: string
   updated_at: string
 }
