@@ -122,7 +122,10 @@ export function PlayerBottomBar() {
 
   if (!currentSong) {
     return (
-      <div className="fixed right-0 bottom-0 left-0 z-[100] border-t border-white/10 bg-background/25 shadow-[0_-18px_70px_rgba(0,0,0,0.28)] backdrop-blur-3xl">
+      <div className={cn(
+        "fixed right-0 bottom-0 left-0 z-[100] border-t border-white/10 bg-background/25 shadow-[0_-18px_70px_rgba(0,0,0,0.28)] backdrop-blur-3xl",
+        pathname === '/admin' && "admin-player-dock"
+      )}>
         {playlistRail}
       </div>
     )
@@ -133,7 +136,10 @@ export function PlayerBottomBar() {
       "fixed bottom-0 left-0 right-0 z-[100] transition-all duration-500",
       (pathname === '/' && isVideoMode && isFullscreen && !showControls) ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-0 opacity-100 pointer-events-auto"
     )}>
-      <div className="player-ambient pointer-events-auto relative w-full overflow-hidden border-t border-white/10 bg-background/35 shadow-[0_-18px_70px_rgba(0,0,0,0.32)] backdrop-blur-3xl">
+      <div className={cn(
+        "player-ambient pointer-events-auto relative w-full overflow-hidden border-t border-white/10 bg-background/35 shadow-[0_-18px_70px_rgba(0,0,0,0.32)] backdrop-blur-3xl",
+        pathname === '/admin' && "admin-player-dock"
+      )}>
         {playlistRail}
         
         {/* Progress Bar (Integrated at top) */}
@@ -166,12 +172,12 @@ export function PlayerBottomBar() {
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
             <div className="hidden lg:flex items-center gap-1 border-r border-white/10 pr-4 mr-2">
               <Link href="/">
-                <Button variant="ghost" size="icon" className={cn("w-10 h-10 rounded-xl", pathname === '/' && "bg-primary/10 text-primary")}>
+                <Button variant="ghost" size="icon" className={cn("w-10 h-10 rounded-full", pathname === '/' && "bg-primary/10 text-primary")}>
                   <Home className="w-5 h-5" />
                 </Button>
               </Link>
               <Link href="/admin">
-                <Button variant="ghost" size="icon" className={cn("w-10 h-10 rounded-xl", pathname === '/admin' && "bg-primary/10 text-primary")}>
+                <Button variant="ghost" size="icon" className={cn("w-10 h-10 rounded-full", pathname === '/admin' && "bg-primary/10 text-primary")}>
                   <LayoutDashboard className="w-5 h-5" />
                 </Button>
               </Link>
@@ -311,7 +317,7 @@ export function PlayerBottomBar() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/15"
+                    className="h-10 w-10 rounded-full bg-primary/10 text-primary hover:bg-primary/15"
                     title="เปิดคิวเพลง"
                   >
                     <ListMusic className="h-5 w-5" />
@@ -330,7 +336,7 @@ export function PlayerBottomBar() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className={cn("hidden h-9 w-9 rounded-xl min-[390px]:flex sm:h-10 sm:w-10", isVideoMode && "text-primary bg-primary/10")}
+                className={cn("hidden h-9 w-9 rounded-full min-[390px]:flex sm:h-10 sm:w-10", isVideoMode && "text-primary bg-primary/10")}
                 onClick={() => setIsVideoMode(!isVideoMode)}
               >
                 <Tv className="w-4 h-4" />
@@ -339,7 +345,7 @@ export function PlayerBottomBar() {
               {/* More Actions Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl sm:h-10 sm:w-10">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full sm:h-10 sm:w-10">
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -374,7 +380,7 @@ export function PlayerBottomBar() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="ml-0.5 h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/15 sm:ml-1 sm:h-12 sm:w-12"
+                    className="ml-0.5 h-10 w-10 rounded-full bg-primary/10 text-primary hover:bg-primary/15 sm:ml-1 sm:h-12 sm:w-12"
                   >
                     <ListMusic className="w-5 h-5 sm:w-6 sm:h-6" />
                   </Button>

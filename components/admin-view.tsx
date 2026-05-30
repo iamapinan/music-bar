@@ -388,19 +388,19 @@ export function AdminView({ onLogout }: AdminViewProps) {
   return (
     <div className="admin-shell flex min-h-[100dvh] flex-col pb-36 text-foreground bg-background sm:pb-48 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden">
       {/* Header (Top Navigation) */}
-      <header className="admin-glass sticky top-0 z-30 border-b border-border/60">
-        <div className="w-full flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
+      <header className="admin-glass admin-console-header sticky top-0 z-30 border-b border-border/60">
+        <div className="scrollbar-none flex w-full flex-nowrap items-center justify-between gap-3 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8">
+          <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
             <Button
               variant="outline"
               size="icon"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="h-9 w-9 rounded border-border hover:bg-black/5 shrink-0"
+              className="h-9 w-9 shrink-0 rounded-full border-border hover:bg-black/5"
               title={isSidebarOpen ? "พับเก็บเมนูข้าง" : "ขยายเมนูข้าง"}
             >
               <List className="w-4 h-4 text-foreground" />
             </Button>
-            <div className="flex h-9 w-9 items-center justify-center rounded border border-primary/20 bg-primary/10">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
               <Settings className="w-4 h-4 text-primary" />
             </div>
             <div>
@@ -412,12 +412,12 @@ export function AdminView({ onLogout }: AdminViewProps) {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowQR(true)}
-              className="h-8 gap-1 border-primary/30 bg-primary/5 text-xs text-primary hover:bg-primary/10 hover:text-primary transition-all rounded"
+              className="h-8 gap-1 rounded-full border-primary/30 bg-primary/5 text-xs text-primary transition-all hover:bg-primary/10 hover:text-primary"
             >
               <QrCode className="w-3.5 h-3.5" />
               QR Link
@@ -426,7 +426,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
               variant="outline"
               size="sm"
               onClick={onLogout}
-              className="h-8 text-xs text-muted-foreground hover:text-foreground hover:bg-black/5 border-border transition-all rounded"
+              className="h-8 rounded-full border-border text-xs text-muted-foreground transition-all hover:bg-black/5 hover:text-foreground"
             >
               ออกจากระบบ
             </Button>
@@ -449,7 +449,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
               }}
             >
               {/* Stats Bar */}
-              <div className="admin-surface rounded-lg p-3 flex flex-col gap-2">
+              <div className="admin-surface admin-stat-card flex flex-col gap-2.5 rounded-3xl p-3.5">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-primary/10 text-primary border border-primary/20">
                     <LibraryBig className="h-4 w-4" />
@@ -495,7 +495,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
               </div>
 
               {/* Playlist Manager */}
-              <div className="admin-surface rounded-lg p-3 flex-1 flex flex-col gap-3 min-h-0">
+              <div className="admin-surface admin-library-panel flex min-h-0 flex-1 flex-col gap-3 rounded-3xl p-3.5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-[10px] font-bold uppercase tracking-wider text-foreground">
                     เพลย์ลิสต์ของคุณ
@@ -593,7 +593,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 <ScrollArea className="flex-1 min-h-0 pr-1">
                   {playlistView === "cards" ? (
                     /* Playlist Cards: Gorgeous square Spotify-like grid layout */
-                    <div className="grid grid-cols-2 gap-2.5 p-0.5">
+                    <div className="grid grid-cols-2 gap-3 p-0.5">
                       {playlists.length === 0 ? (
                         <div className="col-span-2 text-center py-8 text-muted-foreground text-xs">
                           ไม่มีเพลย์ลิสต์
@@ -605,7 +605,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                             <div
                               key={pl.id}
                               className={cn(
-                                "group overflow-hidden rounded border transition-all duration-200 cursor-pointer flex flex-col p-2.5 gap-2 relative bg-card shadow-sm",
+                                "admin-playlist-card group overflow-hidden rounded-xl border transition-all duration-300 cursor-pointer flex flex-col p-2.5 gap-2 relative bg-card",
                                 isCurrent
                                   ? "border-primary bg-primary/[0.03] shadow-md"
                                   : "border-border/50 hover:bg-secondary/40 hover:border-border/80",
@@ -849,7 +849,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
           {isSidebarOpen && (
             <div
               onMouseDown={handleMouseDown}
-              className="hidden lg:block w-1 hover:w-1.5 hover:bg-primary/50 bg-border/40 cursor-col-resize transition-all self-stretch shrink-0 relative z-10"
+              className="admin-resize-handle hidden lg:block w-1 hover:w-1.5 hover:bg-primary/50 bg-border/40 cursor-col-resize transition-all self-stretch shrink-0 relative z-10"
               title="ลากเพื่อยืดหดแผงไลบรารี"
             />
           )}
@@ -857,9 +857,9 @@ export function AdminView({ onLogout }: AdminViewProps) {
           {/* RIGHT COLUMN: Active Workspace (List / Grid View for tracks) */}
           <div className="flex min-h-[36rem] flex-1 flex-col gap-4 lg:min-h-0">
             {/* Header Area inside Workspace */}
-            <div className="admin-surface rounded-lg p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
-              <div>
-                <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <div className="admin-surface admin-workspace-header flex shrink-0 flex-col gap-3 rounded-3xl p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <h2 className="flex items-center gap-2 truncate whitespace-nowrap text-sm font-bold text-foreground">
                   {currentPlaylist
                     ? currentPlaylist.name
                     : "กรุณาเลือกเพลย์ลิสต์"}
@@ -869,23 +869,23 @@ export function AdminView({ onLogout }: AdminViewProps) {
                     </Badge>
                   )}
                 </h2>
-                <p className="text-xs text-muted-foreground">
+                <p className="truncate whitespace-nowrap text-xs text-muted-foreground">
                   สับเปลี่ยนเพลง ค้นหาแทร็ก
                   หรือบริหารรายการขอเพลงจากลูกค้าในพื้นที่เดียว
                 </p>
               </div>
 
               {/* Console controls & toggle layout view */}
-              <div className="flex flex-col gap-2 sm:items-end">
+              <div className="scrollbar-none flex max-w-full shrink-0 flex-nowrap items-center gap-2 overflow-x-auto">
                 {/* View Mode Grid/List selectors */}
-                <div className="flex self-start rounded border border-border/40 p-0.5">
+                <div className="flex shrink-0 rounded-full border border-border/40 p-0.5">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setMusicListView("list")}
                     className={cn(
-                      "h-6 w-7 p-0 rounded-sm",
+                      "h-6 w-7 rounded-full p-0",
                       musicListView === "list" &&
                         "bg-white text-primary shadow-sm hover:bg-white",
                     )}
@@ -899,7 +899,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                     size="sm"
                     onClick={() => setMusicListView("grid")}
                     className={cn(
-                      "h-6 w-7 p-0 rounded-sm",
+                      "h-6 w-7 rounded-full p-0",
                       musicListView === "grid" &&
                         "bg-white text-primary shadow-sm hover:bg-white",
                     )}
@@ -910,11 +910,11 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 </div>
 
                 {/* Tab switch buttons */}
-                <div className="flex max-w-full overflow-x-auto rounded border border-border/40 p-0.5 scrollbar-none">
+                <div className="scrollbar-none flex shrink-0 overflow-x-auto rounded-full border border-border/40 p-0.5">
                   <button
                     onClick={() => setActiveWorkspaceTab("tracks")}
                     className={cn(
-                      "flex shrink-0 items-center gap-1.5 rounded border px-3 py-1 text-xs font-semibold transition-all",
+                      "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all",
                       activeWorkspaceTab === "tracks"
                         ? "bg-white text-primary border border-border shadow-sm"
                         : "text-muted-foreground hover:text-foreground border border-transparent",
@@ -926,7 +926,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                   <button
                     onClick={() => setActiveWorkspaceTab("search")}
                     className={cn(
-                      "flex shrink-0 items-center gap-1.5 rounded border px-3 py-1 text-xs font-semibold transition-all",
+                      "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all",
                       activeWorkspaceTab === "search"
                         ? "bg-white text-primary border border-border shadow-sm"
                         : "text-muted-foreground hover:text-foreground border border-transparent",
@@ -938,7 +938,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                   <button
                     onClick={() => setActiveWorkspaceTab("requests")}
                     className={cn(
-                      "relative flex shrink-0 items-center gap-1.5 rounded border px-3 py-1 text-xs font-semibold transition-all",
+                      "relative flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all",
                       activeWorkspaceTab === "requests"
                         ? "bg-white text-primary border border-border shadow-sm"
                         : "text-muted-foreground hover:text-foreground border border-transparent",
@@ -958,9 +958,9 @@ export function AdminView({ onLogout }: AdminViewProps) {
 
             {/* TAB CONTENT: PLAYLIST TRACKS (Full Div Height enabled) */}
             {activeWorkspaceTab === "tracks" && (
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="flex items-center justify-between shrink-0 mb-1.5">
-                  <p className="text-xs text-muted-foreground">
+              <div className="admin-content-panel flex min-h-0 flex-1 flex-col rounded-xl p-3">
+                <div className="flex items-center justify-between shrink-0 mb-2 px-1">
+                  <p className="text-[11px] font-medium text-muted-foreground">
                     รายการเพลงทั้งหมดในแผง ({playlistSongs.length} แทร็ก)
                   </p>
                 </div>
@@ -983,7 +983,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                       {playlistSongs.map((song, i) => (
                         <div
                           key={song.id}
-                          className="flex items-center gap-3 p-2.5 rounded border border-border/20 bg-black/[0.01] hover:bg-black/[0.03] hover:border-border/60 transition-all group"
+                          className="admin-track-row flex items-center gap-3 rounded-lg border p-2.5 transition-all duration-300 group"
                         >
                           <span className="text-[10px] font-semibold text-muted-foreground w-6 text-center tabular-nums">
                             {String(i + 1).padStart(2, "0")}
@@ -1024,7 +1024,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                       {playlistSongs.map((song) => (
                         <div
                           key={song.id}
-                          className="group relative rounded border border-border/40 bg-card p-2 flex flex-col gap-2 hover:border-primary hover:shadow transition-all"
+                          className="admin-track-card group relative rounded-lg border border-border/40 bg-card p-2 flex flex-col gap-2 transition-all duration-300"
                         >
                           {/* Song Thumbnail */}
                           <div className="relative aspect-square w-full rounded overflow-hidden shadow-inner bg-muted shrink-0">
@@ -1068,7 +1068,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
 
             {/* TAB CONTENT: SEARCH YOUTUBE (Full Div Height enabled) */}
             {activeWorkspaceTab === "search" && (
-              <div className="flex-1 min-h-0 flex flex-col overflow-hidden gap-3">
+              <div className="admin-content-panel flex-1 min-h-0 flex flex-col overflow-hidden gap-3 rounded-xl p-3">
                 {/* Search Type controls */}
                 <div className="flex gap-2 shrink-0">
                   <Button
@@ -1173,7 +1173,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                           <div
                             key={result.id}
                             className={cn(
-                              "flex items-center gap-3 rounded border border-border/20 bg-black/[0.01] p-2 hover:border-border/60 hover:bg-black/[0.02] transition-all",
+                              "admin-track-row flex items-center gap-3 rounded-lg border border-border/20 bg-black/[0.01] p-2 transition-all duration-300",
                               inPlaylist && "opacity-50",
                             )}
                           >
@@ -1218,7 +1218,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                       {ytPlaylistResults.map((pl) => (
                         <div
                           key={pl.id}
-                          className="flex items-center gap-3 rounded border border-border/20 bg-black/[0.01] p-2 hover:border-border/60 hover:bg-black/[0.02] transition-all"
+                          className="admin-track-row flex items-center gap-3 rounded-lg border border-border/20 bg-black/[0.01] p-2 transition-all duration-300"
                         >
                           {pl.thumbnail && (
                             <img
@@ -1273,7 +1273,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                           <div
                             key={result.id}
                             className={cn(
-                              "group relative rounded border border-border/40 bg-card p-2 flex flex-col gap-2 hover:border-primary hover:shadow transition-all",
+                              "admin-track-card group relative rounded-lg border border-border/40 bg-card p-2 flex flex-col gap-2 transition-all duration-300",
                               inPlaylist && "opacity-40",
                             )}
                           >
@@ -1322,7 +1322,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                       {ytPlaylistResults.map((pl) => (
                         <div
                           key={pl.id}
-                          className="group relative rounded border border-border/40 bg-card p-2 flex flex-col gap-2 hover:border-primary hover:shadow transition-all"
+                          className="admin-track-card group relative rounded-lg border border-border/40 bg-card p-2 flex flex-col gap-2 transition-all duration-300"
                         >
                           <div className="relative aspect-square w-full rounded overflow-hidden shadow bg-muted shrink-0">
                             <img
@@ -1378,7 +1378,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
 
             {/* TAB CONTENT: CUSTOMER SONG REQUESTS (Full Div Height enabled) */}
             {activeWorkspaceTab === "requests" && (
-              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              <div className="admin-content-panel flex-1 min-h-0 flex flex-col overflow-hidden rounded-xl p-3">
                 <div className="flex items-center justify-between shrink-0 mb-1.5">
                   <p className="text-xs text-muted-foreground">
                     รายการแทร็กเพลงที่มีผู้ยื่นขอระบบคิว ({requests.length}{" "}
@@ -1462,7 +1462,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                           <div
                             key={req.id}
                             className={cn(
-                              "group relative rounded border bg-card p-2 flex flex-col gap-2 hover:border-primary hover:shadow transition-all",
+                              "admin-track-card group relative rounded-lg border bg-card p-2 flex flex-col gap-2 transition-all duration-300",
                               isCurrentPlaying
                                 ? "border-primary bg-primary/[0.02]"
                                 : "border-border/40",

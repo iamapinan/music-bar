@@ -358,22 +358,185 @@ html.admin-mode,
 body.admin-mode {
   color: var(--foreground);
   background:
-    radial-gradient(circle at 100% 0%, oklch(0.94 0.03 175 / 0.5), transparent 40rem),
-    linear-gradient(180deg, oklch(0.985 0.003 175), oklch(0.965 0.005 175)) !important;
+    radial-gradient(circle at 92% 0%, oklch(0.9 0.055 168 / 0.58), transparent 34rem),
+    radial-gradient(circle at 2% 92%, oklch(0.9 0.035 190 / 0.38), transparent 30rem),
+    linear-gradient(145deg, oklch(0.988 0.004 175), oklch(0.955 0.012 175)) !important;
   background-attachment: fixed !important;
 }
 
 .admin-glass {
-  background: oklch(1 0 0 / 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid oklch(0.9 0.005 175 / 0.6);
+  background: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(28px) saturate(1.08);
+  -webkit-backdrop-filter: blur(28px) saturate(1.08);
+  border-bottom: 1px solid oklch(0.82 0.018 175 / 0.52);
 }
 
 .admin-surface {
-  background: oklch(1 0 0 / 0.95);
-  border: 1px solid oklch(0.88 0.008 175 / 0.8);
-  box-shadow: 0 10px 30px oklch(0.2 0.01 175 / 0.04), inset 0 1px 0 oklch(1 0 0);
+  background: oklch(1 0 0 / 0.74);
+  border: 1px solid oklch(0.84 0.014 175 / 0.62);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.92),
+    0 18px 50px oklch(0.28 0.035 175 / 0.075);
+  backdrop-filter: blur(24px) saturate(1.06);
+  -webkit-backdrop-filter: blur(24px) saturate(1.06);
+}
+
+.admin-console-header {
+  box-shadow: 0 8px 32px oklch(0.28 0.035 175 / 0.08);
+}
+
+.admin-stat-card {
+  background:
+    radial-gradient(circle at 0% 0%, oklch(0.9 0.08 158 / 0.32), transparent 12rem),
+    oklch(1 0 0 / 0.74);
+}
+
+.admin-library-panel {
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.94),
+    0 22px 60px oklch(0.24 0.035 175 / 0.09);
+}
+
+.admin-content-panel {
+  background: oklch(1 0 0 / 0.34);
+  border: 1px solid oklch(0.84 0.014 175 / 0.42);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.68),
+    0 18px 42px oklch(0.28 0.035 175 / 0.045);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.admin-workspace-header {
+  background:
+    radial-gradient(circle at 96% 0%, oklch(0.9 0.065 158 / 0.36), transparent 22rem),
+    oklch(1 0 0 / 0.78);
+}
+
+.admin-resize-handle {
+  border-radius: 999px;
+  opacity: 0.68;
+}
+
+.admin-playlist-card,
+.admin-track-card {
+  box-shadow: 0 4px 14px oklch(0.25 0.025 175 / 0.035);
+}
+
+.admin-playlist-card {
+  background: oklch(1 0 0 / 0.72);
+}
+
+.admin-track-card {
+  background: oklch(1 0 0 / 0.7);
+}
+
+.admin-track-row {
+  background: oklch(1 0 0 / 0.52);
+  border-color: oklch(0.84 0.014 175 / 0.32);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.52),
+    0 3px 10px oklch(0.25 0.025 175 / 0.026);
+}
+
+.admin-playlist-card:hover,
+.admin-track-card:hover {
+  transform: translateY(-3px);
+  border-color: oklch(0.58 0.13 158 / 0.62);
+  box-shadow:
+    0 14px 30px oklch(0.28 0.04 175 / 0.12),
+    0 0 0 1px oklch(0.62 0.12 158 / 0.08);
+}
+
+.admin-track-row:hover {
+  transform: translateX(4px);
+  border-color: oklch(0.62 0.1 158 / 0.38);
+  background: oklch(1 0 0 / 0.82);
+  box-shadow: 0 10px 24px oklch(0.28 0.04 175 / 0.085);
+}
+
+.admin-player-dock {
+  --background: oklch(0.05 0.018 165);
+  --foreground: oklch(0.98 0.006 165);
+  --muted: oklch(0.12 0.018 165);
+  --muted-foreground: oklch(0.79 0.014 165);
+  --primary: oklch(0.76 0.17 158);
+  --primary-foreground: oklch(0.055 0.018 165);
+  background:
+    radial-gradient(circle at 12% 0%, oklch(0.26 0.085 158 / 0.52), transparent 28rem),
+    linear-gradient(100deg, oklch(0.055 0.022 165 / 0.99), oklch(0.07 0.022 165 / 0.97)) !important;
+  border-color: oklch(0.78 0.1 158 / 0.2) !important;
+  color: var(--foreground);
+  box-shadow:
+    inset 0 1px 0 oklch(0.86 0.12 158 / 0.14),
+    0 -18px 70px oklch(0.025 0.012 165 / 0.58) !important;
+}
+
+.admin-player-dock .text-foreground {
+  color: oklch(0.98 0.006 165) !important;
+}
+
+.admin-player-dock .text-muted-foreground {
+  color: oklch(0.79 0.014 165) !important;
+}
+
+.admin-player-dock button:hover {
+  background-color: oklch(0.76 0.17 158 / 0.16);
+}
+
+.admin-shell .admin-surface,
+.admin-shell .admin-content-panel {
+  border-radius: 1.5rem;
+}
+
+.admin-shell .admin-playlist-card,
+.admin-shell .admin-track-card {
+  border-radius: 1.1rem;
+}
+
+.admin-shell .admin-track-row {
+  border-radius: 999px;
+}
+
+.admin-shell button,
+.admin-shell input,
+.admin-shell select {
+  border-radius: 999px;
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    background-color 220ms ease,
+    color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.admin-shell button:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.admin-shell input:focus,
+.admin-shell select:focus {
+  border-color: oklch(0.58 0.13 158 / 0.72);
+  box-shadow:
+    0 0 0 3px oklch(0.62 0.12 158 / 0.12),
+    inset 0 1px 2px oklch(0.2 0.02 175 / 0.055);
+}
+
+.admin-track-card img,
+.admin-playlist-card img {
+  transition:
+    transform 420ms ease,
+    filter 420ms ease;
+}
+
+.admin-track-card:hover img,
+.admin-playlist-card:hover img {
+  transform: scale(1.045);
+  filter: saturate(1.06) contrast(1.02);
+}
+
+.admin-shell [data-slot="button"][data-variant="ghost"]:hover {
+  background: oklch(0.92 0.02 165 / 0.72);
 }
 
 /* Override sonner toast styles inside admin mode to ensure they are light theme */
