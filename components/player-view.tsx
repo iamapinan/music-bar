@@ -1,6 +1,6 @@
 "use client";
 
-import { Music2, Maximize2, Minimize2 } from "lucide-react";
+import { AudioLines, Clock3, Disc3, Maximize2, Minimize2, Music2, Play, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -11,27 +11,50 @@ export function PlayerView() {
   const {
     isPlaying,
     currentSong,
+    nextSong,
     playMode,
     isShuffle,
     isVideoMode,
     isFullscreen,
+    currentTime,
+    duration,
+    currentIndex,
+    playlistSongs,
+    playlists,
     setIsVideoMode,
     setIsFullscreen,
     showControls,
     setShowControls,
     togglePlay,
+    playSong,
   } = usePlayer();
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || Number.isNaN(seconds)) return "0:00";
+    const minutes = Math.floor(seconds / 60);
+    const remaining = Math.floor(seconds % 60);
+    return `${minutes}:${remaining.toString().padStart(2, "0")}`;
+  };
+
+  const progress = duration ? Math.min((currentTime / duration) * 100, 100) : 0;
+  const queuePreview = (() => {
+    return playlistSongs
+      .slice(currentIndex + 1)
+      .concat(playlistSongs.slice(0, currentIndex));
+  })();
+  const nextSongIsFromPlaylist = nextSong && "playlist_id" in nextSong;
+  const miniPlaylist = queuePreview.slice(nextSongIsFromPlaylist ? 1 : 0, nextSongIsFromPlaylist ? 4 : 3);
 
   if (!currentSong) {
     return (
-      <div className="flex flex-col items-center justify-center h-[100dvh] text-center p-6 ">
+      <div className="app-shell flex min-h-[100dvh] flex-col items-center justify-center p-6 text-center">
         <div className="relative mb-6">
-          <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/30">
-            <Music2 className="w-14 h-14 text-primary/60" />
+          <div className="surface-panel flex h-24 w-24 items-center justify-center rounded-3xl">
+            <Music2 className="h-10 w-10 text-primary/75" />
           </div>
-          <div className="absolute inset-0 w-28 h-28 rounded-full bg-primary/10 animate-ping" />
         </div>
-        <h2 className="text-xl font-semibold mb-2 gradient-text">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.35em] text-primary">Music bar</p>
+        <h2 className="mb-2 text-2xl font-semibold tracking-tight text-foreground">
           ยังไม่มีเพลง
         </h2>
         <p className="text-muted-foreground text-sm">
@@ -41,10 +64,15 @@ export function PlayerView() {
     );
   }
 
+  const requestedBy = "requested_by" in currentSong ? currentSong.requested_by : null;
+  const currentPlaylistName = "playlist_id" in currentSong
+    ? playlists.find((playlist) => playlist.id === currentSong.playlist_id)?.name || "House playlist"
+    : "Guest request";
+
   return (
     <div
       className={cn(
-        "relative flex flex-col h-[100dvh] overflow-hidden transition-all duration-300 bg-background",
+        "app-shell relative flex h-[100dvh] flex-col overflow-hidden bg-background transition-all duration-300",
         isFullscreen && "fixed inset-0 z-50",
       )}
     >
@@ -68,7 +96,7 @@ export function PlayerView() {
       {isFullscreen && (
         <div
           className={cn(
-            "absolute top-0 left-0 right-0 flex items-center justify-between p-4 glass border-b border-border/10 shrink-0 transition-opacity z-[100]",
+            "glass absolute top-0 left-0 right-0 z-[100] flex shrink-0 items-center justify-between border-b border-white/10 p-4 transition-opacity",
             showControls ? "opacity-100" : "opacity-0 pointer-events-none",
           )}
         >
@@ -76,7 +104,7 @@ export function PlayerView() {
             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
               <Music2 className="w-4 h-4 text-primary" />
             </div>
-            <span className="font-bold gradient-text">Music Bar</span>
+            <span className="text-sm font-semibold tracking-tight">Music Bar</span>
           </div>
           <Button
             variant="ghost"
@@ -89,19 +117,39 @@ export function PlayerView() {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 pb-24 sm:pb-32 relative min-h-0">
-        <div className="w-full h-full max-w-5xl flex flex-col items-center justify-center relative">
-          {/* Artwork / Thumbnail / Video Target Container */}
-          <div
-            className={cn(
-              "relative w-full overflow-hidden shadow-2xl border border-white/5 transition-all duration-500 bg-black/50",
-              isFullscreen && isVideoMode
-                ? "fixed inset-0 z-[60] w-full h-[100dvh] max-w-none aspect-auto rounded-none m-0 border-none"
-                : isVideoMode
-                  ? "max-w-4xl aspect-video rounded-xl sm:rounded-2xl"
-                  : "max-w-4xl aspect-video rounded-2xl sm:rounded-[2rem]",
-            )}
-          >
+      {!isFullscreen && (
+        <header className="absolute top-0 right-0 left-0 z-30 flex items-center justify-between px-4 py-4 sm:px-8 sm:py-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/25 bg-primary/10">
+              <AudioLines className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-primary">Music bar</p>
+              <p className="mt-0.5 text-xs text-white/50">Now playing</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55 backdrop-blur">
+            <Radio className="h-3 w-3 text-primary" />
+            Live
+          </div>
+        </header>
+      )}
+
+      <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center p-3 pb-36 sm:p-8 sm:pb-44">
+        {!isVideoMode && currentSong.thumbnail && (
+          <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
+            <img src={currentSong.thumbnail} alt="" className="h-full w-full scale-125 object-cover blur-3xl saturate-50" />
+            <div className="absolute inset-0 bg-background/75" />
+          </div>
+        )}
+        <div className="relative flex h-full w-full max-w-6xl flex-col items-center justify-center pt-14 sm:pt-16">
+          {isVideoMode ? (
+            <div
+              className={cn(
+                "relative w-full max-w-4xl overflow-hidden border border-white/10 bg-black/50 shadow-[0_26px_80px_rgba(0,0,0,0.36)] ring-1 ring-white/5 transition-all duration-500 aspect-video rounded-xl sm:rounded-2xl",
+                isFullscreen && "fixed inset-0 z-[60] h-[100dvh] w-full max-w-none rounded-none border-none",
+              )}
+            >
             {/* The actual target where PersistentYouTubePlayer will move the iframe */}
             <div
               id="video-target-rect"
@@ -121,52 +169,26 @@ export function PlayerView() {
               }}
             />
 
-            {/* Thumbnail for Music Mode */}
-            {!isVideoMode &&
-              (currentSong.thumbnail ? (
-                <img
-                  src={currentSong.thumbnail}
-                  alt={currentSong.title}
-                  className={cn(
-                    "w-full h-full object-cover transition-transform duration-700",
-                    isPlaying ? "scale-105" : "scale-100 grayscale-[0.2]",
-                  )}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-card">
-                  <Music2 className="w-24 h-24 text-muted-foreground/30" />
-                </div>
-              ))}
-
-            {!isVideoMode && (
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 pointer-events-none" />
-            )}
-
             {/* Top Controls (Video/Fullscreen buttons) */}
             <div
               className={cn(
-                "absolute inset-0 flex items-start justify-between p-4 transition-opacity z-[95] pointer-events-none",
+                "absolute inset-0 z-[95] flex items-start justify-between p-3 transition-opacity pointer-events-none sm:p-5",
                 showControls ? "opacity-100" : "opacity-0",
               )}
             >
               <button
-                className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center gap-1.5 justify-center hover:bg-black/60 transition-all pointer-events-auto"
+                className="pointer-events-auto flex h-10 w-10 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsVideoMode(!isVideoMode);
                 }}
                 title={isVideoMode ? "โหมดเพลง" : "โหมดวิดีโอ"}
               >
-                <div
-                  className={cn(
-                    "w-2 h-2 rounded-full",
-                    isVideoMode ? "bg-red-500 animate-pulse" : "bg-white/40",
-                  )}
-                />
+                <AudioLines className={cn("h-4 w-4", isVideoMode ? "text-primary" : "text-white/70")} />
               </button>
 
               <button
-                className="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center hover:bg-black/60 transition-all pointer-events-auto"
+                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsFullscreen(!isFullscreen);
@@ -184,14 +206,14 @@ export function PlayerView() {
             {/* Song Info Overlay (bottom of video) */}
             <div
               className={cn(
-                "absolute bottom-0 left-0 right-0 p-6 sm:p-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity pointer-events-none z-[90]",
+                "pointer-events-none absolute right-0 bottom-0 left-0 z-[90] bg-gradient-to-t from-black/90 via-black/45 to-transparent p-5 pt-20 transition-opacity sm:p-9 sm:pt-28",
                 showControls ? "opacity-100" : "opacity-0",
               )}
             >
               <div className="flex items-center gap-3 mb-3">
                 {playMode === "request" && (
                   <Badge className="bg-accent text-accent-foreground border-none text-[10px] uppercase tracking-widest px-3 py-0.5 rounded-full">
-                    Song Request
+                    Requested
                   </Badge>
                 )}
                 {isShuffle && (
@@ -199,21 +221,144 @@ export function PlayerView() {
                     variant="outline"
                     className="text-[10px] uppercase tracking-widest px-3 py-0.5 border-white/20 text-white rounded-full bg-white/5 backdrop-blur-sm"
                   >
-                    Shuffle Mode
+                    Shuffle
                   </Badge>
                 )}
               </div>
-              <h2 className="text-2xl sm:text-4xl font-black line-clamp-2 leading-[1.1] tracking-tighter text-white drop-shadow-lg mb-2">
+              <h2 className="mb-2 line-clamp-2 max-w-3xl text-2xl font-semibold leading-[1.1] tracking-tight text-white drop-shadow-lg sm:text-4xl">
                 {currentSong.title}
               </h2>
-              <p className="text-lg sm:text-xl text-white/70 font-medium drop-shadow-md">
+              <p className="text-sm font-medium text-white/65 drop-shadow-md sm:text-base">
                 {"requested_by" in currentSong &&
                 (currentSong as SongRequest).requested_by
                   ? `Requested by: ${(currentSong as SongRequest).requested_by}`
                   : "Music Bar Selection"}
               </p>
             </div>
-          </div>
+            </div>
+          ) : (
+            <section className="grid w-full max-w-6xl gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.65fr)]">
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:p-6">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(110,231,183,0.12),transparent_42%)]" />
+                <div className="relative grid gap-5 sm:grid-cols-[minmax(11rem,0.82fr)_minmax(0,1.18fr)] sm:items-center">
+                  <div className="relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-black/30 shadow-2xl">
+                    {currentSong.thumbnail ? (
+                      <img
+                        src={currentSong.thumbnail}
+                        alt={currentSong.title}
+                        className={cn("h-full w-full object-cover transition-transform duration-700", isPlaying && "scale-105")}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Disc3 className="h-20 w-20 text-primary/45" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80 backdrop-blur">
+                      <AudioLines className="h-3 w-3 text-primary" />
+                      Audio mode
+                    </div>
+                    <div className="absolute right-3 bottom-3 flex h-8 items-end gap-1 rounded-full border border-white/15 bg-black/35 px-3 py-2 backdrop-blur">
+                      {[40, 78, 55, 92, 62].map((height, index) => (
+                        <span
+                          key={height}
+                          className={cn("w-0.5 rounded-full bg-primary", isPlaying && "animate-pulse")}
+                          style={{ height: `${height}%`, animationDelay: `${index * 120}ms` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                      <Badge className="border-primary/20 bg-primary/10 text-primary">Now playing</Badge>
+                      {playMode === "request" && <Badge variant="outline" className="border-white/15 text-white/65">Requested</Badge>}
+                      {isShuffle && <Badge variant="outline" className="border-white/15 text-white/65">Shuffle</Badge>}
+                    </div>
+                    <h1 className="line-clamp-3 text-2xl font-semibold leading-[1.08] tracking-tight text-white sm:text-4xl">
+                      {currentSong.title}
+                    </h1>
+                    <p className="mt-3 text-sm text-white/55">
+                      {requestedBy ? `Requested by ${requestedBy}` : "Curated for Music Bar"}
+                    </p>
+
+                    <div className="mt-8">
+                      <div className="mb-2 flex items-center justify-between text-[11px] font-medium tabular-nums text-white/45">
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                        <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
+                      </div>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border border-white/10 bg-black/10 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">Source</p>
+                        <p className="mt-1.5 truncate text-sm font-medium text-white/80">{currentPlaylistName}</p>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-black/10 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">Playback</p>
+                        <p className="mt-1.5 text-sm font-medium text-white/80">{isPlaying ? "Playing live" : "Paused"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <aside className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur-xl sm:p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-primary">Up next</p>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">01</span>
+                  </div>
+                  {nextSong ? (
+                    <div className="mt-4 flex items-center gap-3">
+                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                        {nextSong.thumbnail ? <img src={nextSong.thumbnail} alt={nextSong.title} className="h-full w-full object-cover" /> : <Music2 className="m-5 h-6 w-6 text-white/30" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 text-sm font-medium leading-snug text-white/85">{nextSong.title}</p>
+                        <p className="mt-1 text-xs text-white/40">Next in queue</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-sm text-white/45">ไม่มีเพลงถัดไปในคิว</p>
+                  )}
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur-xl sm:p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-white/75">
+                      <Clock3 className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium">Mini playlist</p>
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">Later</span>
+                  </div>
+                  {miniPlaylist.length > 0 ? (
+                    <div className="mt-3 divide-y divide-white/10">
+                      {miniPlaylist.map((song, index) => (
+                        <button
+                          key={`${song.id}-${index}`}
+                          type="button"
+                          onClick={() => playSong(song)}
+                          className="group flex w-full items-center gap-3 py-2.5 text-left transition-colors hover:text-primary"
+                        >
+                          <span className="w-4 text-[10px] font-medium tabular-nums text-white/30">{index + 1}</span>
+                          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-md border border-white/10 bg-white/5">
+                            {song.thumbnail ? <img src={song.thumbnail} alt={song.title} className="h-full w-full object-cover" /> : <Music2 className="m-2.5 h-4 w-4 text-white/30" />}
+                          </div>
+                          <p className="line-clamp-2 text-xs font-medium leading-snug text-white/70 transition-colors group-hover:text-primary">{song.title}</p>
+                          <Play className="ml-auto h-3.5 w-3.5 shrink-0 text-white/0 transition-colors group-hover:text-primary" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-white/45">ยังไม่มีเพลงเพิ่มเติมในคิว</p>
+                  )}
+                </div>
+              </aside>
+            </section>
+          )}
         </div>
       </div>
     </div>

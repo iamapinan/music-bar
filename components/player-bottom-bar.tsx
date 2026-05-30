@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX,
-  Music2, Shuffle, ListMusic, LayoutDashboard, Home, Tv, Maximize2, Minimize2, MoreVertical
+  Music2, Shuffle, ListMusic, LayoutDashboard, Home, Tv, Maximize2, Minimize2, MoreVertical, Disc3
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -33,7 +33,8 @@ export function PlayerBottomBar() {
     togglePlay, handleSkip, handlePrevious, handleVolumeChange,
     toggleMute, toggleShuffle, isAutoPlayEnabled, setIsAutoPlayEnabled,
     playMode, isVideoMode, setIsVideoMode, isFullscreen, setIsFullscreen,
-    isRequestsEnabled, setIsRequestsEnabled, showControls
+    isRequestsEnabled, setIsRequestsEnabled, showControls,
+    playlists, activePlaylistIds, setActivePlaylistIds
   } = usePlayer()
 
   const pathname = usePathname()
@@ -49,17 +50,51 @@ export function PlayerBottomBar() {
 
   const displayTime = isDraggingTime ? dragTime : currentTime
 
-  if (!currentSong) return null
+  const playlistRail = playlists.length > 0 && (
+    <div className="border-b border-white/10 bg-black/10 px-3 py-2 backdrop-blur-3xl sm:px-5">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+        <span className="mr-1 hidden shrink-0 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35 sm:inline">Playlists</span>
+        {playlists.filter(playlist => playlist.is_enabled).map(playlist => {
+          const isActive = activePlaylistIds.includes(playlist.id)
+          return (
+            <button
+              key={playlist.id}
+              type="button"
+              onClick={() => setActivePlaylistIds([playlist.id])}
+              className={cn(
+                'flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.98]',
+                isActive
+                  ? 'border-primary/35 bg-primary/15 text-primary'
+                  : 'border-white/10 bg-white/[0.035] text-white/55 hover:border-white/20 hover:bg-white/[0.07] hover:text-white/85'
+              )}
+            >
+              <Disc3 className="h-3.5 w-3.5" />
+              <span className="max-w-44 truncate">{playlist.name}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  if (!currentSong) {
+    return (
+      <div className="fixed right-0 bottom-0 left-0 z-[100] border-t border-white/10 bg-background/25 shadow-[0_-18px_70px_rgba(0,0,0,0.28)] backdrop-blur-3xl">
+        {playlistRail}
+      </div>
+    )
+  }
 
   return (
     <div className={cn(
-      "fixed bottom-0 left-0 right-0 z-[100] px-2 pb-2 sm:px-4 sm:pb-4 transition-all duration-500",
+      "fixed bottom-0 left-0 right-0 z-[100] transition-all duration-500",
       (pathname === '/' && isVideoMode && isFullscreen && !showControls) ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-0 opacity-100 pointer-events-auto"
     )}>
-      <div className="max-w-7xl mx-auto glass border border-white/10 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] rounded-2xl pointer-events-auto overflow-hidden bg-background/50 backdrop-blur-xl">
+      <div className="pointer-events-auto w-full overflow-hidden border-t border-white/10 bg-background/35 shadow-[0_-18px_70px_rgba(0,0,0,0.32)] backdrop-blur-3xl">
+        {playlistRail}
         
         {/* Progress Bar (Integrated at top) */}
-        <div className="absolute top-0 left-0 right-0 group px-4 sm:px-6 h-1 hover:h-1.5 transition-all cursor-pointer">
+        <div className="group absolute right-0 bottom-[4.5rem] left-0 h-1 cursor-pointer transition-all hover:h-1.5 sm:bottom-24">
           <Slider
             value={[displayTime]}
             max={duration || 100}
@@ -82,10 +117,10 @@ export function PlayerBottomBar() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 h-20 sm:h-24">
+        <div className="flex h-[4.5rem] items-center justify-between gap-1 px-2.5 sm:h-24 sm:gap-4 sm:px-4">
           
           {/* Left: Navigation & Song Info */}
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-[1.2] sm:flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
             <div className="hidden lg:flex items-center gap-1 border-r border-white/10 pr-4 mr-2">
               <Link href="/">
                 <Button variant="ghost" size="icon" className={cn("w-10 h-10 rounded-xl", pathname === '/' && "bg-primary/10 text-primary")}>
@@ -100,7 +135,7 @@ export function PlayerBottomBar() {
             </div>
 
             <div className="relative group shrink-0">
-              <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-muted border border-white/5">
+              <div className="h-10 w-10 overflow-hidden rounded-lg border border-white/10 bg-muted sm:h-16 sm:w-16">
                 {currentSong.thumbnail ? (
                   <img src={currentSong.thumbnail} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -123,7 +158,7 @@ export function PlayerBottomBar() {
           </div>
 
           {/* Center: Playback Controls */}
-          <div className="flex flex-col items-center gap-1 shrink-0 px-2">
+          <div className="flex shrink-0 flex-col items-center gap-1 px-0.5 sm:px-2">
             <div className="flex items-center gap-1 sm:gap-6">
               <Button
                 size="icon"
@@ -138,7 +173,7 @@ export function PlayerBottomBar() {
               <Button
                 size="icon"
                 onClick={togglePlay}
-                className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-primary text-primary-foreground hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                className="h-11 w-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:scale-105 active:scale-95 sm:h-14 sm:w-14"
               >
                 {isPlaying ? <Pause className="w-5 h-5 sm:w-6 sm:h-6" /> : <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />}
               </Button>
@@ -160,7 +195,7 @@ export function PlayerBottomBar() {
           </div>
 
           {/* Right: Extra Controls */}
-          <div className="flex items-center justify-end gap-1 sm:gap-4 flex-1">
+          <div className="flex flex-1 items-center justify-end gap-0 sm:gap-4">
             
             {/* Desktop Only Controls */}
             <div className="hidden lg:flex items-center gap-3">
@@ -227,6 +262,23 @@ export function PlayerBottomBar() {
                   className="flex-1 cursor-pointer"
                 />
               </div>
+
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/15"
+                    title="เปิดคิวเพลง"
+                  >
+                    <ListMusic className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-md p-0 border-l border-white/10 z-[130]">
+                  <SheetTitle className="sr-only">คิวเพลง</SheetTitle>
+                  <QueueList />
+                </SheetContent>
+              </Sheet>
             </div>
 
             {/* Mobile/Tablet "More" Menu & Primary Actions */}
@@ -235,7 +287,7 @@ export function PlayerBottomBar() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className={cn("w-9 h-9 sm:w-10 sm:h-10 rounded-xl", isVideoMode && "text-primary bg-primary/10")}
+                className={cn("hidden h-9 w-9 rounded-xl min-[390px]:flex sm:h-10 sm:w-10", isVideoMode && "text-primary bg-primary/10")}
                 onClick={() => setIsVideoMode(!isVideoMode)}
               >
                 <Tv className="w-4 h-4" />
@@ -244,7 +296,7 @@ export function PlayerBottomBar() {
               {/* More Actions Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl sm:h-10 sm:w-10">
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -279,7 +331,7 @@ export function PlayerBottomBar() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 ml-1"
+                    className="ml-0.5 h-10 w-10 rounded-xl bg-primary/10 text-primary hover:bg-primary/15 sm:ml-1 sm:h-12 sm:w-12"
                   >
                     <ListMusic className="w-5 h-5 sm:w-6 sm:h-6" />
                   </Button>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'music-bar-v2';
+const CACHE_NAME = 'music-bar-v11';
 const APP_SHELL = [
   '/',
   '/request',
@@ -46,23 +46,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell: Cache first, network fallback
+  // App shell: prefer fresh assets and keep the cache as an offline fallback.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
+    fetch(event.request).then((response) => {
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      });
-    }).catch(() => {
+      }).catch(() => caches.match(event.request).then((cached) => {
+      if (cached) return cached;
       // Offline fallback for navigation
       if (event.request.mode === 'navigate') {
         return caches.match('/');
       }
-    })
+    }))
   );
 });
 

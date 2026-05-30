@@ -66,7 +66,7 @@ export function RequestView() {
   const generateQRCode = async (url: string) => {
     try {
       // Use a free QR code API
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}&bgcolor=0d0d1a&color=a78bfa&format=png&margin=20`
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}&bgcolor=101a17&color=6ee7b7&format=png&margin=20`
       setQrDataUrl(qrUrl)
     } catch {
       toast.error('ไม่สามารถสร้าง QR code ได้')
@@ -188,7 +188,7 @@ export function RequestView() {
             <p className="text-xs text-muted-foreground mb-4 text-center">{pageUrl}</p>
             {qrDataUrl ? (
               <div className="flex flex-col items-center gap-4">
-                <div className="rounded-2xl overflow-hidden border border-border/40 p-2 bg-[#0d0d1a]">
+                <div className="overflow-hidden rounded-2xl border border-border/40 bg-[#101a17] p-2">
                   <img src={qrDataUrl} alt="QR Code" className="w-56 h-56 object-contain" />
                 </div>
                 <Button className="w-full gap-2" onClick={handleDownloadQR}>
