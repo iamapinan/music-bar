@@ -9,7 +9,13 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
 
   useEffect(() => {
+    document.documentElement.classList.add('admin-mode')
+    document.documentElement.classList.remove('dark')
     checkAuth()
+    return () => {
+      document.documentElement.classList.remove('admin-mode')
+      document.documentElement.classList.add('dark')
+    }
   }, [])
 
   const checkAuth = async () => {

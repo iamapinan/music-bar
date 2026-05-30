@@ -222,7 +222,9 @@
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.045), 0 18px 60px oklch(0.03 0.01 165 / 0.2);
 }
 
-.admin-shell {
+.admin-shell,
+html.admin-mode,
+body.admin-mode {
   --background: oklch(0.985 0.003 175);
   --foreground: oklch(0.25 0.01 175);
   --card: oklch(1 0 0);
@@ -240,10 +242,16 @@
   --border: oklch(0.9 0.005 175 / 0.8);
   --input: oklch(0.93 0.005 175);
   --ring: oklch(0.55 0.15 158);
+}
+
+.admin-shell,
+html.admin-mode,
+body.admin-mode {
   color: var(--foreground);
   background:
     radial-gradient(circle at 100% 0%, oklch(0.94 0.03 175 / 0.5), transparent 40rem),
-    linear-gradient(180deg, oklch(0.985 0.003 175), oklch(0.965 0.005 175));
+    linear-gradient(180deg, oklch(0.985 0.003 175), oklch(0.965 0.005 175)) !important;
+  background-attachment: fixed !important;
 }
 
 .admin-glass {
@@ -257,6 +265,23 @@
   background: oklch(1 0 0 / 0.95);
   border: 1px solid oklch(0.88 0.008 175 / 0.8);
   box-shadow: 0 10px 30px oklch(0.2 0.01 175 / 0.04), inset 0 1px 0 oklch(1 0 0);
+}
+
+/* Override sonner toast styles inside admin mode to ensure they are light theme */
+body.admin-mode [data-sonner-toast] {
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 10px 30px oklch(0.2 0.01 175 / 0.08) !important;
+}
+
+/* Light theme elegant scrollbars for admin mode */
+body.admin-mode ::-webkit-scrollbar-thumb {
+  background: oklch(0.8 0.005 175) !important;
+}
+
+body.admin-mode ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.7 0.005 175) !important;
 }
 
 .admin-shell [data-slot="tabs-trigger"][data-state="active"] {
