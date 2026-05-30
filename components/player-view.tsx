@@ -76,6 +76,17 @@ export function PlayerView() {
         isFullscreen && "fixed inset-0 z-50",
       )}
     >
+      <div className="player-stage-ambient pointer-events-none absolute inset-0 overflow-hidden">
+        {!isVideoMode && currentSong.thumbnail && (
+          <img
+            src={currentSong.thumbnail}
+            alt=""
+            className="player-stage-art absolute inset-[-12%] h-[124%] w-[124%] object-cover"
+          />
+        )}
+        <div className="player-stage-wash absolute inset-0" />
+      </div>
+
       {/* ===== FULL-PAGE TOUCH OVERLAY (topmost, captures all taps to show controls) ===== */}
       <div
         className="absolute inset-0 z-[80]"
@@ -136,12 +147,6 @@ export function PlayerView() {
       )}
 
       <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center p-3 pb-36 sm:p-8 sm:pb-44">
-        {!isVideoMode && currentSong.thumbnail && (
-          <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
-            <img src={currentSong.thumbnail} alt="" className="h-full w-full scale-125 object-cover blur-3xl saturate-50" />
-            <div className="absolute inset-0 bg-background/75" />
-          </div>
-        )}
         <div className="relative flex h-full w-full max-w-6xl flex-col items-center justify-center pt-14 sm:pt-16">
           {isVideoMode ? (
             <div
@@ -238,7 +243,7 @@ export function PlayerView() {
             </div>
           ) : (
             <section className="grid w-full max-w-6xl gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.65fr)]">
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:p-6">
+              <div className="player-glass-card player-glass-card-featured relative overflow-hidden rounded-2xl p-4 sm:p-6">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(110,231,183,0.12),transparent_42%)]" />
                 <div className="relative grid gap-5 sm:grid-cols-[minmax(11rem,0.82fr)_minmax(0,1.18fr)] sm:items-center">
                   <div className="relative aspect-square overflow-hidden rounded border border-white/10 bg-black/30 shadow-2xl">
@@ -307,7 +312,7 @@ export function PlayerView() {
               </div>
 
               <aside className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur-xl sm:p-5">
+                <div className="player-glass-card rounded-2xl p-4 sm:p-5">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-primary">Up next</p>
                     <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">01</span>
@@ -326,7 +331,7 @@ export function PlayerView() {
                     <p className="mt-4 text-sm text-white/45">ไม่มีเพลงถัดไปในคิว</p>
                   )}
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur-xl sm:p-5">
+                <div className="player-glass-card rounded-2xl p-4 sm:p-5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-white/75">
                       <Clock3 className="h-4 w-4 text-primary" />
@@ -341,7 +346,7 @@ export function PlayerView() {
                           key={`${song.id}-${index}`}
                           type="button"
                           onClick={() => playSong(song)}
-                          className="group flex w-full items-center gap-3 py-2.5 text-left transition-colors hover:text-primary"
+                          className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-all duration-300 hover:bg-white/[0.075] hover:pl-3 hover:text-primary"
                         >
                           <span className="w-4 text-[10px] font-medium tabular-nums text-white/30">{index + 1}</span>
                           <div className="h-9 w-9 shrink-0 overflow-hidden rounded border border-white/10 bg-white/5">
