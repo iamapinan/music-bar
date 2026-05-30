@@ -49,56 +49,73 @@ export function PlayerBottomBar() {
   }
 
   const displayTime = isDraggingTime ? dragTime : currentTime
+  const enabledPlaylists = playlists.filter(playlist => playlist.is_enabled)
 
-  const playlistRail = playlists.length > 0 && (
-    <div className="border-b border-white/10 bg-black/10 px-3 py-2 backdrop-blur-3xl sm:px-5">
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-        <span className="mr-1 hidden shrink-0 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35 sm:inline">Playlists</span>
-        {playlists.filter(playlist => playlist.is_enabled).map(playlist => {
-          const isActive = activePlaylistIds.includes(playlist.id)
-          const firstLetter = playlist.name.slice(0, 1).toUpperCase()
-          const gradients = [
-            'from-emerald-500 to-teal-700 text-emerald-100',
-            'from-cyan-500 to-blue-700 text-cyan-100',
-            'from-indigo-500 to-purple-700 text-indigo-100',
-            'from-violet-500 to-fuchsia-700 text-violet-100',
-            'from-rose-500 to-orange-700 text-rose-100',
-          ]
-          const gradClass = gradients[playlist.id % gradients.length]
+  const renderPlaylistRailItems = (isDuplicate = false) => (
+    <div
+      className="flex shrink-0 items-center gap-2 pr-2"
+      aria-hidden={isDuplicate || undefined}
+    >
+      <span className="mr-1 hidden shrink-0 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35 sm:inline">
+        Playlists
+      </span>
+      {enabledPlaylists.map(playlist => {
+        const isActive = activePlaylistIds.includes(playlist.id)
+        const firstLetter = playlist.name.slice(0, 1).toUpperCase()
+        const gradients = [
+          'from-emerald-500 to-teal-700 text-emerald-100',
+          'from-cyan-500 to-blue-700 text-cyan-100',
+          'from-indigo-500 to-purple-700 text-indigo-100',
+          'from-violet-500 to-fuchsia-700 text-violet-100',
+          'from-rose-500 to-orange-700 text-rose-100',
+        ]
+        const gradClass = gradients[playlist.id % gradients.length]
 
-          return (
-            <button
-              key={playlist.id}
-              type="button"
-              onClick={() => {
-                if (isActive) {
-                  setActivePlaylistIds([])
-                } else {
-                  setActivePlaylistIds([playlist.id])
-                }
-              }}
-              className={cn(
-                'flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.98]',
-                isActive
-                  ? 'border-primary/35 bg-primary/15 text-primary shadow-[0_2px_10px_rgba(110,231,183,0.1)]'
-                  : 'border-white/10 bg-white/[0.035] text-white/55 hover:border-white/20 hover:bg-white/[0.07] hover:text-white/85'
-              )}
-            >
-              {playlist.cover_thumbnail ? (
-                <img
-                  src={playlist.cover_thumbnail}
-                  alt=""
-                  className="w-4 h-4 rounded object-cover shrink-0 border border-white/10"
-                />
-              ) : (
-                <div className={cn('w-4 h-4 rounded bg-gradient-to-br flex items-center justify-center text-[7px] font-bold shrink-0', gradClass)}>
-                  {firstLetter}
-                </div>
-              )}
-              <span className="max-w-44 truncate">{playlist.name}</span>
-            </button>
-          )
-        })}
+        return (
+          <button
+            key={`${isDuplicate ? 'duplicate' : 'primary'}-${playlist.id}`}
+            type="button"
+            tabIndex={isDuplicate ? -1 : undefined}
+            onClick={() => {
+              if (isActive) {
+                setActivePlaylistIds([])
+              } else {
+                setActivePlaylistIds([playlist.id])
+              }
+            }}
+            className={cn(
+              'flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.98]',
+              isActive
+                ? 'border-primary/35 bg-primary/15 text-primary shadow-[0_2px_10px_rgba(110,231,183,0.1)]'
+                : 'border-white/10 bg-white/[0.035] text-white/55 hover:border-white/20 hover:bg-white/[0.07] hover:text-white/85'
+            )}
+          >
+            {playlist.cover_thumbnail ? (
+              <img
+                src={playlist.cover_thumbnail}
+                alt=""
+                className="w-4 h-4 rounded object-cover shrink-0 border border-white/10"
+              />
+            ) : (
+              <div className={cn('w-4 h-4 rounded bg-gradient-to-br flex items-center justify-center text-[7px] font-bold shrink-0', gradClass)}>
+                {firstLetter}
+              </div>
+            )}
+            <span className="max-w-44 truncate">{playlist.name}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  const playlistRail = enabledPlaylists.length > 0 && (
+    <div className={cn(
+      "overflow-hidden border-b border-white/10 px-3 py-2 backdrop-blur-3xl sm:px-5",
+      pathname === '/admin' ? "bg-[#07120f]/95" : "bg-black/10"
+    )}>
+      <div className="playlist-marquee flex w-max items-center">
+        {renderPlaylistRailItems()}
+        {renderPlaylistRailItems(true)}
       </div>
     </div>
   )
@@ -116,11 +133,11 @@ export function PlayerBottomBar() {
       "fixed bottom-0 left-0 right-0 z-[100] transition-all duration-500",
       (pathname === '/' && isVideoMode && isFullscreen && !showControls) ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-0 opacity-100 pointer-events-auto"
     )}>
-      <div className="pointer-events-auto w-full overflow-hidden border-t border-white/10 bg-background/35 shadow-[0_-18px_70px_rgba(0,0,0,0.32)] backdrop-blur-3xl">
+      <div className="player-ambient pointer-events-auto relative w-full overflow-hidden border-t border-white/10 bg-background/35 shadow-[0_-18px_70px_rgba(0,0,0,0.32)] backdrop-blur-3xl">
         {playlistRail}
         
         {/* Progress Bar (Integrated at top) */}
-        <div className="group absolute right-0 bottom-[4.5rem] left-0 h-1 cursor-pointer transition-all hover:h-1.5 sm:bottom-24">
+        <div className="group absolute right-0 bottom-[4.5rem] left-0 z-10 h-1 cursor-pointer transition-all hover:h-1.5 sm:bottom-24">
           <Slider
             value={[displayTime]}
             max={duration || 100}
@@ -143,7 +160,7 @@ export function PlayerBottomBar() {
           </div>
         </div>
 
-        <div className="flex h-[4.5rem] items-center justify-between gap-1 px-2.5 sm:h-24 sm:gap-4 sm:px-4">
+        <div className="relative z-10 flex h-[4.5rem] items-center justify-between gap-1 px-2.5 sm:h-24 sm:gap-4 sm:px-4">
           
           {/* Left: Navigation & Song Info */}
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">

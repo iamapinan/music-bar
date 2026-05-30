@@ -386,7 +386,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
   };
 
   return (
-    <div className="admin-shell min-h-[100dvh] flex flex-col pb-6 text-foreground bg-background">
+    <div className="admin-shell flex min-h-[100dvh] flex-col pb-36 text-foreground bg-background sm:pb-48 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden">
       {/* Header (Top Navigation) */}
       <header className="admin-glass sticky top-0 z-30 border-b border-border/60">
         <div className="w-full flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
@@ -435,12 +435,12 @@ export function AdminView({ onLogout }: AdminViewProps) {
       </header>
 
       {/* Main Workspace: Full width layout with resizable columns */}
-      <main className="w-full px-4 pt-4 sm:px-6 lg:px-8 flex-1 flex flex-col min-h-0">
-        <div className="flex flex-col lg:flex-row gap-5 items-stretch min-h-0 flex-1">
+      <main className="flex w-full flex-1 flex-col px-4 pt-4 sm:px-6 lg:min-h-0 lg:px-8">
+        <div className="flex flex-1 flex-col gap-5 lg:min-h-0 lg:flex-row lg:items-stretch">
           {/* LEFT COLUMN: Resizable & Toggleable Library Sidebar */}
           {isSidebarOpen && (
             <div
-              className="flex-shrink-0 flex flex-col gap-4 min-h-0 w-full lg:w-auto"
+              className="flex max-h-[34rem] w-full flex-shrink-0 flex-col gap-4 lg:max-h-none lg:min-h-0 lg:w-auto"
               style={{
                 width:
                   typeof window !== "undefined" && window.innerWidth >= 1024
@@ -508,6 +508,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => setPlaylistView("cards")}
+                      aria-label="แสดงเพลย์ลิสต์แบบการ์ด"
                       className={cn(
                         "h-5 w-6 p-0 rounded-sm",
                         playlistView === "cards" &&
@@ -521,6 +522,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => setPlaylistView("table")}
+                      aria-label="แสดงเพลย์ลิสต์แบบตาราง"
                       className={cn(
                         "h-5 w-6 p-0 rounded-sm",
                         playlistView === "table" &&
@@ -547,6 +549,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                     size="sm"
                     onClick={handleCreatePlaylist}
                     disabled={isCreating || !newPlaylistName.trim()}
+                    aria-label="สร้างเพลย์ลิสต์"
                     className="h-8 w-8 rounded shrink-0 p-0"
                   >
                     {isCreating ? (
@@ -612,10 +615,15 @@ export function AdminView({ onLogout }: AdminViewProps) {
                             >
                               {/* Playlist Cover on Top - Square fill for grid cards */}
                               <div className="relative w-full aspect-square rounded overflow-hidden shadow-inner bg-muted shrink-0">
-                                <PlaylistCover playlist={pl} className="w-full h-full text-lg" />
+                                <PlaylistCover
+                                  playlist={pl}
+                                  className="w-full h-full text-lg"
+                                />
 
                                 {/* Overlay Checkbox for continuous playback */}
                                 <button
+                                  type="button"
+                                  aria-label={`เลือก ${pl.name} สำหรับเล่นต่อเนื่อง`}
                                   className="absolute top-1.5 left-1.5 flex h-5 w-5 items-center justify-center rounded bg-black/40 text-white hover:bg-black/60 transition-colors"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -741,6 +749,8 @@ export function AdminView({ onLogout }: AdminViewProps) {
                               >
                                 <TableCell className="p-1 text-center">
                                   <button
+                                    type="button"
+                                    aria-label={`เลือก ${pl.name} สำหรับเล่นต่อเนื่อง`}
                                     className="flex h-5 w-5 items-center justify-center text-muted-foreground mx-auto"
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -756,7 +766,10 @@ export function AdminView({ onLogout }: AdminViewProps) {
                                 </TableCell>
                                 <TableCell className="p-1 min-w-0">
                                   <div className="flex items-center gap-1.5">
-                                    <PlaylistCover playlist={pl} className="w-8 h-8 text-[10px]" />
+                                    <PlaylistCover
+                                      playlist={pl}
+                                      className="w-8 h-8 text-[10px]"
+                                    />
                                     <div className="truncate">
                                       <p className="font-bold text-xs text-foreground truncate">
                                         {pl.name}
@@ -842,9 +855,9 @@ export function AdminView({ onLogout }: AdminViewProps) {
           )}
 
           {/* RIGHT COLUMN: Active Workspace (List / Grid View for tracks) */}
-          <div className="admin-surface rounded-lg p-4 flex-1 flex flex-col gap-4 min-h-0">
+          <div className="flex min-h-[36rem] flex-1 flex-col gap-4 lg:min-h-0">
             {/* Header Area inside Workspace */}
-            <div className="border-b border-border/40 pb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
+            <div className="admin-surface rounded-lg p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
               <div>
                 <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
                   {currentPlaylist
@@ -863,9 +876,9 @@ export function AdminView({ onLogout }: AdminViewProps) {
               </div>
 
               {/* Console controls & toggle layout view */}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-col gap-2 sm:items-end">
                 {/* View Mode Grid/List selectors */}
-                <div className="flex rounded border border-border/40 bg-black/5 p-0.5">
+                <div className="flex self-start rounded border border-border/40 p-0.5">
                   <Button
                     type="button"
                     variant="ghost"
@@ -897,11 +910,11 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 </div>
 
                 {/* Tab switch buttons */}
-                <div className="flex rounded bg-black/5 p-0.5 border border-border/40">
+                <div className="flex max-w-full overflow-x-auto rounded border border-border/40 p-0.5 scrollbar-none">
                   <button
                     onClick={() => setActiveWorkspaceTab("tracks")}
                     className={cn(
-                      "px-3 py-1 text-xs font-semibold rounded transition-all flex items-center gap-1.5",
+                      "flex shrink-0 items-center gap-1.5 rounded border px-3 py-1 text-xs font-semibold transition-all",
                       activeWorkspaceTab === "tracks"
                         ? "bg-white text-primary border border-border shadow-sm"
                         : "text-muted-foreground hover:text-foreground border border-transparent",
@@ -913,7 +926,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                   <button
                     onClick={() => setActiveWorkspaceTab("search")}
                     className={cn(
-                      "px-3 py-1 text-xs font-semibold rounded transition-all flex items-center gap-1.5",
+                      "flex shrink-0 items-center gap-1.5 rounded border px-3 py-1 text-xs font-semibold transition-all",
                       activeWorkspaceTab === "search"
                         ? "bg-white text-primary border border-border shadow-sm"
                         : "text-muted-foreground hover:text-foreground border border-transparent",
@@ -925,7 +938,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                   <button
                     onClick={() => setActiveWorkspaceTab("requests")}
                     className={cn(
-                      "px-3 py-1 text-xs font-semibold rounded transition-all flex items-center gap-1.5 relative",
+                      "relative flex shrink-0 items-center gap-1.5 rounded border px-3 py-1 text-xs font-semibold transition-all",
                       activeWorkspaceTab === "requests"
                         ? "bg-white text-primary border border-border shadow-sm"
                         : "text-muted-foreground hover:text-foreground border border-transparent",
@@ -945,14 +958,14 @@ export function AdminView({ onLogout }: AdminViewProps) {
 
             {/* TAB CONTENT: PLAYLIST TRACKS (Full Div Height enabled) */}
             {activeWorkspaceTab === "tracks" && (
-              <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              <div className="flex min-h-0 flex-1 flex-col">
                 <div className="flex items-center justify-between shrink-0 mb-1.5">
                   <p className="text-xs text-muted-foreground">
                     รายการเพลงทั้งหมดในแผง ({playlistSongs.length} แทร็ก)
                   </p>
                 </div>
 
-                <ScrollArea className="flex-1 min-h-0 h-0 pr-1">
+                <ScrollArea className="h-0 flex-1 pr-1">
                   {playlistSongs.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground text-center">
                       <Music2 className="w-12 h-12 mb-3 opacity-20" />
@@ -996,8 +1009,9 @@ export function AdminView({ onLogout }: AdminViewProps) {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="w-8 h-8 rounded opacity-0 group-hover:opacity-100 transition-all text-destructive hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
+                            className="h-8 w-8 flex-shrink-0 rounded text-destructive transition-all hover:bg-destructive/10 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                             onClick={() => handleRemoveFromPlaylist(song.id)}
+                            aria-label={`ลบ ${song.title}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -1006,7 +1020,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                     </div>
                   ) : (
                     /* Grid Thumbnail View (Spotify album grid style) */
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 p-0.5">
+                    <div className="grid grid-cols-2 gap-3.5 p-0.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                       {playlistSongs.map((song) => (
                         <div
                           key={song.id}
@@ -1016,10 +1030,10 @@ export function AdminView({ onLogout }: AdminViewProps) {
                           <div className="relative aspect-square w-full rounded overflow-hidden shadow-inner bg-muted shrink-0">
                             <img
                               src={song.thumbnail || ""}
-                              alt=""
+                              alt={song.title}
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -1027,6 +1041,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                                 onClick={() =>
                                   handleRemoveFromPlaylist(song.id)
                                 }
+                                aria-label={`ลบ ${song.title}`}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -1100,7 +1115,8 @@ export function AdminView({ onLogout }: AdminViewProps) {
                   <Button
                     size="sm"
                     onClick={handleSearch}
-                    disabled={isSearching}
+                    disabled={isSearching || !searchQuery.trim()}
+                    aria-label="ค้นหาเพลงจาก YouTube"
                     className="h-9 px-4 rounded shrink-0"
                   >
                     {isSearching ? (
@@ -1265,16 +1281,17 @@ export function AdminView({ onLogout }: AdminViewProps) {
                             <div className="relative aspect-square w-full rounded overflow-hidden shadow bg-muted shrink-0">
                               <img
                                 src={result.thumbnail || ""}
-                                alt=""
+                                alt={result.title}
                                 className="w-full h-full object-cover"
                               />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                                 <Button
                                   size="icon"
                                   variant="ghost"
                                   disabled={inPlaylist || isAdding}
                                   className="w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105"
                                   onClick={() => handleAddToPlaylist(result)}
+                                  aria-label={`เพิ่ม ${result.title} ลงในเพลย์ลิสต์`}
                                 >
                                   {isAdding ? (
                                     <Loader2 className="w-4 h-4 animate-spin text-white" />
@@ -1310,16 +1327,17 @@ export function AdminView({ onLogout }: AdminViewProps) {
                           <div className="relative aspect-square w-full rounded overflow-hidden shadow bg-muted shrink-0">
                             <img
                               src={pl.thumbnail || ""}
-                              alt=""
+                              alt={pl.title}
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 disabled={importingId === pl.id}
                                 className="w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105"
                                 onClick={() => handleImportYoutubePlaylist(pl)}
+                                aria-label={`นำเข้าเพลย์ลิสต์ ${pl.title}`}
                               >
                                 {importingId === pl.id ? (
                                   <Loader2 className="w-4 h-4 animate-spin text-white" />
@@ -1427,6 +1445,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                               variant="ghost"
                               className="w-8 h-8 rounded text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
                               onClick={() => handleRemoveRequest(req.id)}
+                              aria-label={`ลบคำขอ ${req.title}`}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
@@ -1453,15 +1472,16 @@ export function AdminView({ onLogout }: AdminViewProps) {
                             <div className="relative aspect-square w-full rounded overflow-hidden shadow bg-muted shrink-0">
                               <img
                                 src={req.thumbnail || ""}
-                                alt=""
+                                alt={req.title}
                                 className="w-full h-full object-cover"
                               />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                                 <Button
                                   size="icon"
                                   variant="ghost"
                                   className="w-8 h-8 rounded bg-destructive/90 text-white hover:bg-destructive hover:scale-105"
                                   onClick={() => handleRemoveRequest(req.id)}
+                                  aria-label={`ลบคำขอ ${req.title}`}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -1516,6 +1536,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 variant="ghost"
                 className="w-8 h-8 rounded"
                 onClick={() => setShowQR(false)}
+                aria-label="ปิดหน้าต่าง QR"
               >
                 <X className="w-4 h-4 text-foreground" />
               </Button>

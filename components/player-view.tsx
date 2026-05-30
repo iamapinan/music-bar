@@ -76,6 +76,17 @@ export function PlayerView() {
         isFullscreen && "fixed inset-0 z-50",
       )}
     >
+      <div className="player-stage-ambient pointer-events-none absolute inset-0 overflow-hidden">
+        {!isVideoMode && currentSong.thumbnail && (
+          <img
+            src={currentSong.thumbnail}
+            alt=""
+            className="player-stage-art absolute inset-[-12%] h-[124%] w-[124%] object-cover"
+          />
+        )}
+        <div className="player-stage-wash absolute inset-0" />
+      </div>
+
       {/* ===== FULL-PAGE TOUCH OVERLAY (topmost, captures all taps to show controls) ===== */}
       <div
         className="absolute inset-0 z-[80]"
@@ -136,12 +147,6 @@ export function PlayerView() {
       )}
 
       <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center p-3 pb-36 sm:p-8 sm:pb-44">
-        {!isVideoMode && currentSong.thumbnail && (
-          <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
-            <img src={currentSong.thumbnail} alt="" className="h-full w-full scale-125 object-cover blur-3xl saturate-50" />
-            <div className="absolute inset-0 bg-background/75" />
-          </div>
-        )}
         <div className="relative flex h-full w-full max-w-6xl flex-col items-center justify-center pt-14 sm:pt-16">
           {isVideoMode ? (
             <div
