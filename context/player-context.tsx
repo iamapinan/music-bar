@@ -130,6 +130,64 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [currentIndex, playMode, isVideoMode, isAutoPlayEnabled, isInitialized])
 
+  // ===================== Player Ping & Registration =====================
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const getOrCreateDeviceId = () => {
+      let id = localStorage.getItem('music_bar_device_id')
+      if (!id) {
+        id = crypto.randomUUID()
+        localStorage.setItem('music_bar_device_id', id)
+      }
+      return id
+    }
+
+    const getDeviceType = () => {
+      const ua = navigator.userAgent
+      if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return 'Tablet'
+      if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return 'Mobile'
+      return 'Desktop'
+    }
+
+    const deviceId = getOrCreateDeviceId()
+    const deviceType = getDeviceType()
+    
+    if (!localStorage.getItem('music_bar_device_name')) {
+      localStorage.setItem('music_bar_device_name', `${deviceType} Player`)
+    }
+
+    const pingServer = async () => {
+      try {
+        const res = await fetch('/api/players', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            device_id: deviceId,
+            device_name: localStorage.getItem('music_bar_device_name'),
+            device_type: deviceType,
+          })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          // If the admin deactivated this player remotely, we can potentially pause playback here
+          // but for now we just register the player.
+          if (data.is_active === false && isPlaying) {
+             playerRef.current?.pause()
+             setIsPlaying(false)
+          }
+        }
+      } catch (err) {
+        console.error('Player ping failed', err)
+      }
+    }
+
+    // Initial ping and then interval every 30s
+    pingServer()
+    const interval = setInterval(pingServer, 30000)
+    return () => clearInterval(interval)
+  }, [isPlaying])
+
   // ===================== Auto-hide Controls =====================
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
   const isPlayingRef = useRef(isPlaying)

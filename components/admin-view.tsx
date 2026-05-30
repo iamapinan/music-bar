@@ -24,6 +24,10 @@ import {
   X,
   RefreshCw,
   QrCode,
+  MonitorPlay,
+  Monitor,
+  Smartphone,
+  Tablet,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -122,6 +126,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
   );
   const [targetPlaylistId, setTargetPlaylistId] = useState<number | null>(null);
   const [playlistView, setPlaylistView] = useState<"cards" | "table">("cards");
+  const [showAddPlaylistInput, setShowAddPlaylistInput] = useState(false);
   const [activeWorkspaceTab, setActiveWorkspaceTab] =
     useState<string>("tracks");
 
@@ -138,6 +143,32 @@ export function AdminView({ onLogout }: AdminViewProps) {
   const [pageUrl, setPageUrl] = useState("");
 
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showPlayersModal, setShowPlayersModal] = useState(false);
+
+  const handleTogglePlayer = async (id: string, currentStatus: boolean) => {
+    try {
+      await fetch(`/api/players/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !currentStatus }),
+      });
+      mutatePlayers();
+    } catch (err) {
+      console.error("Failed to toggle player", err);
+    }
+  };
+
+  const handleDeletePlayer = async (id: string) => {
+    if (!confirm("ต้องการลบเครื่องเล่นนี้หรือไม่?")) return;
+    try {
+      await fetch(`/api/players/${id}`, {
+        method: "DELETE",
+      });
+      mutatePlayers();
+    } catch (err) {
+      console.error("Failed to delete player", err);
+    }
+  };
 
   const handleForceUpdate = () => {
     forceUpdateApp(setIsUpdating);
@@ -161,7 +192,13 @@ export function AdminView({ onLogout }: AdminViewProps) {
   const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>(
     "/api/requests",
     fetcher,
-    { refreshInterval: 5000 },
+    { refreshInterval: 3000 }
+  );
+
+  const { data: players = [], mutate: mutatePlayers } = useSWR<any[]>(
+    showPlayersModal ? "/api/players" : null,
+    fetcher,
+    { refreshInterval: 5000 }
   );
 
   // Initialize QR Code URL
@@ -393,7 +430,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
   };
 
   return (
-    <div className="admin-shell flex min-h-[100dvh] flex-col pb-36 text-foreground bg-background sm:pb-48 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden">
+    <div className="admin-shell flex min-h-[100dvh] flex-col pb-[140px] text-foreground bg-background sm:pb-[140px] lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden lg:pb-[120px]">
       {/* Header (Top Navigation) */}
       <header className="admin-glass admin-console-header sticky top-0 z-30 border-b border-border/60">
         <div className="scrollbar-none flex w-full flex-nowrap items-center justify-between gap-3 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8">
@@ -419,6 +456,27 @@ export function AdminView({ onLogout }: AdminViewProps) {
               </h1>
             </div>
           </div>
+
+          {/* Moved Stats Bar to Top */}
+          <div className="hidden md:flex flex-1 items-center justify-center gap-6 px-4">
+            <div className="flex items-center gap-4 border border-border/40 bg-black/5 rounded-full px-5 py-1.5 shadow-inner">
+              <div className="flex flex-col items-center">
+                <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">Playlists</span>
+                <span className="text-xs font-bold tabular-nums leading-none mt-0.5">{playlists.length}</span>
+              </div>
+              <div className="h-5 w-[1px] bg-border/50"></div>
+              <div className="flex flex-col items-center">
+                <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">Tracks</span>
+                <span className="text-xs font-bold tabular-nums leading-none mt-0.5">{playlistSongs.length}</span>
+              </div>
+              <div className="h-5 w-[1px] bg-border/50"></div>
+              <div className="flex flex-col items-center">
+                <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">Requests</span>
+                <span className="text-xs font-bold tabular-nums text-primary leading-none mt-0.5">{requests.length}</span>
+              </div>
+            </div>
+          </div>
+
           <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
             <Button
               variant="outline"
@@ -442,6 +500,15 @@ export function AdminView({ onLogout }: AdminViewProps) {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setShowPlayersModal(true)}
+              className="h-8 gap-1.5 rounded-full border-border bg-background text-xs text-foreground transition-all hover:bg-black/5"
+            >
+              <MonitorPlay className="w-3.5 h-3.5" />
+              จัดการเครื่องเล่น
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onLogout}
               className="h-8 rounded-full border-border text-xs text-muted-foreground transition-all hover:bg-black/5 hover:text-foreground"
             >
@@ -457,7 +524,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
           {/* LEFT COLUMN: Resizable & Toggleable Library Sidebar */}
           {isSidebarOpen && (
             <div
-              className="flex max-h-[34rem] w-full flex-shrink-0 flex-col gap-4 lg:max-h-none lg:min-h-0 lg:w-auto"
+              className="flex h-[45vh] md:h-[50vh] w-full flex-shrink-0 flex-col gap-4 lg:h-auto lg:min-h-0 lg:w-auto"
               style={{
                 width:
                   typeof window !== "undefined" && window.innerWidth >= 1024
@@ -465,144 +532,118 @@ export function AdminView({ onLogout }: AdminViewProps) {
                     : undefined,
               }}
             >
-              {/* Stats Bar */}
-              <div className="admin-surface admin-stat-card flex flex-col gap-2.5 rounded-3xl p-3.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-primary/10 text-primary border border-primary/20">
-                    <LibraryBig className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-foreground truncate">
-                      {currentPlaylist?.name || "ยังไม่ได้เลือกเพลย์ลิสต์"}
-                    </p>
-                    <p className="text-[9px] text-muted-foreground truncate uppercase tracking-wider">
-                      {currentPlaylist?.is_default
-                        ? "Default Rotation"
-                        : "Custom Playlist"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-1.5 border-t border-border/30 pt-2.5 text-center">
-                  <div>
-                    <p className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Playlists
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">
-                      {playlists.length}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Tracks
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">
-                      {playlistSongs.length}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Requests
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-primary">
-                      {requests.length}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               {/* Playlist Manager */}
               <div className="admin-surface admin-library-panel flex min-h-0 flex-1 flex-col gap-3 rounded-3xl p-3.5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-[10px] font-bold uppercase tracking-wider text-foreground">
+                <div className="flex items-center justify-between px-1">
+                  <h2 className="text-[11px] font-extrabold text-foreground/90 tracking-wide flex items-center gap-1.5">
                     เพลย์ลิสต์ของคุณ
                   </h2>
 
-                  {/* View mode toggle */}
-                  <div className="flex rounded border border-border/40 bg-black/5 p-0.5">
+                  {/* Controls */}
+                  <div className="flex items-center gap-1.5">
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => setPlaylistView("cards")}
-                      aria-label="แสดงเพลย์ลิสต์แบบการ์ด"
+                      onClick={() => setShowAddPlaylistInput(!showAddPlaylistInput)}
                       className={cn(
-                        "h-5 w-6 p-0 rounded-sm",
-                        playlistView === "cards" &&
-                          "bg-white text-primary shadow-sm hover:bg-white",
+                        "h-7 w-7 p-0 rounded-full transition-all",
+                        showAddPlaylistInput ? "bg-primary text-primary-foreground shadow-sm" : "bg-black/5 text-muted-foreground hover:text-foreground"
                       )}
+                      title="เพิ่มเพลย์ลิสต์ใหม่"
                     >
-                      <LayoutGrid className="h-3 w-3" />
+                      <Plus className="h-4 w-4" />
                     </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setPlaylistView("table")}
-                      aria-label="แสดงเพลย์ลิสต์แบบตาราง"
-                      className={cn(
-                        "h-5 w-6 p-0 rounded-sm",
-                        playlistView === "table" &&
-                          "bg-white text-primary shadow-sm hover:bg-white",
-                      )}
-                    >
-                      <Rows3 className="h-3 w-3" />
-                    </Button>
+
+                    <div className="flex rounded-lg border border-border/60 bg-black/5 p-0.5 shadow-sm">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setPlaylistView("cards")}
+                        aria-label="แสดงเพลย์ลิสต์แบบการ์ด"
+                        className={cn(
+                          "h-6 w-7 p-0 rounded-md transition-all",
+                          playlistView === "cards" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-black/5"
+                        )}
+                      >
+                        <LayoutGrid className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setPlaylistView("table")}
+                        aria-label="แสดงเพลย์ลิสต์แบบตาราง"
+                        className={cn(
+                          "h-6 w-7 p-0 rounded-md transition-all",
+                          playlistView === "table" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-black/5"
+                        )}
+                      >
+                        <Rows3 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Create Playlist Input */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="เพิ่มเพลย์ลิสต์ใหม่..."
-                    value={newPlaylistName}
-                    onChange={(e) => setNewPlaylistName(e.target.value)}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleCreatePlaylist()
-                    }
-                    className="h-8 border-border bg-black/5 text-xs rounded shadow-inner text-foreground placeholder:text-muted-foreground"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={handleCreatePlaylist}
-                    disabled={isCreating || !newPlaylistName.trim()}
-                    aria-label="สร้างเพลย์ลิสต์"
-                    className="h-8 w-8 rounded shrink-0 p-0"
-                  >
-                    {isCreating ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Plus className="w-3.5 h-3.5" />
-                    )}
-                  </Button>
-                </div>
+                {/* Create Playlist Input (Conditionally rendered) */}
+                {showAddPlaylistInput && (
+                  <div className="flex gap-2 relative group px-1 animate-in slide-in-from-top-2 fade-in duration-200">
+                    <Input
+                      placeholder="เพิ่มเพลย์ลิสต์ใหม่..."
+                      value={newPlaylistName}
+                      onChange={(e) => setNewPlaylistName(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleCreatePlaylist()
+                      }
+                      autoFocus
+                      className="h-9 pl-4 pr-10 border-primary/20 bg-primary/5 hover:bg-primary/10 focus:bg-primary/10 text-xs rounded-full shadow-inner transition-colors text-foreground placeholder:text-muted-foreground"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleCreatePlaylist}
+                      disabled={isCreating || !newPlaylistName.trim()}
+                      aria-label="สร้างเพลย์ลิสต์"
+                      className="absolute right-2 top-1 bottom-1 h-7 w-7 rounded-full p-0 shadow-sm transition-transform hover:scale-105 bg-primary/80 hover:bg-primary text-primary-foreground"
+                    >
+                      {isCreating ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                )}
 
-                {/* Multiselection Manager */}
-                <div className="flex flex-col gap-1.5 rounded border border-border/40 bg-black/5 p-2.5">
-                  <div className="flex items-center gap-2">
-                    <CheckSquare className="w-3.5 h-3.5 text-primary shrink-0" />
+                {/* Multiselection Manager (Premium & Compact) */}
+                <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/[0.03] p-1.5 shadow-sm transition-all hover:bg-primary/[0.05]">
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-primary">
+                      <CheckSquare className="w-3 h-3" />
+                    </div>
                     <span className="text-[10px] text-foreground font-bold">
-                      เลือกสตรีมต่อเนื่อง ({selectedPlaylists.size})
+                      สตรีมต่อเนื่อง <span className="text-primary ml-0.5">({selectedPlaylists.size})</span>
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Button
-                      size="sm"
-                      className="h-7 text-[10px] flex-1 rounded font-bold"
-                      onClick={handleApplySelectedPlaylists}
-                    >
-                      เล่นเซ็ตนี้ต่อเนื่อง
-                    </Button>
+                  <div className="flex items-center gap-1">
                     {selectedPlaylists.size > 0 && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-7 text-[10px] text-muted-foreground hover:text-foreground rounded"
+                        className="h-6 px-2 text-[9px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded"
                         onClick={() => setSelectedPlaylists(new Set())}
+                        title="ล้างการเลือก"
                       >
                         ล้าง
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      className="h-6 px-3 text-[9px] rounded font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all"
+                      onClick={handleApplySelectedPlaylists}
+                    >
+                      ใช้งานชุดนี้
+                    </Button>
                   </div>
                 </div>
 
@@ -736,125 +777,90 @@ export function AdminView({ onLogout }: AdminViewProps) {
                       )}
                     </div>
                   ) : (
-                    /* Playlist Table View */
-                    <div className="overflow-hidden rounded border border-border/40 bg-black/5">
-                      <Table>
-                        <TableHeader className="bg-black/5">
-                          <TableRow className="border-b border-border/20">
-                            <TableHead className="w-8 h-8 px-1 text-[9px]"></TableHead>
-                            <TableHead className="px-1 text-[9px] text-muted-foreground">
-                              ชื่อ
-                            </TableHead>
-                            <TableHead className="w-12 px-1 text-[9px] text-muted-foreground text-center">
-                              เพลง
-                            </TableHead>
-                            <TableHead className="w-12 px-1 text-[9px] text-muted-foreground text-right"></TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {playlists.map((pl) => {
-                            const isCurrent = currentPlaylist?.id === pl.id;
-                            return (
-                              <TableRow
-                                key={pl.id}
-                                onClick={() => setActivePlaylistId(pl.id)}
-                                className={cn(
-                                  "cursor-pointer border-b border-border/10 hover:bg-black/5 transition-colors",
-                                  isCurrent && "bg-primary/[0.02]",
-                                  !pl.is_enabled && "opacity-40",
-                                )}
+                    /* Playlist List View (Compact) */
+                    <div className="flex flex-col gap-1">
+                      {playlists.map((pl) => {
+                        const isCurrent = currentPlaylist?.id === pl.id;
+                        return (
+                          <div
+                            key={pl.id}
+                            onClick={() => setActivePlaylistId(pl.id)}
+                            className={cn(
+                              "flex items-center w-70 gap-2 rounded-lg border border-transparent p-2 cursor-pointer transition-colors",
+                              isCurrent ? "border-primary/20 bg-primary/5" : "hover:bg-black/5",
+                              !pl.is_enabled && "opacity-40"
+                            )}
+                          >
+                            <button
+                              type="button"
+                              aria-label={`เลือก ${pl.name} สำหรับเล่นต่อเนื่อง`}
+                              className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelectPlaylist(pl.id);
+                              }}
+                            >
+                              {selectedPlaylists.has(pl.id) ? (
+                                <CheckSquare className="h-3.5 w-3.5 text-primary" />
+                              ) : (
+                                <Square className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                            <PlaylistCover
+                              playlist={pl}
+                              className="w-7 h-7 text-[9px] shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-xs text-foreground truncate">
+                                {pl.name}
+                              </p>
+                              <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.5">
+                                <span>{pl.song_count ?? 0} เพลง</span>
+                                {pl.is_default && <span className="text-primary font-semibold">Default</span>}
+                              </div>
+                            </div>
+                            <div
+                              className="flex shrink-0 items-center gap-0.5"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {!pl.is_default && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 rounded hover:bg-black/5"
+                                  onClick={() => handleSetDefault(pl.id)}
+                                  title="ตั้งเป็นหลัก"
+                                >
+                                  <Star className="h-3 w-3 text-amber-500 hover:text-amber-500/30 hover:scale-10" />
+                                </Button>
+                              )}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6 rounded hover:bg-black/5"
+                                onClick={() => handleToggleEnabled(pl.id, pl.is_enabled)}
+                                title={pl.is_enabled ? "ปิด" : "เปิด"}
                               >
-                                <TableCell className="p-1 text-center">
-                                  <button
-                                    type="button"
-                                    aria-label={`เลือก ${pl.name} สำหรับเล่นต่อเนื่อง`}
-                                    className="flex h-5 w-5 items-center justify-center text-muted-foreground mx-auto"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleSelectPlaylist(pl.id);
-                                    }}
-                                  >
-                                    {selectedPlaylists.has(pl.id) ? (
-                                      <CheckSquare className="h-3.5 w-3.5 text-primary" />
-                                    ) : (
-                                      <Square className="h-3.5 w-3.5" />
-                                    )}
-                                  </button>
-                                </TableCell>
-                                <TableCell className="p-1 min-w-0">
-                                  <div className="flex items-center gap-1.5">
-                                    <PlaylistCover
-                                      playlist={pl}
-                                      className="w-8 h-8 text-[10px]"
-                                    />
-                                    <div className="truncate">
-                                      <p className="font-bold text-xs text-foreground truncate">
-                                        {pl.name}
-                                      </p>
-                                      {pl.is_default && (
-                                        <span className="text-[8px] text-primary">
-                                          Default
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="p-1 text-center text-xs tabular-nums text-foreground">
-                                  {pl.song_count ?? 0}
-                                </TableCell>
-                                <TableCell className="p-1 text-right">
-                                  <div
-                                    className="flex justify-end gap-0.5"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {!pl.is_default && (
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-5 w-5 rounded hover:bg-black/5"
-                                        onClick={() => handleSetDefault(pl.id)}
-                                        title="ตั้งเป็นหลัก"
-                                      >
-                                        <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                                      </Button>
-                                    )}
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-5 w-5 rounded hover:bg-black/5"
-                                      onClick={() =>
-                                        handleToggleEnabled(
-                                          pl.id,
-                                          pl.is_enabled,
-                                        )
-                                      }
-                                      title={pl.is_enabled ? "ปิด" : "เปิด"}
-                                    >
-                                      {pl.is_enabled ? (
-                                        <PowerOff className="h-3 w-3 text-red-500" />
-                                      ) : (
-                                        <Power className="h-3 w-3 text-emerald-500" />
-                                      )}
-                                    </Button>
-                                    {!pl.is_default && (
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-5 w-5 text-destructive hover:bg-destructive/10 rounded"
-                                        onClick={() =>
-                                          handleDeletePlaylist(pl.id)
-                                        }
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    )}
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
+                                {pl.is_enabled ? (
+                                  <PowerOff className="h-3 w-3 text-red-500" />
+                                ) : (
+                                  <Power className="h-3 w-3 text-emerald-500" />
+                                )}
+                              </Button>
+                              {!pl.is_default && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 text-destructive hover:bg-destructive/10 rounded"
+                                  onClick={() => handleDeletePlaylist(pl.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </ScrollArea>
@@ -872,39 +878,39 @@ export function AdminView({ onLogout }: AdminViewProps) {
           )}
 
           {/* RIGHT COLUMN: Active Workspace (List / Grid View for tracks) */}
-          <div className="flex min-h-[36rem] flex-1 flex-col gap-4 lg:min-h-0">
+          <div className="flex min-h-[55vh] md:min-h-[65vh] flex-1 flex-col gap-4 lg:min-h-0">
             {/* Header Area inside Workspace */}
-            <div className="admin-surface admin-workspace-header flex shrink-0 flex-col gap-3 rounded-3xl p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <h2 className="flex items-center gap-2 truncate whitespace-nowrap text-sm font-bold text-foreground">
-                  {currentPlaylist
-                    ? currentPlaylist.name
-                    : "กรุณาเลือกเพลย์ลิสต์"}
+            <div className="admin-surface admin-workspace-header flex shrink-0 flex-col gap-3 rounded-full border border-primary/15 bg-gradient-to-r from-primary/[0.03] to-transparent py-2.5 px-4 sm:flex-row sm:items-center sm:justify-between shadow-sm mx-1 mt-1">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="truncate whitespace-nowrap text-[13px] font-extrabold text-foreground tracking-tight">
+                    {currentPlaylist
+                      ? currentPlaylist.name
+                      : "กรุณาเลือกเพลย์ลิสต์"}
+                  </h2>
                   {currentPlaylist?.is_default && (
-                    <Badge className="h-4 bg-primary/10 border-primary/20 text-primary text-[8px]">
+                    <Badge className="h-5 px-2 bg-primary/15 border-primary/20 text-primary text-[9px] font-bold uppercase tracking-widest rounded-full">
                       เริ่มต้น
                     </Badge>
                   )}
-                </h2>
-                <p className="truncate whitespace-nowrap text-xs text-muted-foreground">
-                  สับเปลี่ยนเพลง ค้นหาแทร็ก
-                  หรือบริหารรายการขอเพลงจากลูกค้าในพื้นที่เดียว
+                </div>
+                <p className="truncate whitespace-nowrap text-[10px] text-muted-foreground mt-0.5">
+                  สับเปลี่ยนเพลง ค้นหาแทร็ก หรือบริหารรายการขอเพลงจากลูกค้าในพื้นที่เดียว
                 </p>
               </div>
 
               {/* Console controls & toggle layout view */}
-              <div className="scrollbar-none flex max-w-full shrink-0 flex-nowrap items-center gap-2 overflow-x-auto">
+              <div className="scrollbar-none flex shrink-0 flex-nowrap items-center gap-3 overflow-x-auto pl-3 sm:border-l border-border/40">
                 {/* View Mode Grid/List selectors */}
-                <div className="flex shrink-0 rounded-full border border-border/40 p-0.5">
+                <div className="flex shrink-0 rounded-full border border-border/60 bg-black/5 shadow-inner p-0.5">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setMusicListView("list")}
                     className={cn(
-                      "h-6 w-7 rounded-full p-0",
-                      musicListView === "list" &&
-                        "bg-white text-primary shadow-sm hover:bg-white",
+                      "h-6 w-7 rounded-full p-0 transition-all",
+                      musicListView === "list" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-black/5"
                     )}
                     title="มุมมองรายการ"
                   >
@@ -916,9 +922,8 @@ export function AdminView({ onLogout }: AdminViewProps) {
                     size="sm"
                     onClick={() => setMusicListView("grid")}
                     className={cn(
-                      "h-6 w-7 rounded-full p-0",
-                      musicListView === "grid" &&
-                        "bg-white text-primary shadow-sm hover:bg-white",
+                      "h-6 w-7 rounded-full p-0 transition-all",
+                      musicListView === "grid" ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-black/5"
                     )}
                     title="มุมมองตารางรูปปก"
                   >
@@ -927,14 +932,14 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 </div>
 
                 {/* Tab switch buttons */}
-                <div className="scrollbar-none flex shrink-0 overflow-x-auto rounded-full border border-border/40 p-0.5">
+                <div className="scrollbar-none flex shrink-0 overflow-x-auto rounded-full border border-border/60 bg-black/5 shadow-inner p-0.5 gap-0.5">
                   <button
                     onClick={() => setActiveWorkspaceTab("tracks")}
                     className={cn(
-                      "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all",
+                      "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold transition-all",
                       activeWorkspaceTab === "tracks"
-                        ? "bg-white text-primary border border-border shadow-sm"
-                        : "text-muted-foreground hover:text-foreground border border-transparent",
+                        ? "bg-white text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-black/5"
                     )}
                   >
                     <List className="w-3 h-3" />
@@ -943,10 +948,10 @@ export function AdminView({ onLogout }: AdminViewProps) {
                   <button
                     onClick={() => setActiveWorkspaceTab("search")}
                     className={cn(
-                      "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all",
+                      "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold transition-all",
                       activeWorkspaceTab === "search"
-                        ? "bg-white text-primary border border-border shadow-sm"
-                        : "text-muted-foreground hover:text-foreground border border-transparent",
+                        ? "bg-white text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-black/5"
                     )}
                   >
                     <Search className="w-3 h-3" />
@@ -955,16 +960,16 @@ export function AdminView({ onLogout }: AdminViewProps) {
                   <button
                     onClick={() => setActiveWorkspaceTab("requests")}
                     className={cn(
-                      "relative flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all",
+                      "relative flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold transition-all",
                       activeWorkspaceTab === "requests"
-                        ? "bg-white text-primary border border-border shadow-sm"
-                        : "text-muted-foreground hover:text-foreground border border-transparent",
+                        ? "bg-white text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-black/5"
                     )}
                   >
-                    <Radio className="w-3 h-3 text-primary animate-pulse" />
+                    <Radio className={cn("w-3 h-3", activeWorkspaceTab === "requests" ? "text-primary" : "text-primary animate-pulse")} />
                     คำขอจากลูกค้า
                     {requests.length > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded bg-primary text-[8px] font-bold text-primary-foreground px-1 border border-background">
+                      <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full text-[8px] font-bold px-1 border border-background bg-primary text-primary-foreground">
                         {requests.length}
                       </span>
                     )}
@@ -1190,7 +1195,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                           <div
                             key={result.id}
                             className={cn(
-                              "admin-track-row flex items-center gap-3 rounded-lg border border-border/20 bg-black/[0.01] p-2 transition-all duration-300",
+                              "admin-track-row flex items-center gap-2 rounded border border-border/20 bg-black/[0.01] p-1.5 transition-all duration-300",
                               inPlaylist && "opacity-50",
                             )}
                           >
@@ -1198,7 +1203,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                               <img
                                 src={result.thumbnail}
                                 alt={result.title}
-                                className="w-14 h-10 rounded object-cover flex-shrink-0 shadow border border-black/5"
+                                className="w-10 h-7 rounded-sm object-cover flex-shrink-0 shadow border border-black/5"
                               />
                             )}
                             <div className="flex-1 min-w-0">
@@ -1235,13 +1240,13 @@ export function AdminView({ onLogout }: AdminViewProps) {
                       {ytPlaylistResults.map((pl) => (
                         <div
                           key={pl.id}
-                          className="admin-track-row flex items-center gap-3 rounded-lg border border-border/20 bg-black/[0.01] p-2 transition-all duration-300"
+                          className="admin-track-row flex items-center gap-2 rounded border border-border/20 bg-black/[0.01] p-1.5 transition-all duration-300"
                         >
                           {pl.thumbnail && (
                             <img
                               src={pl.thumbnail}
                               alt={pl.title}
-                              className="w-14 h-10 rounded object-cover flex-shrink-0 shadow border border-black/5"
+                              className="w-10 h-7 rounded-sm object-cover flex-shrink-0 shadow border border-black/5"
                             />
                           )}
                           <div className="flex-1 min-w-0">
@@ -1424,13 +1429,13 @@ export function AdminView({ onLogout }: AdminViewProps) {
                           <div
                             key={req.id}
                             className={cn(
-                              "flex items-center gap-3 p-2.5 rounded border transition-all duration-200",
+                              "flex items-center gap-2 p-1.5 rounded border transition-all duration-200",
                               isCurrentPlaying
                                 ? "border-primary/45 bg-primary/[0.04] shadow-sm"
                                 : "border-border/20 bg-black/[0.01]",
                             )}
                           >
-                            <span className="text-xs font-semibold text-muted-foreground w-6 text-center tabular-nums">
+                            <span className="text-[10px] font-semibold text-muted-foreground w-5 text-center tabular-nums">
                               {i + 1}
                             </span>
 
@@ -1438,7 +1443,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
                               <img
                                 src={req.thumbnail}
                                 alt={req.title}
-                                className="w-12 h-9 rounded object-cover shadow border border-black/5 flex-shrink-0"
+                                className="w-10 h-7 rounded-sm object-cover shadow border border-black/5 flex-shrink-0"
                               />
                             )}
 
@@ -1533,6 +1538,82 @@ export function AdminView({ onLogout }: AdminViewProps) {
           </div>
         </div>
       </main>
+
+      {/* Manage Players Modal */}
+      {showPlayersModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowPlayersModal(false)}
+        >
+          <div
+            className="bg-card rounded-xl p-6 max-w-md w-full border border-border shadow-lg animate-in fade-in zoom-in duration-200 flex flex-col max-h-[80vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <h3 className="font-bold text-base flex items-center gap-2 text-foreground">
+                <MonitorPlay className="w-5 h-5 text-primary" />
+                จัดการเครื่องเล่น (Players)
+              </h3>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="w-8 h-8 rounded-full"
+                onClick={() => setShowPlayersModal(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <ScrollArea className="flex-1 -mx-2 px-2">
+              <div className="flex flex-col gap-2 pb-2">
+                {players.length === 0 ? (
+                  <div className="text-center text-muted-foreground text-xs py-8">
+                    ไม่พบเครื่องเล่นที่เชื่อมต่ออยู่
+                  </div>
+                ) : (
+                  players.map((player: any) => {
+                    const isOnline = new Date().getTime() - new Date(player.last_ping).getTime() < 60000; // 1 minute
+                    return (
+                      <div key={player.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-black/5 hover:bg-black/10 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("p-2 rounded-full border shadow-sm", player.is_active ? "bg-primary/10 border-primary/20 text-primary" : "bg-muted border-border text-muted-foreground")}>
+                            {player.device_type === "Mobile" ? <Smartphone className="w-4 h-4" /> : player.device_type === "Tablet" ? <Tablet className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-foreground truncate max-w-[150px]">{player.device_name}</span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isOnline ? "bg-green-500" : "bg-destructive")}></span>
+                              <span className="text-[9px] text-muted-foreground">{isOnline ? "ออนไลน์" : "ออฟไลน์"}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            size="sm"
+                            variant={player.is_active ? "default" : "outline"}
+                            className={cn("h-7 px-3 text-[10px] rounded-full", player.is_active && "bg-primary text-primary-foreground shadow-sm")}
+                            onClick={() => handleTogglePlayer(player.id, player.is_active)}
+                          >
+                            {player.is_active ? "เปิดใช้งาน" : "ระงับ"}
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="w-7 h-7 rounded-full text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeletePlayer(player.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      )}
 
       {/* QR Code Dialog Modal */}
       {showQR && (
