@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import { Search, Plus, Music2, Loader2, Check, QrCode, Download, X, RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import type { YouTubeSearchResult, SongRequest } from '@/lib/types'
@@ -41,7 +40,6 @@ export function RequestView() {
   const [showQR, setShowQR] = useState(false)
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [pageUrl, setPageUrl] = useState('')
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
   const [isUpdating, setIsUpdating] = useState(false)
 
   const handleForceUpdate = () => {

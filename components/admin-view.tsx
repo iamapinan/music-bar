@@ -11,11 +11,9 @@ import {
   Music2,
   Loader2,
   List,
-  Settings,
   Radio,
   LayoutGrid,
   Rows3,
-  LibraryBig,
   Star,
   Power,
   PowerOff,
@@ -23,26 +21,12 @@ import {
   Youtube,
   CheckSquare,
   Square,
-  X,
   RefreshCw,
-  QrCode,
-  MonitorPlay,
-  Monitor,
-  Smartphone,
-  Tablet,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { toast } from "sonner";
 import type {
   Playlist,
@@ -53,17 +37,12 @@ import type {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/context/player-context";
-import { forceUpdateApp } from "@/lib/app-update";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json();
 };
-
-interface AdminViewProps {
-  onLogout: () => void;
-}
 
 // Beautiful Premium Playlist Cover Component (Standard rounded roundness)
 const PlaylistCover = ({
@@ -109,7 +88,7 @@ const PlaylistCover = ({
   );
 };
 
-export function AdminView({ onLogout }: AdminViewProps) {
+export function AdminView() {
   const { activePlaylistIds, setActivePlaylistIds } = usePlayer();
   const [activePlaylistId, setActivePlaylistId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -135,43 +114,6 @@ export function AdminView({ onLogout }: AdminViewProps) {
   // Music List Toggle View (List vs Grid)
   const [musicListView, setMusicListView] = useState<"list" | "grid">("list");
 
-  // QR Code States
-  const [showQR, setShowQR] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState("");
-  const [pageUrl, setPageUrl] = useState("");
-
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [showPlayersModal, setShowPlayersModal] = useState(false);
-
-  const handleTogglePlayer = async (id: string, currentStatus: boolean) => {
-    try {
-      await fetch(`/api/players/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: !currentStatus }),
-      });
-      mutatePlayers();
-    } catch (err) {
-      console.error("Failed to toggle player", err);
-    }
-  };
-
-  const handleDeletePlayer = async (id: string) => {
-    if (!confirm("ต้องการลบเครื่องเล่นนี้หรือไม่?")) return;
-    try {
-      await fetch(`/api/players/${id}`, {
-        method: "DELETE",
-      });
-      mutatePlayers();
-    } catch (err) {
-      console.error("Failed to delete player", err);
-    }
-  };
-
-  const handleForceUpdate = () => {
-    forceUpdateApp(setIsUpdating);
-  };
-
   const { data: playlists = [], mutate: mutatePlaylists } = useSWR<Playlist[]>(
     "/api/playlists",
     fetcher,
@@ -193,40 +135,9 @@ export function AdminView({ onLogout }: AdminViewProps) {
     { refreshInterval: 3000 },
   );
 
-  const { data: players = [], mutate: mutatePlayers } = useSWR<any[]>(
-    showPlayersModal ? "/api/players" : null,
-    fetcher,
-    { refreshInterval: 5000 },
-  );
-
-  // Initialize QR Code URL
-  useEffect(() => {
-    setPageUrl(window.location.origin + "/request");
-  }, []);
-
   useEffect(() => {
     setSelectedPlaylists(new Set(activePlaylistIds));
   }, [activePlaylistIds]);
-
-  useEffect(() => {
-    if (!showQR || !pageUrl) return;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pageUrl)}&bgcolor=ffffff&color=059669&format=png&margin=20`;
-    setQrDataUrl(qrUrl);
-  }, [showQR, pageUrl]);
-
-  const handleDownloadQR = async () => {
-    try {
-      const res = await fetch(qrDataUrl);
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "music-bar-qr.png";
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch {
-      toast.error("ไม่สามารถดาวน์โหลดได้");
-    }
-  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;

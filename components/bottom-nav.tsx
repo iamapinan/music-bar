@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Play, Music, Settings } from 'lucide-react'
+import { Play, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [

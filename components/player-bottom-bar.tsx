@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX,
-  Music2, Shuffle, ListMusic, LayoutDashboard, Home, Tv, Maximize2, Minimize2, MoreVertical, Disc3
+  Music2, Shuffle, ListMusic, LayoutDashboard, Home, Tv, Maximize2, Minimize2, MoreVertical
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'

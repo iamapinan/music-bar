@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Changed
+- ทำความสะอาดโค้ดที่ไม่ได้ใช้งานทั่วทั้งโปรเจกต์ (Clean Unused Code) ปราศจาก Warning ในระดับ TypeScript Compiler (`tsc`) 100%:
+  - แก้ไขพารามิเตอร์ `request: Request` ที่ไม่ได้ใช้งานใน API Route Handlers (`DELETE` ใน `app/api/players/[id]` และ `GET` ใน `app/api/playlists/[id]/songs`) เป็น `_request: Request` เพื่อรักษาตำแหน่งตามมาตรฐานของ Next.js Route Handlers
+  - ลบ Unused Imports ของแพ็กเกจไอคอนจาก `lucide-react` (เช่น `Music` ใน `components/bottom-nav.tsx` และ `Disc3` ใน `components/player-bottom-bar.tsx`)
+  - ลบการดึงตัวแปรที่ไม่ได้ใช้ `isAutoPlayEnabled` จาก Context ของ `usePlayer()` ในเครื่องเล่นเพลงเบื้องหลัง (`components/persistent-player.tsx`)
+  - ลบพารามิเตอร์ดัชนีลูป `i` ที่ไม่ได้ใช้งานในลูปแสดง Playlist แทร็ก (`components/queue-list.tsx`)
+  - ลบโมดูล `ScrollArea` ที่ไม่ได้อ้างอิง และตัวแปรอ้างอิง canvas `qrCanvasRef` (รวมถึง `useRef` ใน React) ออกจากหน้าขอเพลงของลูกค้า (`components/request-view.tsx`) เนื่องจากเปลี่ยนไปใช้การดึง QR Code API แทนแล้ว
+  - ลบการอิมพอร์ต React ที่ไม่ได้เรียกใช้งานใน `components/theme-provider.tsx`
+
 ### Added
 - เพิ่มระบบและปุ่มบังคับอัปเดตแอปพลิเคชัน (PWA Force Update & Cache Clearing) เพื่อความเสถียร 100%:
   - สร้าง Utility กลาง `lib/app-update.ts` ทำหน้าที่ประสานงานกับ Service Worker ตรวจสอบเวอร์ชันใหม่ และส่งข้อความ `SKIP_WAITING` เพื่ออัปเดตระบบทันที

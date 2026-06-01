@@ -145,7 +145,7 @@ export function QueueList() {
 
           {playlistSongs
             .map((song, originalIndex) => ({ song, originalIndex }))
-            .map(({ song, originalIndex }, i) => {
+            .map(({ song, originalIndex }) => {
               const isActive =
                 playMode === "playlist" && originalIndex === currentIndex;
               return (

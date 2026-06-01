@@ -43,7 +43,7 @@ interface YTPlayer {
 export function PersistentYouTubePlayer() {
   const { 
     currentSong, handleSongEnd, setIsPlaying, playerRef, volume, 
-    isVideoMode, isAutoPlayEnabled, setCurrentTime, setDuration, isFullscreen,
+    isVideoMode, setCurrentTime, setDuration, isFullscreen,
     playMode, currentIndex
   } = usePlayer()
 
