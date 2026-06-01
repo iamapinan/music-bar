@@ -23,6 +23,7 @@ export function PlayerView() {
     duration,
     currentIndex,
     playlistSongs,
+    isPlaylistLoading,
     playlists,
     setIsVideoMode,
     setIsFullscreen,
@@ -63,10 +64,12 @@ export function PlayerView() {
         </div>
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.35em] text-primary">Music bar</p>
         <h2 className="mb-2 text-2xl font-semibold tracking-tight text-foreground">
-          ยังไม่มีเพลง
+          {isPlaylistLoading ? "กำลังโหลดเพลง" : "ยังไม่มีเพลง"}
         </h2>
         <p className="text-muted-foreground text-sm">
-          เพิ่มเพลงใน playlist หรือรอให้ลูกค้าขอเพลง
+          {isPlaylistLoading
+            ? "กำลังเตรียม playlist สำหรับเครื่องเล่น"
+            : "เพิ่มเพลงใน playlist หรือรอให้ลูกค้าขอเพลง"}
         </p>
       </div>
     );
@@ -80,7 +83,7 @@ export function PlayerView() {
   return (
     <div
       className={cn(
-        "app-shell relative flex h-[100dvh] flex-col overflow-hidden bg-background transition-all duration-300",
+        "app-shell relative flex min-h-[100dvh] flex-col overflow-y-auto bg-background transition-all duration-300 sm:h-[100dvh] sm:overflow-hidden",
         isFullscreen && "fixed inset-0 z-50",
       )}
     >
@@ -166,7 +169,7 @@ export function PlayerView() {
         </header>
       )}
 
-      <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center p-3 pb-36 sm:p-8 sm:pb-44">
+      <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center p-3 pb-[11rem] sm:p-8 sm:pb-[13rem]">
         <div className="relative flex h-full w-full max-w-6xl flex-col items-center justify-center pt-14 sm:pt-16">
           {isVideoMode ? (
             <div

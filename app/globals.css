@@ -130,27 +130,6 @@
   display: none;
 }
 
-/* Continuous playlist rail. Hovering keeps the current position for quick selection. */
-.playlist-marquee {
-  animation: playlist-marquee 52s linear infinite;
-}
-
-.playlist-marquee:hover {
-  animation-play-state: paused;
-}
-
-@keyframes playlist-marquee {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .playlist-marquee {
-    animation-play-state: paused;
-  }
-}
-
 /* Quiet ambient tint behind the player controls. */
 .player-ambient {
   isolation: isolate;
@@ -180,10 +159,22 @@
   background: oklch(0.055 0.012 165);
 }
 
+.player-stage-ambient::after {
+  position: absolute;
+  inset: -24%;
+  content: '';
+  background:
+    radial-gradient(circle at 22% 36%, oklch(0.66 0.14 158 / 0.16), transparent 22rem),
+    radial-gradient(circle at 78% 62%, oklch(0.56 0.11 205 / 0.14), transparent 26rem);
+  filter: blur(18px);
+  animation: player-stage-glow-drift 18s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
 .player-stage-art {
-  filter: blur(48px) saturate(1.32) brightness(1.42) contrast(1.08);
+  filter: blur(48px) saturate(1.38) brightness(1.46) contrast(1.08);
   opacity: 0.92;
-  animation: player-stage-art-drift 15s ease-in-out infinite alternate;
+  animation: player-stage-art-drift 13s ease-in-out infinite alternate;
   will-change: transform, opacity;
 }
 
@@ -191,6 +182,8 @@
   background:
     linear-gradient(115deg, oklch(0.025 0.008 165 / 0.08), transparent 52%, oklch(0.025 0.008 165 / 0.1)),
     radial-gradient(circle at 50% 50%, transparent 24%, oklch(0.02 0.006 165 / 0.1) 96%);
+  background-size: 145% 145%, 120% 120%;
+  animation: player-stage-wash-drift 20s ease-in-out infinite alternate;
 }
 
 @keyframes player-stage-art-drift {
@@ -204,8 +197,30 @@
   }
 }
 
+@keyframes player-stage-glow-drift {
+  from {
+    transform: translate3d(-3%, -2%, 0) scale(1);
+    opacity: 0.72;
+  }
+  to {
+    transform: translate3d(4%, 3%, 0) scale(1.12);
+    opacity: 1;
+  }
+}
+
+@keyframes player-stage-wash-drift {
+  from {
+    background-position: 0% 15%, 35% 35%;
+  }
+  to {
+    background-position: 100% 85%, 65% 65%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .player-stage-art {
+  .player-stage-ambient::after,
+  .player-stage-art,
+  .player-stage-wash {
     animation: none;
   }
 }
@@ -334,23 +349,23 @@
 .admin-shell,
 html.admin-mode,
 body.admin-mode {
-  --background: oklch(0.985 0.003 175);
-  --foreground: oklch(0.25 0.01 175);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.01 175);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.01 175);
-  --primary: oklch(0.55 0.15 158);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.95 0.005 175);
-  --secondary-foreground: oklch(0.3 0.01 175);
-  --muted: oklch(0.94 0.005 175);
-  --muted-foreground: oklch(0.55 0.01 175);
-  --accent: oklch(0.55 0.15 158 / 0.1);
-  --accent-foreground: oklch(0.55 0.15 158);
-  --border: oklch(0.9 0.005 175 / 0.8);
-  --input: oklch(0.93 0.005 175);
-  --ring: oklch(0.55 0.15 158);
+  --background: oklch(0.07 0.012 165);
+  --foreground: oklch(0.96 0.006 165);
+  --card: oklch(0.115 0.014 165);
+  --card-foreground: oklch(0.96 0.006 165);
+  --popover: oklch(0.135 0.014 165);
+  --popover-foreground: oklch(0.96 0.006 165);
+  --primary: oklch(0.76 0.17 158);
+  --primary-foreground: oklch(0.07 0.018 165);
+  --secondary: oklch(0.17 0.014 165);
+  --secondary-foreground: oklch(0.9 0.008 165);
+  --muted: oklch(0.16 0.012 165);
+  --muted-foreground: oklch(0.68 0.014 165);
+  --accent: oklch(0.76 0.17 158 / 0.14);
+  --accent-foreground: oklch(0.8 0.15 158);
+  --border: oklch(0.27 0.018 165 / 0.72);
+  --input: oklch(0.145 0.014 165);
+  --ring: oklch(0.76 0.17 158);
 }
 
 .admin-shell,
@@ -358,101 +373,125 @@ html.admin-mode,
 body.admin-mode {
   color: var(--foreground);
   background:
-    radial-gradient(circle at 92% 0%, oklch(0.9 0.055 168 / 0.58), transparent 34rem),
-    radial-gradient(circle at 2% 92%, oklch(0.9 0.035 190 / 0.38), transparent 30rem),
-    linear-gradient(145deg, oklch(0.988 0.004 175), oklch(0.955 0.012 175)) !important;
+    radial-gradient(circle at 84% -8%, oklch(0.3 0.09 158 / 0.32), transparent 36rem),
+    radial-gradient(circle at -8% 88%, oklch(0.18 0.055 205 / 0.22), transparent 32rem),
+    linear-gradient(145deg, oklch(0.055 0.014 165), oklch(0.085 0.015 165)) !important;
   background-attachment: fixed !important;
 }
 
 .admin-glass {
-  background: oklch(1 0 0 / 0.72);
-  backdrop-filter: blur(28px) saturate(1.08);
-  -webkit-backdrop-filter: blur(28px) saturate(1.08);
-  border-bottom: 1px solid oklch(0.82 0.018 175 / 0.52);
+  background: oklch(0.065 0.014 165 / 0.82);
+  backdrop-filter: blur(22px) saturate(1.08);
+  -webkit-backdrop-filter: blur(22px) saturate(1.08);
+  border-bottom: 1px solid oklch(0.76 0.17 158 / 0.1);
 }
 
 .admin-surface {
-  background: oklch(1 0 0 / 0.74);
-  border: 1px solid oklch(0.84 0.014 175 / 0.62);
+  background:
+    linear-gradient(145deg, oklch(0.145 0.016 165 / 0.96), oklch(0.09 0.014 165 / 0.96));
+  border: 1px solid oklch(0.86 0.02 165 / 0.1);
   box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.92),
-    0 18px 50px oklch(0.28 0.035 175 / 0.075);
-  backdrop-filter: blur(24px) saturate(1.06);
-  -webkit-backdrop-filter: blur(24px) saturate(1.06);
+    inset 0 1px 0 oklch(0.96 0.01 165 / 0.08),
+    0 22px 64px oklch(0.02 0.01 165 / 0.3);
 }
 
 .admin-console-header {
-  box-shadow: 0 8px 32px oklch(0.28 0.035 175 / 0.08);
+  box-shadow: 0 10px 38px oklch(0.02 0.01 165 / 0.42);
+}
+
+.admin-command-rail {
+  background:
+    linear-gradient(180deg, oklch(0.095 0.018 165 / 0.98), oklch(0.055 0.014 165 / 0.98));
+  box-shadow:
+    inset -1px 0 0 oklch(0.76 0.17 158 / 0.035),
+    18px 0 44px oklch(0.02 0.01 165 / 0.26);
+}
+
+.admin-dashboard-hero {
+  background:
+    radial-gradient(circle at 82% -16%, oklch(0.76 0.17 158 / 0.19), transparent 24rem),
+    linear-gradient(135deg, oklch(0.16 0.026 165 / 0.98), oklch(0.085 0.015 165 / 0.98));
+  box-shadow:
+    inset 0 1px 0 oklch(0.96 0.01 165 / 0.08),
+    0 26px 70px oklch(0.02 0.01 165 / 0.32);
+}
+
+.admin-metric-card {
+  background:
+    linear-gradient(145deg, oklch(0.135 0.016 165 / 0.94), oklch(0.085 0.014 165 / 0.94));
+  box-shadow:
+    inset 0 1px 0 oklch(0.96 0.01 165 / 0.055),
+    0 16px 36px oklch(0.02 0.01 165 / 0.2);
 }
 
 .admin-stat-card {
   background:
-    radial-gradient(circle at 0% 0%, oklch(0.9 0.08 158 / 0.32), transparent 12rem),
-    oklch(1 0 0 / 0.74);
+    radial-gradient(circle at 12% 0%, oklch(0.76 0.17 158 / 0.12), transparent 10rem),
+    oklch(0.1 0.014 165 / 0.84);
 }
 
 .admin-library-panel {
   box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.94),
-    0 22px 60px oklch(0.24 0.035 175 / 0.09);
+    inset 0 1px 0 oklch(0.96 0.01 165 / 0.08),
+    0 26px 72px oklch(0.02 0.01 165 / 0.36);
 }
 
 .admin-content-panel {
-  background: oklch(1 0 0 / 0.34);
-  border: 1px solid oklch(0.84 0.014 175 / 0.42);
+  background: oklch(0.075 0.012 165 / 0.88);
+  border: 1px solid oklch(0.86 0.02 165 / 0.085);
   box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.68),
-    0 18px 42px oklch(0.28 0.035 175 / 0.045);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+    inset 0 1px 0 oklch(0.96 0.01 165 / 0.05),
+    0 18px 50px oklch(0.02 0.01 165 / 0.24);
 }
 
 .admin-workspace-header {
   background:
-    radial-gradient(circle at 96% 0%, oklch(0.9 0.065 158 / 0.36), transparent 22rem),
-    oklch(1 0 0 / 0.78);
-}
-
-.admin-resize-handle {
-  border-radius: 999px;
-  opacity: 0.68;
+    radial-gradient(circle at 96% 0%, oklch(0.76 0.17 158 / 0.14), transparent 22rem),
+    linear-gradient(135deg, oklch(0.15 0.018 165 / 0.98), oklch(0.1 0.014 165 / 0.98));
 }
 
 .admin-playlist-card,
 .admin-track-card {
-  box-shadow: 0 4px 14px oklch(0.25 0.025 175 / 0.035);
+  box-shadow: 0 10px 24px oklch(0.02 0.01 165 / 0.24);
 }
 
 .admin-playlist-card {
-  background: oklch(1 0 0 / 0.72);
+  background: oklch(0.13 0.014 165 / 0.88);
 }
 
 .admin-track-card {
-  background: oklch(1 0 0 / 0.7);
+  background: oklch(0.125 0.014 165 / 0.86);
 }
 
 .admin-track-row {
-  background: oklch(1 0 0 / 0.52);
-  border-color: oklch(0.84 0.014 175 / 0.32);
+  background: oklch(0.12 0.014 165 / 0.82);
+  border-color: oklch(0.86 0.02 165 / 0.08);
   box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.52),
-    0 3px 10px oklch(0.25 0.025 175 / 0.026);
+    inset 0 1px 0 oklch(0.96 0.01 165 / 0.045),
+    0 5px 14px oklch(0.02 0.01 165 / 0.16);
+}
+
+.admin-playlist-collection img,
+.admin-playlist-collection > div:first-child {
+  box-shadow:
+    0 16px 34px oklch(0.02 0.01 165 / 0.34),
+    inset 0 1px 0 oklch(0.96 0.01 165 / 0.06);
 }
 
 .admin-playlist-card:hover,
 .admin-track-card:hover {
   transform: translateY(-3px);
-  border-color: oklch(0.58 0.13 158 / 0.62);
+  border-color: oklch(0.76 0.17 158 / 0.46);
   box-shadow:
-    0 14px 30px oklch(0.28 0.04 175 / 0.12),
-    0 0 0 1px oklch(0.62 0.12 158 / 0.08);
+    0 16px 36px oklch(0.02 0.01 165 / 0.34),
+    0 0 0 1px oklch(0.76 0.17 158 / 0.08);
 }
 
 .admin-track-row:hover {
   transform: translateX(4px);
-  border-color: oklch(0.62 0.1 158 / 0.38);
-  background: oklch(1 0 0 / 0.82);
-  box-shadow: 0 10px 24px oklch(0.28 0.04 175 / 0.085);
+  border-color: oklch(0.76 0.17 158 / 0.3);
+  background: oklch(0.16 0.018 165 / 0.96);
+  box-shadow: 0 12px 28px oklch(0.02 0.01 165 / 0.28);
 }
 
 .admin-player-dock {
@@ -516,10 +555,10 @@ body.admin-mode {
 
 .admin-shell input:focus,
 .admin-shell select:focus {
-  border-color: oklch(0.58 0.13 158 / 0.72);
+  border-color: oklch(0.76 0.17 158 / 0.72);
   box-shadow:
-    0 0 0 3px oklch(0.62 0.12 158 / 0.12),
-    inset 0 1px 2px oklch(0.2 0.02 175 / 0.055);
+    0 0 0 3px oklch(0.76 0.17 158 / 0.12),
+    inset 0 1px 2px oklch(0.02 0.01 165 / 0.34);
 }
 
 .admin-track-card img,
@@ -536,36 +575,34 @@ body.admin-mode {
 }
 
 .admin-shell [data-slot="button"][data-variant="ghost"]:hover {
-  background: oklch(0.92 0.02 165 / 0.72);
+  background: oklch(0.76 0.17 158 / 0.1);
 }
 
-/* Override sonner toast styles inside admin mode to ensure they are light theme */
 body.admin-mode [data-sonner-toast] {
   background: var(--card) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
-  box-shadow: 0 10px 30px oklch(0.2 0.01 175 / 0.08) !important;
+  box-shadow: 0 16px 38px oklch(0.02 0.01 165 / 0.4) !important;
 }
 
-/* Light theme elegant scrollbars for admin mode */
 body.admin-mode ::-webkit-scrollbar-thumb {
-  background: oklch(0.8 0.005 175) !important;
+  background: oklch(0.32 0.018 165) !important;
 }
 
 body.admin-mode ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.7 0.005 175) !important;
+  background: oklch(0.44 0.04 158) !important;
 }
 
 .admin-shell [data-slot="tabs-trigger"][data-state="active"] {
-  background: oklch(0.95 0.005 175);
-  color: oklch(0.55 0.15 158);
-  border-color: oklch(0.55 0.15 158 / 0.3);
+  background: oklch(0.76 0.17 158 / 0.14);
+  color: oklch(0.8 0.15 158);
+  border-color: oklch(0.76 0.17 158 / 0.28);
 }
 
 .admin-shell [data-slot="button"][data-variant="outline"] {
-  background: oklch(1 0 0 / 0.9);
-  border-color: oklch(0.88 0.008 175 / 0.8);
-  color: oklch(0.3 0.01 175);
+  background: oklch(0.12 0.014 165 / 0.86);
+  border-color: oklch(0.86 0.02 165 / 0.14);
+  color: oklch(0.9 0.008 165);
 }
 
 /* Gradient border */

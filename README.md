@@ -54,16 +54,16 @@ Music Bar is a modern, Progressive Web Application (PWA) designed specifically f
    ```
 
 3. **Environment Setup:**
-   Create a `.env` file in the root directory and add the following variables:
+   Create a `.env.local` file in the root directory and add the following variables:
    ```env
    DATABASE_URL="postgresql://user:password@host/database"
    YOUTUBE_API_KEY="your_youtube_api_key_here"
    ```
 
 4. **Initialize Database:**
-   Push the Prisma schema to your database.
+   Import the PostgreSQL schema into the new database.
    ```bash
-   bunx prisma db push
+   psql "$DATABASE_URL" -f database/music-bar.sql
    ```
 
 5. **Run the development server:**
@@ -78,8 +78,8 @@ Music Bar is a modern, Progressive Web Application (PWA) designed specifically f
 - `app/request/`: Isolated layout for the customer request page (Mobile optimized, no background player).
 - `components/`: Reusable React components including the `PersistentYouTubePlayer` and `PlayerView`.
 - `context/`: React Context (`player-context.tsx`) that manages the global state of the queue, volume, and playback modes.
-- `lib/`: Utility functions and Prisma client setup.
-- `prisma/`: Database schema definition.
+- `lib/`: Utility functions and Neon database setup.
+- `database/`: PostgreSQL schema for initializing a new database.
 
 ## 🤝 Contributing
 

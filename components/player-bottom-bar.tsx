@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -50,72 +50,113 @@ export function PlayerBottomBar() {
 
   const displayTime = isDraggingTime ? dragTime : currentTime
   const enabledPlaylists = playlists.filter(playlist => playlist.is_enabled)
+  const activePlaylistKey = activePlaylistIds.join(',')
 
-  const renderPlaylistRailItems = (isDuplicate = false) => (
-    <div
-      className="flex shrink-0 items-center gap-2 pr-2"
-      aria-hidden={isDuplicate || undefined}
-    >
-      <span className="mr-1 hidden shrink-0 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35 sm:inline">
-        Playlists
-      </span>
-      {enabledPlaylists.map(playlist => {
-        const isActive = activePlaylistIds.includes(playlist.id)
-        const firstLetter = playlist.name.slice(0, 1).toUpperCase()
-        const gradients = [
-          'from-emerald-500 to-teal-700 text-emerald-100',
-          'from-cyan-500 to-blue-700 text-cyan-100',
-          'from-indigo-500 to-purple-700 text-indigo-100',
-          'from-violet-500 to-fuchsia-700 text-violet-100',
-          'from-rose-500 to-orange-700 text-rose-100',
-        ]
-        const gradClass = gradients[playlist.id % gradients.length]
+  const activePlaylistCardRef = useRef<HTMLButtonElement | null>(null)
+  const playlistRailRef = useRef<HTMLDivElement | null>(null)
+  const playlistDriftIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const playlistDriftDirectionRef = useRef(1)
+  const playlistDriftPausedRef = useRef(false)
+  const playlistDriftResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-        return (
-          <button
-            key={`${isDuplicate ? 'duplicate' : 'primary'}-${playlist.id}`}
-            type="button"
-            tabIndex={isDuplicate ? -1 : undefined}
-            onClick={() => {
-              if (isActive) {
-                setActivePlaylistIds([])
-              } else {
-                setActivePlaylistIds([playlist.id])
-              }
-            }}
-            className={cn(
-              'flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.98]',
-              isActive
-                ? 'border-primary/35 bg-primary/15 text-primary shadow-[0_2px_10px_rgba(110,231,183,0.1)]'
-                : 'border-white/10 bg-white/[0.035] text-white/55 hover:border-white/20 hover:bg-white/[0.07] hover:text-white/85'
-            )}
-          >
-            {playlist.cover_thumbnail ? (
-              <img
-                src={playlist.cover_thumbnail}
-                alt=""
-                className="w-4 h-4 rounded object-cover shrink-0 border border-white/10"
-              />
-            ) : (
-              <div className={cn('w-4 h-4 rounded bg-gradient-to-br flex items-center justify-center text-[7px] font-bold shrink-0', gradClass)}>
-                {firstLetter}
-              </div>
-            )}
-            <span className="max-w-44 truncate">{playlist.name}</span>
-          </button>
-        )
-      })}
-    </div>
-  )
+  useEffect(() => {
+    activePlaylistCardRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    })
+  }, [activePlaylistKey])
 
-  const playlistRail = enabledPlaylists.length > 0 && (
+  const setPlaylistRailRef = useCallback((rail: HTMLDivElement | null) => {
+    playlistRailRef.current = rail
+    if (playlistDriftIntervalRef.current) clearInterval(playlistDriftIntervalRef.current)
+    if (!rail || enabledPlaylists.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    playlistDriftIntervalRef.current = setInterval(() => {
+      if (!playlistDriftPausedRef.current && rail.scrollWidth > rail.clientWidth) {
+        const maxScroll = rail.scrollWidth - rail.clientWidth
+        const nextScroll = rail.scrollLeft + playlistDriftDirectionRef.current
+
+        if (nextScroll >= maxScroll) playlistDriftDirectionRef.current = -1
+        if (nextScroll <= 0) playlistDriftDirectionRef.current = 1
+        rail.scrollLeft = Math.max(0, Math.min(maxScroll, nextScroll))
+      }
+    }, 60)
+  }, [enabledPlaylists.length])
+
+  const pausePlaylistDrift = (resumeDelay = 2600) => {
+    playlistDriftPausedRef.current = true
+    if (playlistDriftResumeTimerRef.current) clearTimeout(playlistDriftResumeTimerRef.current)
+    playlistDriftResumeTimerRef.current = setTimeout(() => {
+      playlistDriftPausedRef.current = false
+    }, resumeDelay)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (playlistDriftIntervalRef.current) clearInterval(playlistDriftIntervalRef.current)
+      if (playlistDriftResumeTimerRef.current) clearTimeout(playlistDriftResumeTimerRef.current)
+    }
+  }, [])
+
+  const playlistRail = pathname !== '/admin' && enabledPlaylists.length > 0 && (
     <div className={cn(
-      "overflow-hidden border-b border-white/10 px-3 py-2 backdrop-blur-3xl sm:px-5",
+      "border-b border-white/10 py-2 backdrop-blur-3xl",
       pathname === '/admin' ? "bg-[#07120f]/95" : "bg-black/10"
     )}>
-      <div className="playlist-marquee flex w-max items-center">
-        {renderPlaylistRailItems()}
-        {renderPlaylistRailItems(true)}
+      <div
+        ref={setPlaylistRailRef}
+        className="playlist-card-rail scrollbar-none flex items-center gap-2 overflow-x-auto px-[calc(50%-5.25rem)] sm:gap-3 sm:px-[calc(50%-6rem)]"
+        onPointerDown={() => pausePlaylistDrift()}
+        onTouchStart={() => pausePlaylistDrift()}
+        onWheel={() => pausePlaylistDrift()}
+      >
+        {enabledPlaylists.map(playlist => {
+          const isActive = activePlaylistIds.includes(playlist.id)
+          const firstLetter = playlist.name.slice(0, 1).toUpperCase()
+          const gradients = [
+            'from-emerald-500 to-teal-700 text-emerald-100',
+            'from-cyan-500 to-blue-700 text-cyan-100',
+            'from-indigo-500 to-purple-700 text-indigo-100',
+            'from-violet-500 to-fuchsia-700 text-violet-100',
+            'from-rose-500 to-orange-700 text-rose-100',
+          ]
+          const gradClass = gradients[playlist.id % gradients.length]
+
+          return (
+            <button
+              key={playlist.id}
+              ref={isActive ? activePlaylistCardRef : undefined}
+              type="button"
+              onClick={() => setActivePlaylistIds(isActive ? [] : [playlist.id])}
+              className={cn(
+                'group flex h-16 shrink-0 items-center gap-2.5 rounded-2xl border px-2.5 text-left transition-all duration-300 active:scale-[0.98] sm:h-[4.5rem] sm:gap-3 sm:px-3',
+                isActive
+                  ? 'w-[10.5rem] border-primary/45 bg-primary/15 text-primary shadow-[0_8px_28px_rgba(16,185,129,0.2)] ring-1 ring-primary/15 sm:w-48'
+                  : 'w-[8.75rem] scale-[0.92] border-white/10 bg-white/[0.035] text-white/55 hover:border-white/20 hover:bg-white/[0.07] hover:text-white/85 sm:w-40'
+              )}
+              aria-pressed={isActive}
+            >
+              {playlist.cover_thumbnail ? (
+                <img
+                  src={playlist.cover_thumbnail}
+                  alt=""
+                  className={cn('h-11 w-11 shrink-0 rounded-xl border border-white/10 object-cover shadow-md transition-all sm:h-12 sm:w-12', isActive && 'sm:h-14 sm:w-14')}
+                />
+              ) : (
+                <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-sm font-bold shadow-md transition-all sm:h-12 sm:w-12', isActive && 'sm:h-14 sm:w-14', gradClass)}>
+                  {firstLetter}
+                </div>
+              )}
+              <span className="min-w-0">
+                <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] text-white/35">
+                  {isActive ? 'Playing' : 'Playlist'}
+                </span>
+                <span className="mt-1 block truncate text-xs font-semibold leading-none sm:text-sm">{playlist.name}</span>
+              </span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )

@@ -40,6 +40,7 @@ interface PlayerContextValue {
   currentIndex: number
   requests: SongRequest[]
   playlistSongs: PlaylistSong[]
+  isPlaylistLoading: boolean
   playlists: Playlist[]
   activePlaylistIds: number[]
   isRequestsEnabled: boolean
@@ -228,7 +229,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   // ===================== Settings Sync =====================
   const { data: dbSettings, mutate: mutateSettings } = useSWR('/api/settings', fetcher, {
-    refreshInterval: 30000
+    refreshInterval: 3000
   })
 
   useEffect(() => {
@@ -269,13 +270,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [mutateSettings])
 
   // ===================== Data =====================
-  const { data: playlists = [] } = useSWR<Playlist[]>('/api/playlists', fetcher, { refreshInterval: 15000 })
-  const defaultPlaylistId = playlists?.find((p: { is_default: boolean }) => p.is_default)?.id || playlists?.[0]?.id || 1
+  const { data: playlists = [] } = useSWR<Playlist[]>('/api/playlists', fetcher, { refreshInterval: 5000 })
+  const defaultPlaylistId = playlists.find((p: { is_default: boolean }) => p.is_default)?.id || playlists[0]?.id
   const enabledPlaylistIds = activePlaylistIds.filter(id => playlists.some(playlist => playlist.id === id && playlist.is_enabled))
-  const playbackPlaylistIds = enabledPlaylistIds.length > 0 ? enabledPlaylistIds : [defaultPlaylistId]
+  const playbackPlaylistIds = enabledPlaylistIds.length > 0
+    ? enabledPlaylistIds
+    : defaultPlaylistId
+      ? [defaultPlaylistId]
+      : []
   const playlistSongsKey = playbackPlaylistIds.join(',')
 
-  const { data: playlistSongs = [], mutate: mutateSongs } = useSWR<PlaylistSong[]>(
+  const { data: playlistSongs = [], isLoading: isPlaylistLoading, mutate: mutateSongs } = useSWR<PlaylistSong[]>(
     playlistSongsKey ? `playlist-songs:${playlistSongsKey}` : null,
     async () => {
       const songGroups = await Promise.all(
@@ -283,7 +288,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       )
       return songGroups.flat()
     },
-    { refreshInterval: 10000 }
+    { refreshInterval: 10000, keepPreviousData: true }
   )
 
   const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>(
@@ -542,7 +547,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       isPlaying, currentSong, nextSong, playMode, volume, isMuted, isShuffle, isVideoMode, isAutoPlayEnabled,
       isFullscreen,
       currentTime, duration,
-      currentIndex, requests, playlistSongs, playlists, activePlaylistIds: playbackPlaylistIds,
+      currentIndex, requests, playlistSongs, isPlaylistLoading, playlists, activePlaylistIds: playbackPlaylistIds,
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
       toggleMute, toggleShuffle, handleSongEnd, playByIndex, playSong, setActivePlaylistIds, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
       setIsFullscreen, setIsRequestsEnabled: handleSetIsRequestsEnabled, setCurrentTime, setDuration,

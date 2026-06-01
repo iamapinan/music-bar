@@ -3,9 +3,10 @@ import { sql } from '@/lib/db'
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { is_active, device_name } = await request.json()
     
     // We can update either is_active or device_name, so we build the query dynamically or just check what is provided
@@ -13,7 +14,7 @@ export async function PATCH(
       const result = await sql`
         UPDATE active_players 
         SET is_active = ${is_active}
-        WHERE id = ${params.id}
+        WHERE id = ${id}
         RETURNING *
       `
       return NextResponse.json(result[0] || {})
@@ -23,7 +24,7 @@ export async function PATCH(
       const result = await sql`
         UPDATE active_players 
         SET device_name = ${device_name}
-        WHERE id = ${params.id}
+        WHERE id = ${id}
         RETURNING *
       `
       return NextResponse.json(result[0] || {})
@@ -38,12 +39,13 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await sql`
       DELETE FROM active_players
-      WHERE id = ${params.id}
+      WHERE id = ${id}
     `
     return NextResponse.json({ success: true })
   } catch (error) {

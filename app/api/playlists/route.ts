@@ -43,6 +43,12 @@ export async function PATCH(request: Request) {
       // If setting as default, first unset all others
       if (is_default) {
         await sql`UPDATE playlists SET is_default = false WHERE is_default = true`
+        await sql`
+          INSERT INTO app_settings (key, value, updated_at)
+          VALUES ('active_playlist_ids', ${JSON.stringify([])}, NOW())
+          ON CONFLICT (key) DO UPDATE
+          SET value = EXCLUDED.value, updated_at = NOW()
+        `
       }
       await sql`UPDATE playlists SET is_default = ${is_default}, updated_at = NOW() WHERE id = ${id}`
     }
