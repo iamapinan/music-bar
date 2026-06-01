@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import {
+  ChevronDown,
+  ChevronRight,
   Plus,
   Search,
   Trash2,
@@ -128,6 +130,7 @@ export function AdminView({ onLogout }: AdminViewProps) {
   const [showAddPlaylistInput, setShowAddPlaylistInput] = useState(false);
   const [activeWorkspaceTab, setActiveWorkspaceTab] =
     useState<string>("tracks");
+  const [isPlaylistsExpanded, setIsPlaylistsExpanded] = useState(true);
 
   // Music List Toggle View (List vs Grid)
   const [musicListView, setMusicListView] = useState<"list" | "grid">("list");
@@ -414,6 +417,16 @@ export function AdminView({ onLogout }: AdminViewProps) {
           <section className="admin-library-panel flex flex-col gap-3">
             {/* Playlist Manager */}
             <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPlaylistsExpanded(!isPlaylistsExpanded)}
+                  className="flex items-center gap-1.5 text-sm font-bold text-foreground hover:text-primary transition-colors"
+                >
+                  {isPlaylistsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  เพลย์ลิสต์ของร้าน
+                </button>
+              </div>
               <div className="flex items-center gap-1">
                 <a
                   href="#playlist-studio"
@@ -466,7 +479,9 @@ export function AdminView({ onLogout }: AdminViewProps) {
             )}
 
             {/* Quiet stream selection bar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-y border-border/50 px-1 py-2">
+            {isPlaylistsExpanded && (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-y border-border/50 px-1 py-2">
               <div className="flex min-w-0 items-center gap-2 px-1">
                 <div className="flex h-5 w-5 items-center justify-center text-primary">
                   <CheckSquare className="w-3 h-3" />
@@ -639,6 +654,8 @@ export function AdminView({ onLogout }: AdminViewProps) {
                 )}
               </div>
             </div>
+              </>
+            )}
           </section>
 
           <section
