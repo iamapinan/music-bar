@@ -102,6 +102,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [showControls, setShowControls] = useState(true)
   const [activePlaylistIds, setActivePlaylistIdsState] = useState<number[]>([])
   const [isInitialized, setIsInitialized] = useState(false)
+  const [nextShuffleIndex, setNextShuffleIndex] = useState(0)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
 
   // Load saved state
@@ -311,7 +312,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (requests.length > 0) return requests[0]
       if (playlistSongs.length === 0) return null
       const nextIdx = isShuffle
-        ? Math.floor(Math.random() * playlistSongs.length)
+        ? nextShuffleIndex
         : (currentIndex + 1) % playlistSongs.length
       return playlistSongs[nextIdx] || null
     }
@@ -338,6 +339,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const currentIndexRef = useRef(currentIndex)
   const isShuffleRef = useRef(isShuffle)
   const playlistSongsRef = useRef(playlistSongs)
+  const nextShuffleIndexRef = useRef(nextShuffleIndex)
+
+  useEffect(() => {
+    if (isShuffle && playlistSongs.length > 0) {
+      let nextIdx = Math.floor(Math.random() * playlistSongs.length)
+      if (playlistSongs.length > 1 && nextIdx === currentIndex) {
+        nextIdx = (nextIdx + 1) % playlistSongs.length
+      }
+      setNextShuffleIndex(nextIdx)
+      nextShuffleIndexRef.current = nextIdx
+    }
+  }, [currentIndex, isShuffle, playlistSongs.length])
 
   useEffect(() => { playModeRef.current = playMode }, [playMode])
   useEffect(() => { requestsRef.current = requests }, [requests])
@@ -374,7 +387,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (songs.length === 0) return
 
       const next = shuffle
-        ? Math.floor(Math.random() * songs.length)
+        ? nextShuffleIndexRef.current
         : (idx + 1) % songs.length
       setCurrentIndex(next)
 
@@ -392,7 +405,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const shuffle = isShuffleRef.current
       if (songs.length === 0) return
       const prev = shuffle
-        ? Math.floor(Math.random() * songs.length)
+        ? Math.floor(Math.random() * songs.length) // For previous, random is fine as we don't display "Previous Song"
         : (idx - 1 + songs.length) % songs.length
       setCurrentIndex(prev)
     }
