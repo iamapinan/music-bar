@@ -45,6 +45,7 @@ interface PlayerContextValue {
   activePlaylistIds: number[]
   isRequestsEnabled: boolean
   showControls: boolean
+  showPlaylistRail: boolean
   // Controls
   togglePlay: () => void
   handleSkip: () => void
@@ -64,6 +65,7 @@ interface PlayerContextValue {
   setShowControls: (v: boolean) => void
   setCurrentTime: (v: number) => void
   setDuration: (v: number) => void
+  setShowPlaylistRail: (v: boolean) => void
   mutatePlaylist: () => Promise<any>
   mutateRequests: () => Promise<any>
   // Player ref for YouTube component
@@ -101,6 +103,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isRequestsEnabled, setIsRequestsEnabled] = useState(true)
   const [showControls, setShowControls] = useState(true)
   const [activePlaylistIds, setActivePlaylistIdsState] = useState<number[]>([])
+  const [showPlaylistRail, setShowPlaylistRail] = useState(true)
   const [isInitialized, setIsInitialized] = useState(false)
   const [nextShuffleIndex, setNextShuffleIndex] = useState(0)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
@@ -115,6 +118,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (parsed.playMode) setPlayMode(parsed.playMode)
         if (parsed.isVideoMode !== undefined) setIsVideoMode(parsed.isVideoMode)
         if (parsed.isAutoPlayEnabled !== undefined) setIsAutoPlayEnabled(parsed.isAutoPlayEnabled)
+        if (parsed.showPlaylistRail !== undefined) setShowPlaylistRail(parsed.showPlaylistRail)
       }
     } catch {}
     setIsInitialized(true)
@@ -127,10 +131,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         currentIndex,
         playMode,
         isVideoMode,
-        isAutoPlayEnabled
+        isAutoPlayEnabled,
+        showPlaylistRail
       }))
     }
-  }, [currentIndex, playMode, isVideoMode, isAutoPlayEnabled, isInitialized])
+  }, [currentIndex, playMode, isVideoMode, isAutoPlayEnabled, showPlaylistRail, isInitialized])
 
   // ===================== Player Ping & Registration =====================
   useEffect(() => {
@@ -565,7 +570,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleMute, toggleShuffle, handleSongEnd, playByIndex, playSong, setActivePlaylistIds, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
       setIsFullscreen, setIsRequestsEnabled: handleSetIsRequestsEnabled, setCurrentTime, setDuration,
       mutatePlaylist: mutateSongs, mutateRequests,
-      playerRef, isRequestsEnabled, showControls, setShowControls
+      playerRef, isRequestsEnabled, showControls, setShowControls,
+      showPlaylistRail, setShowPlaylistRail
     }}>
       {children}
     </PlayerContext.Provider>

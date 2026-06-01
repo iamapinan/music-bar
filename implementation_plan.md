@@ -1,61 +1,52 @@
-# แผนงานการลบโค้ดที่ไม่ได้ใช้งาน (Clean Unused Code Implementation Plan)
+# แผนงานการเปิด/ปิดสไลด์บาร์เพลย์ลิสต์และการเพิ่มคำแนะนำในการค้นหา (Toggle Slide Bar & Local Related Suggestions Plan)
 
-แผนงานนี้มีเป้าหมายเพื่อลบโค้ดและตัวแปรที่ไม่ได้ใช้งาน (Unused imports, unused variables, unused parameters) ตามที่ตรวจพบโดย TypeScript Compiler (`tsc`) เพื่อให้โค้ดของโครงการ Music Bar สะอาดขึ้น ปราศจาก Warning และง่ายต่อการบำรุงรักษา
-
-## ⚠️ สิ่งที่ต้องคำนึง (User Review Required)
-
-การลบพารามิเตอร์ของ Route Handlers (เช่น `request: Request`) อาจส่งผลกับ Signature ของฟังก์ชันได้ ดังนั้นเพื่อรักษาตำแหน่งของ `params` ในพารามิเตอร์ตัวที่สอง เราจะเปลี่ยนชื่อเป็น `_request` เพื่อหลีกเลี่ยงข้อผิดพลาดของ TypeScript compiler และรักษารูปแบบที่ถูกต้องของ Next.js API Routes
+แผนงานนี้มีเป้าหมายเพื่อเพิ่มความยืดหยุ่นในการแสดงผลสไลด์บาร์เพลย์ลิสต์ที่ด้านล่างของเครื่องเล่นเพลง และเพิ่มระบบแนะนำคีย์เวิร์ดอัจฉริยะในหน้าค้นหาเพลย์ลิสต์จาก YouTube โดยใช้ชื่อเพลย์ลิสต์ที่มีอยู่แล้วในระบบ
 
 ---
 
 ## 🛠️ รายการเปลี่ยนแปลงที่เสนอ (Proposed Changes)
 
-### 1. Web Core API Components
+### 1. โครงสร้างสถานะเครื่องเล่น (Player State & Context)
 
-#### 📂 [MODIFY] [route.ts](file:///Users/apinan/Developments/music-bar/app/api/players/%5Bid%5D/route.ts)
-- เปลี่ยน `request: Request` ในฟังก์ชัน `DELETE` เป็น `_request: Request` เพื่อระบุว่าเป็นตัวแปรที่ตั้งใจไม่เรียกใช้งาน
-
-#### 📂 [MODIFY] [route.ts](file:///Users/apinan/Developments/music-bar/app/api/playlists/%5Bid%5D/songs/route.ts)
-- เปลี่ยน `request: Request` ในฟังก์ชัน `GET` เป็น `_request: Request`
+#### 📂 [MODIFY] [player-context.tsx](file:///Users/apinan/Developments/music-bar/context/player-context.tsx)
+- เพิ่มตัวแปรสถานะ `showPlaylistRail` (ประเภท `boolean`) เพื่อควบคุมการซ่อน/แสดงแถบสไลด์บาร์เพลย์ลิสต์
+- เพิ่มฟังก์ชัน `setShowPlaylistRail` ใน Context Value
+- มีการจัดเก็บสถานะ `showPlaylistRail` ลงใน `localStorage` เพื่อรักษาสถานะเมื่อผู้ใช้รีเฟรชหน้าเว็บ (ค่าเริ่มต้น: `true`)
 
 ---
 
-### 2. Frontend User Interface Components
-
-#### 📂 [MODIFY] [bottom-nav.tsx](file:///Users/apinan/Developments/music-bar/components/bottom-nav.tsx)
-- ลบการอิมพอร์ต `Music` จากแพ็กเกจ `lucide-react` เนื่องจากไม่ได้ใช้งาน
-
-#### 📂 [MODIFY] [persistent-player.tsx](file:///Users/apinan/Developments/music-bar/components/persistent-player.tsx)
-- ลบการ Destructure ตัวแปร `isAutoPlayEnabled` จากการดึงข้อมูล `usePlayer()` เนื่องจากไม่ได้ถูกเรียกใช้ในฟังก์ชัน
+### 2. แถบเครื่องเล่นเพลงด้านล่าง (Bottom Playback Bar)
 
 #### 📂 [MODIFY] [player-bottom-bar.tsx](file:///Users/apinan/Developments/music-bar/components/player-bottom-bar.tsx)
-- ลบการอิมพอร์ต `Disc3` จากแพ็กเกจ `lucide-react` เนื่องจากไม่ได้ใช้งาน
+- ดึงสถานะ `showPlaylistRail` และ `setShowPlaylistRail` จาก `usePlayer()`
+- เพิ่มสวิตช์ Toggle "แสดงแถบสไลด์ / ซ่อนแถบสไลด์" ในส่วนแผงควบคุมฝั่งขวา (สำหรับผู้ดูแลระบบเมื่อเข้าหน้า `/admin`)
+- ปรับเงื่อนไขการแสดงผล `playlistRail` ให้ขึ้นอยู่กับสถานะ `showPlaylistRail` ด้วย (ถ้าเปิดสวิตช์และเงื่อนไขอื่นๆ ครบจึงจะแสดง)
 
-#### 📂 [MODIFY] [queue-list.tsx](file:///Users/apinan/Developments/music-bar/components/queue-list.tsx)
-- ลบพารามิเตอร์ `i` (index) จากลูป `.map` ชั้นที่สอง ในส่วนการแสดงผล Playlist แทร็ก เนื่องจากไม่ได้ใช้งาน
+---
 
-#### 📂 [MODIFY] [request-view.tsx](file:///Users/apinan/Developments/music-bar/components/request-view.tsx)
-- ลบการอิมพอร์ต `ScrollArea` จาก `@/components/ui/scroll-area`
-- ลบการประกาศ `qrCanvasRef` (เนื่องจากการสร้าง QR Code เปลี่ยนไปใช้ API direct URL และไม่ได้อ้างอิง canvas แล้ว)
+### 3. หน้าผู้ดูแลระบบและการค้นหา (Admin View & Youtube Playlist Search)
 
-#### 📂 [MODIFY] [theme-provider.tsx](file:///Users/apinan/Developments/music-bar/components/theme-provider.tsx)
-- ลบการอิมพอร์ต `import * as React from 'react'` เนื่องจากไม่ได้ใช้ฟีเจอร์ใดๆ ของ React โดยตรงในไฟล์นี้
+#### 📂 [MODIFY] [admin-view.tsx](file:///Users/apinan/Developments/music-bar/components/admin-view.tsx)
+- ในหน้าค้นหา YouTube Playlist (แท็บค้นหา เมื่อเลือกประเภทเป็น "เพลย์ลิสต์ YouTube") เพิ่มระบบดึงชื่อของ Local Playlists (เพลย์ลิสต์ในเครื่อง) มาแสดงเป็นปุ่มแนะนำ (Suggestions)
+- เมื่อคลิกที่ปุ่มชื่อเพลย์ลิสต์แนะนำ ระบบจะทำการกรอกคีย์เวิร์ดคำนั้นลงในช่องค้นหาทันที ช่วยเพิ่มความสะดวกในการค้นหาเพลย์ลิสต์แนวเพลงเดียวกันบน YouTube
 
 ---
 
 ## 🧪 แผนการตรวจสอบและทดสอบ (Verification Plan)
 
 ### การทดสอบแบบอัตโนมัติ (Automated Tests)
-- รันคำสั่งตรวจสอบประเภทข้อมูลและการทำงานของ TypeScript ด้วย:
+- ตรวจสอบไวยากรณ์และการ Type Checking ของ TypeScript หลังการเพิ่ม State ใหม่:
   ```bash
   npx tsc --noEmit --noUnusedLocals --noUnusedParameters
   ```
-  เพื่อตรวจสอบว่าไม่มีข้อผิดพลาด `TS6133` (Unused code) หลงเหลืออยู่อีก
-- รันคำสั่งตรวจสอบความถูกต้องของโครงสร้างและการคอมไพล์ของ Next.js:
-  ```bash
-  npm run build
-  ```
-  หรือ `bun run build`
 
 ### การตรวจสอบด้วยตนเอง (Manual Verification)
-- ตรวจสอบว่าหน้าจอจัดการเพลย์ลิสต์ ระบบเล่นเพลงต่อเนื่อง คิวเพลง และหน้าจอขอเพลงของลูกค้าทำงานได้ตามปกติ ไหลลื่น ไม่มีข้อผิดพลาด
+- **สไลด์บาร์เพลย์ลิสต์**:
+  1. ไปที่หน้าผู้ดูแลระบบ `/admin` 
+  2. ทดสอบเลื่อนสวิตช์ "ซ่อนแถบสไลด์" บนแผงควบคุมเครื่องเล่นด้านล่าง และยืนยันว่าแถบ `playlistRail` ได้หายไปจากหน้าจอจริง
+  3. ทดสอบสลับกลับเป็น "แสดงแถบสไลด์" และยืนยันว่าสไลด์บาร์เพลย์ลิสต์ปรากฏขึ้นมาใหม่
+- **การค้นหาแนะนำ**:
+  1. ไปที่แท็บค้นหาในหน้า `/admin`
+  2. เลือกหมวดค้นหาเป็น "เพลย์ลิสต์ YouTube"
+  3. ตรวจสอบว่ามีรายการปุ่มแนะนำชื่อตามเพลย์ลิสต์ที่ร้านมีอยู่แสดงขึ้นมาใต้ช่องค้นหา
+  4. ทดสอบกดปุ่มแนะนำ และดูว่าคำถูกนำไปใส่ในช่องค้นหาพร้อมค้นหาได้อย่างถูกต้อง

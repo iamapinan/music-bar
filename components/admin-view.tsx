@@ -139,12 +139,13 @@ export function AdminView() {
     setSelectedPlaylists(new Set(activePlaylistIds));
   }, [activePlaylistIds]);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = async (overrideQuery?: string) => {
+    const query = overrideQuery !== undefined ? overrideQuery : searchQuery;
+    if (!query.trim()) return;
     setIsSearching(true);
     try {
       const res = await fetch(
-        `/api/youtube/search?q=${encodeURIComponent(searchQuery)}&type=${searchType}`,
+        `/api/youtube/search?q=${encodeURIComponent(query)}&type=${searchType}`,
       );
       const data = await res.json();
       if (searchType === "playlist") {
@@ -836,7 +837,7 @@ export function AdminView() {
                   />
                   <Button
                     size="sm"
-                    onClick={handleSearch}
+                    onClick={() => handleSearch()}
                     disabled={isSearching || !searchQuery.trim()}
                     aria-label="ค้นหาเพลงจาก YouTube"
                     className="h-9 px-4 rounded shrink-0"
@@ -848,6 +849,28 @@ export function AdminView() {
                     )}
                   </Button>
                 </div>
+
+                {/* Suggestions for YouTube Playlist Search */}
+                {searchType === "playlist" && playlists.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 px-1 py-0.5 shrink-0 animate-in fade-in duration-200">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mr-1">
+                      แนะนำคีย์เวิร์ด:
+                    </span>
+                    {playlists.map((pl) => (
+                      <button
+                        key={pl.id}
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery(pl.name);
+                          handleSearch(pl.name);
+                        }}
+                        className="rounded-full bg-primary/5 hover:bg-primary/15 border border-primary/20 px-2.5 py-0.5 text-[10px] font-bold text-primary hover:text-primary transition-all active:scale-95 cursor-pointer"
+                      >
+                        {pl.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {/* Destination Dropdown for single search */}
                 {searchType === "video" && playlists.length > 0 && (

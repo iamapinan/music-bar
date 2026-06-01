@@ -34,7 +34,8 @@ export function PlayerBottomBar() {
     toggleMute, toggleShuffle, isAutoPlayEnabled, setIsAutoPlayEnabled,
     playMode, isVideoMode, setIsVideoMode, isFullscreen, setIsFullscreen,
     isRequestsEnabled, setIsRequestsEnabled, showControls,
-    playlists, activePlaylistIds, setActivePlaylistIds
+    playlists, activePlaylistIds, setActivePlaylistIds,
+    showPlaylistRail, setShowPlaylistRail
   } = usePlayer()
 
   const pathname = usePathname()
@@ -99,7 +100,7 @@ export function PlayerBottomBar() {
     }
   }, [])
 
-  const playlistRail = pathname !== '/admin' && enabledPlaylists.length > 0 && (
+  const playlistRail = showPlaylistRail && pathname !== '/admin' && enabledPlaylists.length > 0 && (
     <div className={cn(
       "border-b border-white/10 py-2 backdrop-blur-3xl",
       pathname === '/admin' ? "bg-[#07120f]/95" : "bg-black/10"
@@ -291,16 +292,28 @@ export function PlayerBottomBar() {
             <div className="hidden lg:flex items-center gap-3">
                {/* Requests Toggle (Admin Only) */}
               {pathname === '/admin' && (
-                <div className="flex items-center gap-2 mr-4 pr-4 border-r border-white/10">
-                  <Switch 
-                    checked={isRequestsEnabled} 
-                    onCheckedChange={setIsRequestsEnabled}
-                    className="scale-75 data-[state=checked]:bg-accent"
-                  />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
-                    {isRequestsEnabled ? 'เปิดรับเพลง' : 'ปิดรับเพลง'}
-                  </span>
-                </div>
+                <>
+                  <div className="flex items-center gap-2 mr-4 pr-4 border-r border-white/10">
+                    <Switch 
+                      checked={isRequestsEnabled} 
+                      onCheckedChange={setIsRequestsEnabled}
+                      className="scale-75 data-[state=checked]:bg-accent"
+                    />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                      {isRequestsEnabled ? 'เปิดรับเพลง' : 'ปิดรับเพลง'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mr-4 pr-4 border-r border-white/10">
+                    <Switch 
+                      checked={showPlaylistRail} 
+                      onCheckedChange={setShowPlaylistRail}
+                      className="scale-75 data-[state=checked]:bg-accent"
+                    />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                      {showPlaylistRail ? 'แสดงแถบสไลด์' : 'ซ่อนแถบสไลด์'}
+                    </span>
+                  </div>
+                </>
               )}
 
               {/* Autoplay Switch */}
