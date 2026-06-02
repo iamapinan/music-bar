@@ -179,7 +179,7 @@ export function PlayerBottomBar() {
       (pathname === '/' && isVideoMode && isFullscreen && !showControls) ? "translate-y-24 opacity-0 pointer-events-none" : "translate-y-0 opacity-100 pointer-events-auto"
     )}>
       <div className={cn(
-        "player-ambient pointer-events-auto relative w-full overflow-hidden border-t border-white/10 bg-background/35 shadow-[0_-18px_70px_rgba(0,0,0,0.32)] backdrop-blur-3xl",
+        "player-ambient pointer-events-auto relative w-full border-t border-white/10 bg-background/35 shadow-[0_-18px_70px_rgba(0,0,0,0.32)] backdrop-blur-3xl",
         pathname === '/admin' && "admin-player-dock"
       )}>
         {playlistRail}

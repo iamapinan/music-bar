@@ -1,10 +1,8 @@
-# รายการงานระบบปรับปรุง Seek Bar ตัวเล่นเพลงให้เลื่อนเวลาได้พรีเมียม (Seek Bar Refinement Tasks)
+# รายการงานระบบแก้ไข Seek Bar ไม่แสดงและกดไม่ได้ในหน้า Admin (Admin Seek Bar Fix Tasks)
 
-- [x] ปรับปรุงเลย์เอาต์และการเรนเดอร์ Seek Bar ในแถบควบคุมเพลงด้านล่าง (`components/player-bottom-bar.tsx`)
-    - [x] ลบ Div ที่ทับซ้อนและจัดระดับชั้น Layer ใหม่
-    - [x] ขยายพื้นที่สัมผัสเป็นความสูง `h-5` (20px) ครอบคลุมการกดของนิ้วมือ
-    - [x] นำ Slider ดั้งเดิมของ Radix UI มาทำหน้าที่เรนเดอร์ Range & Track
-    - [x] ตั้งค่าการซ่อน/แสดงปุ่มกลม (Thumb) และความหนาของเส้นอย่างนุ่มนวลแบบ Spotify
+- [x] ปรับปรุงบาร์เครื่องเล่นเพลงด้านล่าง (`components/player-bottom-bar.tsx`)
+    - [x] เอาคลาส `overflow-hidden` ออกจากบาร์หลัก `player-ambient`
+    - [x] ยืนยันการแสดงผลของ Seek Bar ในหน้า `/admin`
 - [x] การตรวจสอบและบันทึกประวัติ
     - [x] ทดสอบ compile และรัน typecheck ผ่าน `tsc`
     - [x] บันทึกการพัฒนาลงใน `CHANGELOG.md`
