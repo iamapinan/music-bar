@@ -56,6 +56,7 @@ interface PlayerContextValue {
   handleSongEnd: () => void
   playByIndex: (index: number) => void
   playSong: (song: PlaylistSong) => void
+  playSongImmediately: (song: any) => void
   setActivePlaylistIds: (ids: number[]) => Promise<void>
   setIsPlaying: (v: boolean) => void
   setIsVideoMode: (v: boolean) => void
@@ -107,6 +108,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false)
   const [nextShuffleIndex, setNextShuffleIndex] = useState(0)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
+  const [customSong, setCustomSong] = useState<PlaylistSong | SongRequest | null>(null)
+  const customSongRef = useRef<PlaylistSong | SongRequest | null>(null)
 
   // Load saved state
   useEffect(() => {
@@ -305,9 +308,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   // ===================== Current Song =====================
   const currentSong: PlaylistSong | SongRequest | null =
-    playMode === 'request' && requests.length > 0
-      ? requests[0]
-      : playlistSongs[currentIndex] ?? null
+    customSong
+      ? customSong
+      : (playMode === 'request' && requests.length > 0
+        ? requests[0]
+        : playlistSongs[currentIndex] ?? null)
 
   const nextSong: PlaylistSong | SongRequest | null = (() => {
     if (playMode === 'request') {
@@ -364,6 +369,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => { playlistSongsRef.current = playlistSongs }, [playlistSongs])
 
   const handleSongEnd = useCallback(async () => {
+    if (customSongRef.current) {
+      setCustomSong(null)
+      customSongRef.current = null
+      
+      const reqs = requestsRef.current
+      if (reqs.length > 0) {
+        setPlayMode('request')
+      } else {
+        setPlayMode('playlist')
+      }
+      setIsPlaying(true)
+      return
+    }
+
     const mode = playModeRef.current
     const reqs = requestsRef.current
     const idx = currentIndexRef.current
@@ -404,6 +423,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [mutateRequests])
 
   const handlePrevious = useCallback(() => {
+    if (customSongRef.current) {
+      setCustomSong(null)
+      customSongRef.current = null
+      
+      const reqs = requestsRef.current
+      if (reqs.length > 0) {
+        setPlayMode('request')
+      } else {
+        setPlayMode('playlist')
+      }
+      setIsPlaying(true)
+      return
+    }
+
     if (playModeRef.current === 'playlist') {
       const songs = playlistSongsRef.current
       const idx = currentIndexRef.current
@@ -417,6 +450,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const handleSkip = useCallback(async () => {
+    if (customSongRef.current) {
+      setCustomSong(null)
+      customSongRef.current = null
+      
+      const reqs = requestsRef.current
+      if (reqs.length > 0) {
+        setPlayMode('request')
+      } else {
+        setPlayMode('playlist')
+      }
+      setIsPlaying(true)
+      return
+    }
+
     const mode = playModeRef.current
     const reqs = requestsRef.current
 
@@ -558,6 +605,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const playSongImmediately = useCallback((song: any) => {
+    const formattedSong = {
+      ...song,
+      id: song.id || 999999,
+      playlist_id: song.playlist_id || 999999,
+      youtube_id: song.youtube_id,
+      title: song.title,
+      thumbnail: song.thumbnail || '',
+      artist: song.artist || song.channelTitle || 'Music Bar',
+    }
+    setCustomSong(formattedSong)
+    customSongRef.current = formattedSong
+    setIsPlaying(true)
+  }, [])
+
   if (!isInitialized) return null
 
   return (
@@ -567,7 +629,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       currentTime, duration,
       currentIndex, requests, playlistSongs, isPlaylistLoading, playlists, activePlaylistIds: playbackPlaylistIds,
       togglePlay, handleSkip, handlePrevious, handleVolumeChange,
-      toggleMute, toggleShuffle, handleSongEnd, playByIndex, playSong, setActivePlaylistIds, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
+      toggleMute, toggleShuffle, handleSongEnd, playByIndex, playSong, playSongImmediately, setActivePlaylistIds, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
       setIsFullscreen, setIsRequestsEnabled: handleSetIsRequestsEnabled, setCurrentTime, setDuration,
       mutatePlaylist: mutateSongs, mutateRequests,
       playerRef, isRequestsEnabled, showControls, setShowControls,

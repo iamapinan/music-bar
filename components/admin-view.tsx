@@ -22,6 +22,9 @@ import {
   CheckSquare,
   Square,
   RefreshCw,
+  Play,
+  Pause,
+  Eye,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -89,7 +92,14 @@ const PlaylistCover = ({
 };
 
 export function AdminView() {
-  const { activePlaylistIds, setActivePlaylistIds } = usePlayer();
+  const { 
+    activePlaylistIds, 
+    setActivePlaylistIds, 
+    playSongImmediately, 
+    currentSong, 
+    isPlaying, 
+    togglePlay 
+  } = usePlayer();
   const [activePlaylistId, setActivePlaylistId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<YouTubeSearchResult[]>([]);
@@ -102,6 +112,41 @@ export function AdminView() {
   const [importingId, setImportingId] = useState<string | null>(null);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  const [activePreviewPlaylist, setActivePreviewPlaylist] = useState<YouTubePlaylistResult | null>(null);
+  const [previewSongs, setPreviewSongs] = useState<{ id: string; youtube_id: string; title: string; thumbnail: string | null; channelTitle: string }[]>([]);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+
+  const handlePlayPauseSong = (song: { youtube_id: string; title: string; thumbnail?: string | null; artist?: string | null }) => {
+    if (currentSong?.youtube_id === song.youtube_id) {
+      togglePlay();
+    } else {
+      playSongImmediately(song);
+    }
+  };
+
+  const handlePreviewPlaylist = async (pl: YouTubePlaylistResult) => {
+    setActivePreviewPlaylist(pl);
+    setIsPreviewModalOpen(true);
+    setIsLoadingPreview(true);
+    setPreviewSongs([]);
+    try {
+      const res = await fetch(`/api/youtube/playlist-items?playlistId=${pl.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPreviewSongs(data.items || []);
+      } else {
+        toast.error("ไม่สามารถโหลดรายชื่อเพลงได้");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
   const [selectedPlaylists, setSelectedPlaylists] = useState<Set<number>>(
     new Set(),
   );
@@ -729,6 +774,24 @@ export function AdminView() {
                             </p>
                           </div>
 
+                          {/* Play/Pause Button */}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className={cn(
+                              "h-8 w-8 flex-shrink-0 rounded text-primary transition-all hover:bg-primary/10 hover:text-primary xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100",
+                              currentSong?.youtube_id === song.youtube_id && isPlaying && "bg-primary/10 text-primary xl:opacity-100"
+                            )}
+                            onClick={() => handlePlayPauseSong(song)}
+                            aria-label={`เล่น ${song.title}`}
+                          >
+                            {currentSong?.youtube_id === song.youtube_id && isPlaying ? (
+                              <Pause className="w-3.5 h-3.5" />
+                            ) : (
+                              <Play className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+
                           <Button
                             size="icon"
                             variant="ghost"
@@ -756,7 +819,23 @@ export function AdminView() {
                               alt={song.title}
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
+                            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className={cn(
+                                  "w-8 h-8 rounded bg-primary/90 text-white hover:bg-primary hover:scale-105",
+                                  currentSong?.youtube_id === song.youtube_id && isPlaying && "bg-primary text-white"
+                                )}
+                                onClick={() => handlePlayPauseSong(song)}
+                                aria-label={`เล่น ${song.title}`}
+                              >
+                                {currentSong?.youtube_id === song.youtube_id && isPlaying ? (
+                                  <Pause className="w-4 h-4" />
+                                ) : (
+                                  <Play className="w-4 h-4" />
+                                )}
+                              </Button>
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -937,6 +1016,24 @@ export function AdminView() {
                                 {result.channelTitle}
                               </p>
                             </div>
+                            {/* Play/Pause Button */}
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className={cn(
+                                "h-8 w-8 rounded text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:text-primary shrink-0",
+                                currentSong?.youtube_id === result.id && isPlaying && "bg-primary/20 text-primary border-primary/40"
+                              )}
+                              onClick={() => handlePlayPauseSong({ youtube_id: result.id, title: result.title, thumbnail: result.thumbnail, artist: result.channelTitle })}
+                              aria-label={`เล่น ${result.title}`}
+                            >
+                              {currentSong?.youtube_id === result.id && isPlaying ? (
+                                <Pause className="w-3.5 h-3.5" />
+                              ) : (
+                                <Play className="w-3.5 h-3.5" />
+                              )}
+                            </Button>
+
                             <Button
                               size="sm"
                               variant={inPlaylist ? "secondary" : "default"}
@@ -980,21 +1077,32 @@ export function AdminView() {
                               {pl.channelTitle} · {pl.itemCount} เพลง
                             </p>
                           </div>
-                          <Button
-                            size="sm"
-                            disabled={importingId === pl.id}
-                            onClick={() => handleImportYoutubePlaylist(pl)}
-                            className="h-8 text-xs px-3 font-bold rounded shrink-0"
-                          >
-                            {importingId === pl.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <>
-                                <RefreshCw className="w-3 h-3 mr-1" />
-                                Import
-                              </>
-                            )}
-                          </Button>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePreviewPlaylist(pl)}
+                              className="h-8 text-xs px-2.5 font-bold rounded border-primary/20 text-primary hover:bg-primary/5 hover:text-primary"
+                              title="ดูรายชื่อเพลงก่อนนำเข้า"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              disabled={importingId === pl.id}
+                              onClick={() => handleImportYoutubePlaylist(pl)}
+                              className="h-8 text-xs px-3 font-bold rounded"
+                            >
+                              {importingId === pl.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <RefreshCw className="w-3 h-3 mr-1" />
+                                  Import
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       ))}
 
@@ -1029,7 +1137,23 @@ export function AdminView() {
                                 alt={result.title}
                                 className="w-full h-full object-cover"
                               />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
+                              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className={cn(
+                                    "w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105",
+                                    currentSong?.youtube_id === result.id && isPlaying && "bg-primary text-white"
+                                  )}
+                                  onClick={() => handlePlayPauseSong({ youtube_id: result.id, title: result.title, thumbnail: result.thumbnail, artist: result.channelTitle })}
+                                  aria-label={`เล่น ${result.title}`}
+                                >
+                                  {currentSong?.youtube_id === result.id && isPlaying ? (
+                                    <Pause className="w-4 h-4" />
+                                  ) : (
+                                    <Play className="w-4 h-4" />
+                                  )}
+                                </Button>
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -1075,7 +1199,16 @@ export function AdminView() {
                               alt={pl.title}
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
+                            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105"
+                                onClick={() => handlePreviewPlaylist(pl)}
+                                aria-label={`ดูรายชื่อเพลง ${pl.title}`}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -1185,6 +1318,24 @@ export function AdminView() {
                               </Badge>
                             )}
 
+                            {/* Play/Pause Button */}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className={cn(
+                                "w-8 h-8 rounded text-primary hover:bg-primary/10 hover:text-primary shrink-0",
+                                currentSong?.youtube_id === req.youtube_id && isPlaying && "bg-primary/10 text-primary"
+                              )}
+                              onClick={() => handlePlayPauseSong({ youtube_id: req.youtube_id, title: req.title, thumbnail: req.thumbnail, artist: req.requested_by || "ลูกค้าทั่วไป" })}
+                              aria-label={`เล่น ${req.title}`}
+                            >
+                              {currentSong?.youtube_id === req.youtube_id && isPlaying ? (
+                                <Pause className="w-3.5 h-3.5" />
+                              ) : (
+                                <Play className="w-3.5 h-3.5" />
+                              )}
+                            </Button>
+
                             <Button
                               size="icon"
                               variant="ghost"
@@ -1220,7 +1371,23 @@ export function AdminView() {
                                 alt={req.title}
                                 className="w-full h-full object-cover"
                               />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
+                              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className={cn(
+                                    "w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105",
+                                    currentSong?.youtube_id === req.youtube_id && isPlaying && "bg-primary text-white"
+                                  )}
+                                  onClick={() => handlePlayPauseSong({ youtube_id: req.youtube_id, title: req.title, thumbnail: req.thumbnail, artist: req.requested_by || "ลูกค้าทั่วไป" })}
+                                  aria-label={`เล่น ${req.title}`}
+                                >
+                                  {currentSong?.youtube_id === req.youtube_id && isPlaying ? (
+                                    <Pause className="w-4 h-4" />
+                                  ) : (
+                                    <Play className="w-4 h-4" />
+                                  )}
+                                </Button>
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -1259,6 +1426,143 @@ export function AdminView() {
               </div>
             )}
           </section>
+
+          {/* YouTube Playlist Preview Modal */}
+          {isPreviewModalOpen && activePreviewPlaylist && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+              <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-primary/15 bg-background shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {activePreviewPlaylist.thumbnail && (
+                      <img
+                        src={activePreviewPlaylist.thumbnail}
+                        alt={activePreviewPlaylist.title}
+                        className="w-12 h-9 rounded object-cover shadow border border-black/5"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-extrabold text-foreground truncate">
+                        {activePreviewPlaylist.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        ช่อง: {activePreviewPlaylist.channelTitle} · มีทั้งหมด {activePreviewPlaylist.itemCount} เพลง
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setIsPreviewModalOpen(false)}
+                    className="h-8 w-8 p-0 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground"
+                  >
+                    <span className="text-lg">×</span>
+                  </Button>
+                </div>
+
+                {/* Content */}
+                <ScrollArea className="flex-1 overflow-y-auto p-5">
+                  {isLoadingPreview ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        กำลังโหลดรายชื่อเพลงจาก YouTube...
+                      </p>
+                    </div>
+                  ) : previewSongs.length === 0 ? (
+                    <div className="text-center py-12 text-xs text-muted-foreground">
+                      ไม่พบรายชื่อเพลงในเพลย์ลิสต์นี้
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {previewSongs.map((song, i) => {
+                        const isThisSongPlaying = currentSong?.youtube_id === song.youtube_id && isPlaying;
+                        return (
+                          <div
+                            key={song.id}
+                            className="flex items-center gap-3 rounded-lg border border-border/20 bg-black/[0.01] p-2 hover:bg-black/10 transition-all group"
+                          >
+                            <span className="text-xs font-semibold text-muted-foreground w-6 text-center tabular-nums">
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+
+                            {song.thumbnail && (
+                              <img
+                                src={song.thumbnail}
+                                alt={song.title}
+                                className="w-12 h-9 rounded object-cover shadow border border-black/5 flex-shrink-0"
+                              />
+                            )}
+
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                                {song.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                {song.channelTitle}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {/* Play Button */}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className={cn(
+                                  "h-8 w-8 rounded text-primary hover:bg-primary/10 hover:text-primary",
+                                  isThisSongPlaying && "bg-primary/10"
+                                )}
+                                onClick={() => handlePlayPauseSong(song)}
+                              >
+                                {isThisSongPlaying ? (
+                                  <Pause className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Play className="w-3.5 h-3.5" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </ScrollArea>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-2 border-t border-border/60 bg-muted/20 px-5 py-4 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsPreviewModalOpen(false)}
+                    className="text-xs font-bold"
+                  >
+                    ปิดหน้าต่าง
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={importingId === activePreviewPlaylist.id}
+                    onClick={() => {
+                      setIsPreviewModalOpen(false);
+                      handleImportYoutubePlaylist(activePreviewPlaylist);
+                    }}
+                    className="text-xs font-bold"
+                  >
+                    {importingId === activePreviewPlaylist.id ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
+                        กำลังนำเข้า...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-3 h-3 mr-1.5" />
+                        นำเข้าเพลย์ลิสต์นี้
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
   );
 }

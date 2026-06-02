@@ -14,6 +14,15 @@
   - ลบการอิมพอร์ต React ที่ไม่ได้เรียกใช้งานใน `components/theme-provider.tsx`
 
 ### Added
+- เพิ่มระบบสั่งเล่นเพลงทันทีจากหน้าแผงควบคุมผู้ดูแลระบบ (Play Songs Immediately from Admin):
+  - พัฒนาโครงสร้าง Player Context ใน `player-context.tsx` เพิ่มสถานะ `customSong` (Computed logic ครอบคลุมคิวปกติ) และเพิ่มฟังก์ชัน `playSongImmediately` สำหรับส่งคำสั่งควบคุม YouTube Player Iframe
+  - อัปเดตตรรกะใน Callback สิ้นสุดเพลง `handleSongEnd` และปุ่มข้ามเพลง `handleSkip`, `handlePrevious` ให้ล้างค่า `customSong` เป็น null เพื่อสลับคืนสู่การสตรีมคิวปกติ (Playlist หรือ Request) อย่างไร้รอยต่อ
+  - ติดตั้งปุ่มควบคุม Dynamic Play/Pause ดีไซน์พรีเมียม (ใช้ไอคอน `Play` และ `Pause` จาก `lucide-react`) ในทุกแท็บรายการของหน้า Admin (`admin-view.tsx`): เพลงในเพลย์ลิสต์, ผลการค้นหาวิดีโอ YouTube, และรายการคำขอเพลงของลูกค้า ทั้งในมุมมอง List View และ Grid View
+- เพิ่มระบบแสดงตัวอย่างและลองฟังรายชื่อเพลงใน YouTube Playlist ก่อนการนำเข้า (Preview YouTube Playlist Before Import):
+  - พัฒนา API Endpoint ใหม่ที่ `/api/youtube/playlist-items` สำหรับดึงรายการเพลงทั้งหมดภายใน YouTube Playlist ผ่าน Google YouTube v3 API (พร้อมระบบ Mock Data จำลองข้อมูลสำหรับการสาธิตเมื่อไม่พบคีย์)
+  - เพิ่มปุ่ม "ดูรายชื่อเพลง" (ไอคอน `Eye` จาก `lucide-react`) ในผลการค้นหา YouTube Playlist บนหน้าแผงควบคุม Admin
+  - พัฒนาหน้าต่าง Custom Preview Modal ตกแต่งด้วย CSS/Tailwind สไตล์ Premium Dark Mode ครอบคลุมการแสดงผลรูปปก รายการชื่อเพลง ศิลปิน
+  - สนับสนุนระบบการทดลองฟังเพลงเดี่ยวใดๆ ภายใน Modal พรีวิวส่งตรงไปยังเครื่องเล่นหลักได้ทันที และมีปุ่มนำเข้าเพลย์ลิสต์นี้จากภายใน Modal
 - เพิ่มระบบสลับแสดงผลสไลด์บาร์เพลย์ลิสต์ (Toggle Playlist Slide Bar):
   - เพิ่มสถานะ `showPlaylistRail` ใน `PlayerProvider` และเก็บบันทึกค่าไว้ใน `localStorage` เพื่อรักษาสถานะไว้เสมอเมื่อมีการโหลดหน้าใหม่
   - เพิ่มสวิตช์ Toggle ควบคุมการแสดงผล "แสดงแถบสไลด์ / ซ่อนแถบสไลด์" ในแถบแผงควบคุมฝั่งขวาของเครื่องเล่นเพลงด้านล่าง (สำหรับ Admin บนหน้า `/admin`)

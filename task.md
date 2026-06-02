@@ -1,17 +1,27 @@
-# รายการงานระบบสลับสไลด์บาร์และแนะนำคีย์เวิร์ดเพลย์ลิสต์ (Toggle Slide Bar & Local Suggestions Tasks)
+# รายการงานระบบกดฟังเพลงจาก Admin และพรีวิว YouTube Playlist ก่อน Import (Play from Admin & Playlist Preview Tasks)
 
 - [x] ปรับปรุง Player Context (`context/player-context.tsx`)
-    - [x] เพิ่ม `showPlaylistRail` และ `setShowPlaylistRail` ใน interface `PlayerContextValue`
-    - [x] ประกาศสถานะ `showPlaylistRail` พร้อมการโหลดและเซฟค่าจาก `localStorage`
-    - [x] ส่งค่าสถานะผ่าน `PlayerContext.Provider`
-- [x] ปรับปรุงแถบควบคุมเพลงด้านล่าง (`components/player-bottom-bar.tsx`)
-    - [x] ดึงสถานะ `showPlaylistRail` และ `setShowPlaylistRail` จาก `usePlayer()`
-    - [x] เพิ่มสวิตช์ Toggle สำหรับซ่อน/แสดงแถบสไลด์ในพื้นที่แผงควบคุมผู้ดูแลระบบ
-    - [x] เชื่อมโยงสถานะเพื่อควบคุมการแสดงผลของ `playlistRail`
-- [x] เพิ่มคำแนะนำค้นหาในแผงจัดการ (`components/admin-view.tsx`)
-    - [x] ดึงรายการชื่อเพลย์ลิสต์ทั้งหมดที่มีอยู่ในระบบ
-    - [x] แสดงปุ่มแนะนำ (Suggestions) ในหน้าค้นหา YouTube Playlist
-    - [x] ตรวจสอบให้การกดปุ่มแนะนำกรอกข้อมูลลงช่องสืบค้นได้ทันที
+    - [x] เพิ่ม `playSongImmediately` ใน interface `PlayerContextValue`
+    - [x] ประกาศสถานะ `customSong` และ `customSongRef` ใน PlayerProvider
+    - [x] ปรับแก้ Computed Value `currentSong` ให้ตรวจสอบและคืนค่า `customSong` ก่อน
+    - [x] ปรับปรุง Callback `handleSongEnd` ให้เคลียร์ `customSong` เป็น null เมื่อเพลงเล่นจบ
+    - [x] ปรับปรุง Callback `handleSkip` และ `handlePrevious` ให้เคลียร์ `customSong` ด้วย
+    - [x] ส่งฟังก์ชัน `playSongImmediately` ผ่าน Context Provider
+- [x] สร้าง API Route สำหรับดึงรายการเพลงในเพลย์ลิสต์ (`app/api/youtube/playlist-items/route.ts`)
+    - [x] สร้างโครงสร้าง API GET Endpoint
+    - [x] ตรวจสอบ API Key และเตรียม Mock Data ในกรณีที่ไม่พบคีย์
+    - [x] เรียกดึงข้อมูลผ่าน YouTube API `playlistItems`
+    - [x] คัดกรองและส่งค่ากลับในรูปแบบ JSON
+- [x] ปรับปรุงหน้าผู้ดูแลระบบจัดการ (`components/admin-view.tsx`)
+    - [x] นำเข้าฟังก์ชันควบคุมจาก `usePlayer()` (`playSongImmediately`, `currentSong`, `isPlaying`, `togglePlay`)
+    - [x] นำเข้าไอคอนเพิ่มเติม `Play`, `Pause`, `Eye` จาก `lucide-react`
+    - [x] เพิ่มปุ่มควบคุมการเล่นเพลงทันทีในแท็บ "เพลงในเพลย์ลิสต์" (List & Grid View)
+    - [x] เพิ่มปุ่มควบคุมการเล่นเพลงทันทีในแท็บ "ค้นหาเดี่ยว" (List & Grid View)
+    - [x] เพิ่มปุ่มควบคุมการเล่นเพลงทันทีในแท็บ "คำขอจากลูกค้า" (List & Grid View)
+    - [x] พัฒนาระบบ Preview Modal สำหรับแสดงรายชื่อเพลงในเพลย์ลิสต์ YouTube
+    - [x] เพิ่มปุ่ม "ดูรายชื่อเพลง" ในแท็บค้นหา YouTube Playlist เพื่อสั่งเปิด Modal และโหลดข้อมูล
+    - [x] รองรับการกดฟังแต่ละเพลงจากใน Preview Modal ไปเล่นที่เครื่องเล่นหลัก
+    - [x] รองรับการกดนำเข้า (Import) เพลย์ลิสต์ตรงจากภายใน Preview Modal
 - [x] การตรวจสอบและบันทึกประวัติ
     - [x] ทดสอบ compile และรัน typecheck ผ่าน `tsc`
     - [x] บันทึกการพัฒนาลงใน `CHANGELOG.md`
