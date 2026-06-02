@@ -1,27 +1,10 @@
-# รายการงานระบบกดฟังเพลงจาก Admin และพรีวิว YouTube Playlist ก่อน Import (Play from Admin & Playlist Preview Tasks)
+# รายการงานระบบปรับปรุง Seek Bar ตัวเล่นเพลงให้เลื่อนเวลาได้พรีเมียม (Seek Bar Refinement Tasks)
 
-- [x] ปรับปรุง Player Context (`context/player-context.tsx`)
-    - [x] เพิ่ม `playSongImmediately` ใน interface `PlayerContextValue`
-    - [x] ประกาศสถานะ `customSong` และ `customSongRef` ใน PlayerProvider
-    - [x] ปรับแก้ Computed Value `currentSong` ให้ตรวจสอบและคืนค่า `customSong` ก่อน
-    - [x] ปรับปรุง Callback `handleSongEnd` ให้เคลียร์ `customSong` เป็น null เมื่อเพลงเล่นจบ
-    - [x] ปรับปรุง Callback `handleSkip` และ `handlePrevious` ให้เคลียร์ `customSong` ด้วย
-    - [x] ส่งฟังก์ชัน `playSongImmediately` ผ่าน Context Provider
-- [x] สร้าง API Route สำหรับดึงรายการเพลงในเพลย์ลิสต์ (`app/api/youtube/playlist-items/route.ts`)
-    - [x] สร้างโครงสร้าง API GET Endpoint
-    - [x] ตรวจสอบ API Key และเตรียม Mock Data ในกรณีที่ไม่พบคีย์
-    - [x] เรียกดึงข้อมูลผ่าน YouTube API `playlistItems`
-    - [x] คัดกรองและส่งค่ากลับในรูปแบบ JSON
-- [x] ปรับปรุงหน้าผู้ดูแลระบบจัดการ (`components/admin-view.tsx`)
-    - [x] นำเข้าฟังก์ชันควบคุมจาก `usePlayer()` (`playSongImmediately`, `currentSong`, `isPlaying`, `togglePlay`)
-    - [x] นำเข้าไอคอนเพิ่มเติม `Play`, `Pause`, `Eye` จาก `lucide-react`
-    - [x] เพิ่มปุ่มควบคุมการเล่นเพลงทันทีในแท็บ "เพลงในเพลย์ลิสต์" (List & Grid View)
-    - [x] เพิ่มปุ่มควบคุมการเล่นเพลงทันทีในแท็บ "ค้นหาเดี่ยว" (List & Grid View)
-    - [x] เพิ่มปุ่มควบคุมการเล่นเพลงทันทีในแท็บ "คำขอจากลูกค้า" (List & Grid View)
-    - [x] พัฒนาระบบ Preview Modal สำหรับแสดงรายชื่อเพลงในเพลย์ลิสต์ YouTube
-    - [x] เพิ่มปุ่ม "ดูรายชื่อเพลง" ในแท็บค้นหา YouTube Playlist เพื่อสั่งเปิด Modal และโหลดข้อมูล
-    - [x] รองรับการกดฟังแต่ละเพลงจากใน Preview Modal ไปเล่นที่เครื่องเล่นหลัก
-    - [x] รองรับการกดนำเข้า (Import) เพลย์ลิสต์ตรงจากภายใน Preview Modal
+- [x] ปรับปรุงเลย์เอาต์และการเรนเดอร์ Seek Bar ในแถบควบคุมเพลงด้านล่าง (`components/player-bottom-bar.tsx`)
+    - [x] ลบ Div ที่ทับซ้อนและจัดระดับชั้น Layer ใหม่
+    - [x] ขยายพื้นที่สัมผัสเป็นความสูง `h-5` (20px) ครอบคลุมการกดของนิ้วมือ
+    - [x] นำ Slider ดั้งเดิมของ Radix UI มาทำหน้าที่เรนเดอร์ Range & Track
+    - [x] ตั้งค่าการซ่อน/แสดงปุ่มกลม (Thumb) และความหนาของเส้นอย่างนุ่มนวลแบบ Spotify
 - [x] การตรวจสอบและบันทึกประวัติ
     - [x] ทดสอบ compile และรัน typecheck ผ่าน `tsc`
     - [x] บันทึกการพัฒนาลงใน `CHANGELOG.md`

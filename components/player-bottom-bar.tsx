@@ -185,7 +185,7 @@ export function PlayerBottomBar() {
         {playlistRail}
         
         {/* Progress Bar (Integrated at top) */}
-        <div className="group absolute right-0 bottom-[4.5rem] left-0 z-10 h-1 cursor-pointer transition-all hover:h-1.5 sm:bottom-24">
+        <div className="group absolute right-0 bottom-[4.5rem] left-0 z-20 h-5 flex items-center cursor-pointer sm:bottom-24">
           <Slider
             value={[displayTime]}
             max={duration || 100}
@@ -198,14 +198,8 @@ export function PlayerBottomBar() {
               setIsDraggingTime(false)
               playerRef.current?.seekTo(vals[0])
             }}
-            className="w-full absolute inset-0 opacity-0 group-hover:opacity-100 z-10 transition-opacity"
+            className="w-full [&_[data-slot=slider-track]]:h-1 group-hover:[&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:transition-all [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:opacity-0 group-hover:[&_[data-slot=slider-thumb]]:opacity-100 focus-within:[&_[data-slot=slider-thumb]]:opacity-100 [&_[data-slot=slider-thumb]]:transition-opacity [&_[data-slot=slider-thumb]]:size-3.5 [&_[data-slot=slider-thumb]]:border-primary"
           />
-          <div className="absolute inset-0 bg-primary/10">
-            <div 
-              className="h-full bg-primary transition-all duration-100" 
-              style={{ width: `${(displayTime / (duration || 1)) * 100}%` }} 
-            />
-          </div>
         </div>
 
         <div className="relative z-10 flex h-[4.5rem] items-center justify-between gap-1 px-2.5 sm:h-24 sm:gap-4 sm:px-4">
