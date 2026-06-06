@@ -209,7 +209,11 @@ export function AdminView() {
 
   const handleAddToPlaylist = async (result: YouTubeSearchResult) => {
     const targetId = targetPlaylistId || currentPlaylist?.id;
-    if (!targetId || addingIds.has(result.id)) return;
+    if (!targetId) {
+      toast.error("กรุณาสร้างหรือเลือก playlist ก่อนเพิ่มเพลง");
+      return;
+    }
+    if (addingIds.has(result.id)) return;
     setAddingIds((prev) => new Set(prev).add(result.id));
     try {
       const res = await fetch(`/api/playlists/${targetId}/songs`, {
@@ -222,13 +226,14 @@ export function AdminView() {
           artist: result.channelTitle,
         }),
       });
-      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "ไม่สามารถเพิ่มเพลงได้");
       mutateSongs();
       mutatePlaylists(); // refresh cover thumbnail
       const targetName = playlists.find((p) => p.id === targetId)?.name || "";
       toast.success(`เพิ่มเพลงไปยัง ${targetName} แล้ว`);
-    } catch {
-      toast.error("ไม่สามารถเพิ่มเพลงได้");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "ไม่สามารถเพิ่มเพลงได้");
     } finally {
       setAddingIds((prev) => {
         const n = new Set(prev);
@@ -997,7 +1002,7 @@ export function AdminView() {
                           <div
                             key={result.id}
                             className={cn(
-                              "admin-track-row flex items-center gap-2 rounded border border-border/20 bg-black/[0.01] p-1.5 transition-all duration-300",
+                              "admin-track-row flex min-w-0 items-center gap-2 overflow-hidden rounded border border-border/20 bg-black/[0.01] p-1.5 transition-all duration-300",
                               inPlaylist && "opacity-50",
                             )}
                           >
@@ -1009,10 +1014,10 @@ export function AdminView() {
                               />
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-foreground truncate">
+                              <p className="truncate text-xs font-bold text-foreground" title={result.title}>
                                 {result.title}
                               </p>
-                              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground" title={result.channelTitle}>
                                 {result.channelTitle}
                               </p>
                             </div>
@@ -1058,10 +1063,10 @@ export function AdminView() {
 
                       {/* YouTube Playlist Results */}
                       {ytPlaylistResults.map((pl) => (
-                        <div
-                          key={pl.id}
-                          className="admin-track-row flex items-center gap-2 rounded border border-border/20 bg-black/[0.01] p-1.5 transition-all duration-300"
-                        >
+                          <div
+                            key={pl.id}
+                            className="admin-track-row flex min-w-0 items-center gap-2 overflow-hidden rounded border border-border/20 bg-black/[0.01] p-1.5 transition-all duration-300"
+                          >
                           {pl.thumbnail && (
                             <img
                               src={pl.thumbnail}
@@ -1069,15 +1074,15 @@ export function AdminView() {
                               className="w-10 h-7 rounded-sm object-cover flex-shrink-0 shadow border border-black/5"
                             />
                           )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-foreground truncate">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-bold text-foreground" title={pl.title}>
                               {pl.title}
                             </p>
-                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            <p className="mt-0.5 truncate text-xs text-muted-foreground" title={`${pl.channelTitle} · ${pl.itemCount} เพลง`}>
                               {pl.channelTitle} · {pl.itemCount} เพลง
                             </p>
                           </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="flex shrink-0 items-center gap-1.5">
                             <Button
                               size="sm"
                               variant="outline"
@@ -1432,20 +1437,20 @@ export function AdminView() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
               <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-primary/15 bg-background shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-4">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     {activePreviewPlaylist.thumbnail && (
                       <img
                         src={activePreviewPlaylist.thumbnail}
                         alt={activePreviewPlaylist.title}
-                        className="w-12 h-9 rounded object-cover shadow border border-black/5"
+                        className="h-9 w-12 shrink-0 rounded object-cover shadow border border-black/5"
                       />
                     )}
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-extrabold text-foreground truncate">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-extrabold text-foreground" title={activePreviewPlaylist.title}>
                         {activePreviewPlaylist.title}
                       </h3>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground" title={`${activePreviewPlaylist.channelTitle} · มีทั้งหมด ${activePreviewPlaylist.itemCount} เพลง`}>
                         ช่อง: {activePreviewPlaylist.channelTitle} · มีทั้งหมด {activePreviewPlaylist.itemCount} เพลง
                       </p>
                     </div>
@@ -1454,14 +1459,14 @@ export function AdminView() {
                     size="sm"
                     variant="ghost"
                     onClick={() => setIsPreviewModalOpen(false)}
-                    className="h-8 w-8 p-0 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground"
+                    className="h-8 w-8 shrink-0 p-0 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground"
                   >
                     <span className="text-lg">×</span>
                   </Button>
                 </div>
 
                 {/* Content */}
-                <ScrollArea className="flex-1 overflow-y-auto p-5">
+                <ScrollArea className="flex-1 overflow-y-auto overflow-x-hidden p-5">
                   {isLoadingPreview ? (
                     <div className="flex flex-col items-center justify-center py-20">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -1474,15 +1479,15 @@ export function AdminView() {
                       ไม่พบรายชื่อเพลงในเพลย์ลิสต์นี้
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full min-w-0 max-w-full flex-col gap-2 overflow-hidden">
                       {previewSongs.map((song, i) => {
                         const isThisSongPlaying = currentSong?.youtube_id === song.youtube_id && isPlaying;
                         return (
                           <div
                             key={song.id}
-                            className="flex items-center gap-3 rounded-lg border border-border/20 bg-black/[0.01] p-2 hover:bg-black/10 transition-all group"
+                            className="group relative flex w-full min-w-0 max-w-full items-center gap-3 overflow-hidden rounded-lg border border-border/20 bg-black/[0.01] p-2 pr-12 transition-all hover:bg-black/10"
                           >
-                            <span className="text-xs font-semibold text-muted-foreground w-6 text-center tabular-nums">
+                            <span className="w-6 shrink-0 text-center text-xs font-semibold tabular-nums text-muted-foreground">
                               {String(i + 1).padStart(2, "0")}
                             </span>
 
@@ -1490,29 +1495,30 @@ export function AdminView() {
                               <img
                                 src={song.thumbnail}
                                 alt={song.title}
-                                className="w-12 h-9 rounded object-cover shadow border border-black/5 flex-shrink-0"
+                                className="h-9 w-12 flex-shrink-0 rounded object-cover shadow border border-black/5"
                               />
                             )}
 
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                            <div className="w-0 min-w-0 flex-1">
+                              <p className="truncate text-xs font-bold text-foreground transition-colors group-hover:text-primary" title={song.title}>
                                 {song.title}
                               </p>
-                              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground" title={song.channelTitle}>
                                 {song.channelTitle}
                               </p>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="absolute right-2 top-1/2 z-10 flex shrink-0 -translate-y-1/2 items-center gap-2">
                               {/* Play Button */}
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 className={cn(
-                                  "h-8 w-8 rounded text-primary hover:bg-primary/10 hover:text-primary",
+                                  "h-8 w-8 shrink-0 rounded bg-background/70 text-primary shadow-sm ring-1 ring-border/40 backdrop-blur hover:bg-primary/10 hover:text-primary",
                                   isThisSongPlaying && "bg-primary/10"
                                 )}
                                 onClick={() => handlePlayPauseSong(song)}
+                                aria-label={`เล่น ${song.title}`}
                               >
                                 {isThisSongPlaying ? (
                                   <Pause className="w-3.5 h-3.5" />

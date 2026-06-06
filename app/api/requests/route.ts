@@ -35,11 +35,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { youtube_id, title, thumbnail, duration, requested_by, device_id } = await request.json()
+    const youtubeId = typeof youtube_id === 'string' ? youtube_id.trim() : ''
+    const songTitle = typeof title === 'string' ? title.trim() : ''
+
+    if (!youtubeId || !songTitle) {
+      return NextResponse.json({ error: 'ข้อมูลเพลงไม่ครบ กรุณาค้นหาและเลือกเพลงใหม่อีกครั้ง' }, { status: 400 })
+    }
     
     // Check if song is already in queue
     const existing = await sql`
       SELECT * FROM song_requests 
-      WHERE youtube_id = ${youtube_id} AND status = 'pending'
+      WHERE youtube_id = ${youtubeId} AND status = 'pending'
     `
     
     if (existing.length > 0) {
@@ -48,7 +54,7 @@ export async function POST(request: Request) {
     
     const result = await sql`
       INSERT INTO song_requests (youtube_id, title, thumbnail, duration, requested_by, device_id, status)
-      VALUES (${youtube_id}, ${title}, ${thumbnail}, ${duration}, ${requested_by || 'ลูกค้า'}, ${device_id || null}, 'pending')
+      VALUES (${youtubeId}, ${songTitle}, ${thumbnail || null}, ${duration || null}, ${requested_by || 'ลูกค้า'}, ${device_id || null}, 'pending')
       RETURNING *
     `
     

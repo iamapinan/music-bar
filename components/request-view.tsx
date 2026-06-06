@@ -97,6 +97,10 @@ export function RequestView() {
     try {
       const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(searchQuery)}`)
       const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || 'เกิดข้อผิดพลาดในการค้นหา')
+        return
+      }
       setSearchResults(data.items || [])
     } catch {
       toast.error('เกิดข้อผิดพลาดในการค้นหา')
@@ -116,12 +120,13 @@ export function RequestView() {
           youtube_id: result.id,
           title: result.title,
           thumbnail: result.thumbnail,
+          duration: result.duration,
           requested_by: requesterName.trim() || 'ลูกค้า',
           device_id: deviceId,
         }),
       })
+      const data = await res.json()
       if (!res.ok) {
-        const data = await res.json()
         toast.error(data.error || 'ไม่สามารถเพิ่มเพลงได้')
         return
       }
