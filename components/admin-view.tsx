@@ -203,103 +203,107 @@ function PlaylistCard({
       >
         <PlaylistCover playlist={playlist} className="h-full w-full text-lg" />
 
-        {/* Gradient overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        {/* Gradient overlay + Hover actions */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
         {/* Checkbox for stream selection */}
         <button
           type="button"
           aria-label={`เลือก ${playlist.name} สำหรับเล่นต่อเนื่อง`}
           className={cn(
-            "absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white shadow-sm backdrop-blur-md transition-all duration-300 hover:bg-black/50",
-            isSelected && "bg-primary text-primary-foreground border-primary shadow-[0_0_16px_oklch(0.76_0.17_158/0.4)]",
+            "absolute left-2.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-md border border-white/25 bg-black/40 text-white/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-black/60 hover:text-white",
+            isSelected && "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_oklch(0.76_0.17_158/0.35)]",
           )}
           onClick={onToggleSelect}
         >
           {isSelected ? (
-            <CheckSquare className="h-3.5 w-3.5" />
+            <CheckSquare className="h-3 w-3" />
           ) : (
-            <Square className="h-3.5 w-3.5" />
+            <Square className="h-3 w-3" />
           )}
         </button>
 
         {/* Default badge */}
         {playlist.is_default && (
-          <span className="absolute right-2 top-2 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/90 backdrop-blur-md">
-            Default
+          <span className="absolute right-2.5 top-2.5 z-10 rounded-md border border-white/15 bg-black/50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-white/80 backdrop-blur-sm">
+            หลัก
           </span>
         )}
 
         {/* Now Playing indicator */}
         {isPlaying && isCurrent && (
-          <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 backdrop-blur-md">
+          <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-sm">
             <EqualizerBars />
             <span className="text-[10px] font-bold text-white/90">กำลังเล่น</span>
           </div>
         )}
 
-        {/* Hover actions */}
+        {/* Hover overlay actions - centered, clean, no slide */}
         <div
           className={cn(
-            "absolute inset-x-2 bottom-2 flex items-center justify-between rounded-full border border-white/15 bg-black/50 px-1.5 py-1 text-white backdrop-blur-xl transition-all duration-300",
-            "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0",
-            isCurrent && "opacity-100 translate-y-0",
+            "absolute inset-0 z-10 flex items-center justify-center gap-2.5 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+            isCurrent && "opacity-100",
           )}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center gap-0.5">
-            {!playlist.is_default && (
-              <button
-                type="button"
-                onClick={onSetDefault}
-                className="flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-all hover:bg-white/15 hover:text-white"
-                title="ตั้งเป็นหลัก"
-              >
-                <Star className="h-3 w-3" />
-              </button>
+          {!playlist.is_default && (
+            <button
+              type="button"
+              onClick={onSetDefault}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 backdrop-blur-sm transition-all duration-200 hover:bg-white/25 hover:text-white hover:scale-110"
+              title="ตั้งเป็นเพลย์ลิสต์หลัก"
+            >
+              <Star className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onToggleEnabled}
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110",
+              playlist.is_enabled
+                ? "bg-white/10 text-white/80 hover:bg-white/25 hover:text-white"
+                : "bg-primary/20 text-primary hover:bg-primary/40",
             )}
-            <button
-              type="button"
-              onClick={onToggleEnabled}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-all hover:bg-white/15 hover:text-white"
-              title={playlist.is_enabled ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
-            >
-              {playlist.is_enabled ? (
-                <PowerOff className="h-3 w-3" />
-              ) : (
-                <Power className="h-3 w-3" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={onExport}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-all hover:bg-white/15 hover:text-white"
-              title="ส่งออก"
-            >
-              <Download className="h-3 w-3" />
-            </button>
-          </div>
+            title={playlist.is_enabled ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
+          >
+            {playlist.is_enabled ? (
+              <PowerOff className="h-3.5 w-3.5" />
+            ) : (
+              <Power className="h-3.5 w-3.5" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onExport}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 backdrop-blur-sm transition-all duration-200 hover:bg-white/25 hover:text-white hover:scale-110"
+            title="ส่งออกไฟล์"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </button>
           {!playlist.is_default && (
             <button
               type="button"
               onClick={onDelete}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-all hover:bg-red-500/40 hover:text-white"
-              title="ลบ"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20 text-red-400 backdrop-blur-sm transition-all duration-200 hover:bg-red-500/40 hover:text-red-300 hover:scale-110"
+              title="ลบเพลย์ลิสต์"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Info */}
-      <div className="min-w-0 px-0.5">
-        <p className="truncate text-xs font-bold leading-tight text-foreground">
-          {playlist.name}
-        </p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          {Number(playlist.song_count ?? 0).toLocaleString()} เพลง
-        </p>
+      {/* Info + Always-visible action row */}
+      <div className="min-w-0 space-y-1.5 px-0.5">
+        <div>
+          <p className="truncate text-xs font-bold leading-tight text-foreground">
+            {playlist.name}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {Number(playlist.song_count ?? 0).toLocaleString()} เพลง
+          </p>
+        </div>
       </div>
     </div>
   );
