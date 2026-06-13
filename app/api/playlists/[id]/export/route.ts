@@ -1,16 +1,22 @@
 import { sql } from '@/lib/db'
+import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 import { NextResponse } from 'next/server'
 
 export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin', 'staff'] })
+    if (isTenantError(ctx)) return ctx
+
     const { id } = await params
     const playlistId = parseInt(id)
 
     const playlist = await sql`
-      SELECT * FROM playlists WHERE id = ${playlistId}
+      SELECT * FROM playlists
+      WHERE id = ${playlistId}
+        AND tenant_id = ${ctx.tenant.id}
     `
 
     if (!playlist.length) {
@@ -20,10 +26,10 @@ export async function GET(
     const songs = await sql`
       SELECT * FROM playlist_songs
       WHERE playlist_id = ${playlistId}
+        AND tenant_id = ${ctx.tenant.id}
       ORDER BY position ASC, created_at ASC
     `
 
-    // Build CSV
     const header = 'No,Title,Artist,YouTube ID,YouTube URL'
     const rows = songs.map((song, index) =>
       `${index + 1},"${(song.title as string).replace(/"/g, '""')}","${((song.artist as string) || '').replace(/"/g, '""')}",${song.youtube_id},https://youtube.com/watch?v=${song.youtube_id}`

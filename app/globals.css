@@ -739,3 +739,190 @@ input[type="range"]::-webkit-slider-runnable-track {
   background: var(--muted);
   border-radius: 2px;
 }
+
+/* Admin Light Theme Overrides */
+.admin-shell.light-theme,
+html.admin-mode.light-theme,
+body.admin-mode.light-theme {
+  --background: oklch(0.975 0.005 165);
+  --foreground: oklch(0.15 0.012 165);
+  --card: oklch(0.995 0.002 165);
+  --card-foreground: oklch(0.15 0.012 165);
+  --popover: oklch(0.99 0.004 165);
+  --popover-foreground: oklch(0.15 0.012 165);
+  --primary: oklch(0.55 0.18 158);
+  --primary-foreground: oklch(0.99 0.002 165);
+  --secondary: oklch(0.93 0.006 165);
+  --secondary-foreground: oklch(0.2 0.012 165);
+  --muted: oklch(0.94 0.008 165);
+  --muted-foreground: oklch(0.48 0.02 165);
+  --accent: oklch(0.55 0.18 158 / 0.12);
+  --accent-foreground: oklch(0.45 0.18 158);
+  --border: oklch(0.88 0.01 165);
+  --input: oklch(0.98 0.002 165);
+  --ring: oklch(0.55 0.18 158);
+}
+
+.admin-shell.light-theme,
+html.admin-mode.light-theme,
+body.admin-mode.light-theme {
+  color: var(--foreground);
+  background:
+    radial-gradient(circle at 84% -8%, oklch(0.88 0.08 158 / 0.28), transparent 36rem),
+    radial-gradient(circle at -8% 88%, oklch(0.92 0.04 205 / 0.18), transparent 32rem),
+    linear-gradient(145deg, oklch(0.97 0.005 165), oklch(0.94 0.008 165)) !important;
+  background-attachment: fixed !important;
+}
+
+.admin-shell.light-theme .admin-glass {
+  background: oklch(0.96 0.005 165 / 0.82);
+  border-bottom-color: oklch(0.55 0.18 158 / 0.15);
+}
+
+.admin-shell.light-theme .admin-surface {
+  background:
+    linear-gradient(145deg, oklch(0.995 0.002 165 / 0.96), oklch(0.96 0.005 165 / 0.96));
+  border-color: oklch(0.15 0.012 165 / 0.08);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.6),
+    0 22px 64px oklch(0.15 0.012 165 / 0.08);
+}
+
+.admin-shell.light-theme .admin-command-rail {
+  background:
+    linear-gradient(180deg, oklch(0.985 0.002 165 / 0.98), oklch(0.955 0.005 165 / 0.98));
+  box-shadow:
+    inset -1px 0 0 oklch(0.55 0.18 158 / 0.08),
+    18px 0 44px oklch(0.15 0.012 165 / 0.04);
+}
+
+.admin-shell.light-theme .admin-dashboard-hero {
+  background:
+    radial-gradient(circle at 82% -16%, oklch(0.55 0.18 158 / 0.14), transparent 24rem),
+    linear-gradient(135deg, oklch(0.92 0.01 165 / 0.98), oklch(0.96 0.005 165 / 0.98));
+  border-color: oklch(0.15 0.012 165 / 0.08);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.6),
+    0 26px 70px oklch(0.15 0.012 165 / 0.08);
+}
+
+.admin-shell.light-theme .admin-metric-card {
+  background:
+    linear-gradient(145deg, oklch(0.99 0.004 165 / 0.94), oklch(0.95 0.006 165 / 0.94));
+  border-color: oklch(0.15 0.012 165 / 0.06);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.5),
+    0 16px 36px oklch(0.15 0.012 165 / 0.05);
+}
+
+.admin-shell.light-theme .admin-stat-card {
+  background:
+    radial-gradient(circle at 12% 0%, oklch(0.55 0.18 158 / 0.08), transparent 10rem),
+    oklch(0.98 0.004 165 / 0.84);
+  border-color: oklch(0.15 0.012 165 / 0.06);
+}
+
+.admin-shell.light-theme .admin-content-panel {
+  background: oklch(0.985 0.004 165 / 0.88);
+  border-color: oklch(0.15 0.012 165 / 0.085);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.4),
+    0 18px 50px oklch(0.15 0.012 165 / 0.06);
+}
+
+.admin-shell.light-theme .admin-playlist-card,
+.admin-shell.light-theme .admin-track-card {
+  border-color: oklch(0.15 0.012 165 / 0.06);
+  box-shadow: 0 10px 24px oklch(0.15 0.012 165 / 0.06);
+}
+
+.admin-shell.light-theme .admin-playlist-card {
+  background: oklch(0.98 0.004 165 / 0.88);
+}
+
+.admin-shell.light-theme .admin-track-card {
+  background: oklch(0.975 0.004 165 / 0.86);
+}
+
+.admin-shell.light-theme .admin-track-row {
+  background: oklch(0.98 0.004 165 / 0.82);
+  border-color: oklch(0.15 0.012 165 / 0.05);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.3),
+    0 5px 14px oklch(0.15 0.012 165 / 0.04);
+}
+
+.admin-shell.light-theme .admin-track-row:hover {
+  background: oklch(0.95 0.008 165 / 0.96);
+  border-color: oklch(0.55 0.18 158 / 0.3);
+}
+
+.admin-shell.light-theme [data-slot="button"][data-variant="outline"] {
+  background: oklch(0.99 0.002 165 / 0.86);
+  border-color: oklch(0.15 0.012 165 / 0.15);
+  color: oklch(0.2 0.012 165);
+}
+
+.admin-shell.light-theme .text-white {
+  color: oklch(0.15 0.012 165) !important;
+}
+
+.admin-shell.light-theme .text-white\/90 {
+  color: oklch(0.15 0.012 165 / 0.9) !important;
+}
+
+.admin-shell.light-theme .text-white\/70 {
+  color: oklch(0.15 0.012 165 / 0.7) !important;
+}
+
+.admin-shell.light-theme .text-white\/60 {
+  color: oklch(0.15 0.012 165 / 0.6) !important;
+}
+
+.admin-shell.light-theme .text-white\/50 {
+  color: oklch(0.15 0.012 165 / 0.5) !important;
+}
+
+.admin-shell.light-theme .text-white\/45 {
+  color: oklch(0.15 0.012 165 / 0.45) !important;
+}
+
+.admin-shell.light-theme .text-white\/40 {
+  color: oklch(0.15 0.012 165 / 0.4) !important;
+}
+
+.admin-shell.light-theme .bg-black\/20 {
+  background-color: oklch(0.15 0.012 165 / 0.05) !important;
+}
+
+.admin-shell.light-theme .border-white\/10 {
+  border-color: oklch(0.15 0.012 165 / 0.1) !important;
+}
+
+.admin-shell.light-theme .bg-white\/5 {
+  background-color: oklch(0.15 0.012 165 / 0.04) !important;
+}
+
+.admin-shell.light-theme .bg-white\/10 {
+  background-color: oklch(0.15 0.012 165 / 0.08) !important;
+}
+
+.admin-shell.light-theme .bg-black\/40 {
+  background-color: oklch(0.95 0.005 165 / 0.6) !important;
+}
+
+.admin-shell.light-theme .bg-black\/90 {
+  background-color: oklch(0.99 0.002 165 / 0.95) !important;
+}
+
+.admin-shell.light-theme .bg-black\/95 {
+  background-color: oklch(0.99 0.002 165 / 0.98) !important;
+}
+
+.admin-shell.light-theme body.admin-mode ::-webkit-scrollbar-thumb {
+  background: oklch(0.82 0.01 165) !important;
+}
+
+.admin-shell.light-theme body.admin-mode ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.7 0.02 165) !important;
+}

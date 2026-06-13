@@ -49,6 +49,7 @@ export function PersistentYouTubePlayer() {
 
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const isApiReadyRef = useRef(false)
+  const isPlayerReadyRef = useRef(false)
   const currentVideoRef = useRef<string>('')
   const containerRef = useRef<HTMLDivElement>(null)
   const lastPlayedKeyRef = useRef<string>('')
@@ -85,11 +86,31 @@ export function PersistentYouTubePlayer() {
   // Expose methods to context
   const exposeMethods = useCallback(() => {
     const methods: YouTubePlayerMethods = {
-      play: () => ytPlayerRef.current?.playVideo(),
-      pause: () => ytPlayerRef.current?.pauseVideo(),
-      setVolume: (v: number) => ytPlayerRef.current?.setVolume(v),
-      loadVideo: (id: string) => ytPlayerRef.current?.loadVideoById(id),
-      seekTo: (seconds: number) => ytPlayerRef.current?.seekTo(seconds, true),
+      play: () => {
+        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+          ytPlayerRef.current.playVideo()
+        }
+      },
+      pause: () => {
+        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
+          ytPlayerRef.current.pauseVideo()
+        }
+      },
+      setVolume: (v: number) => {
+        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.setVolume === 'function') {
+          ytPlayerRef.current.setVolume(v)
+        }
+      },
+      loadVideo: (id: string) => {
+        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
+          ytPlayerRef.current.loadVideoById(id)
+        }
+      },
+      seekTo: (seconds: number) => {
+        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
+          ytPlayerRef.current.seekTo(seconds, true)
+        }
+      },
     }
     playerRef.current = methods
   }, [playerRef])
@@ -98,6 +119,7 @@ export function PersistentYouTubePlayer() {
     if (!isApiReadyRef.current || !videoId) return
 
     if (ytPlayerRef.current) {
+      isPlayerReadyRef.current = false
       ytPlayerRef.current.destroy()
       ytPlayerRef.current = null
     }
@@ -126,8 +148,13 @@ export function PersistentYouTubePlayer() {
       },
       events: {
         onReady: (event) => {
-          event.target.setVolume(volumeRef.current)
-          event.target.playVideo()
+          isPlayerReadyRef.current = true
+          if (typeof event.target.setVolume === 'function') {
+            event.target.setVolume(volumeRef.current)
+          }
+          if (typeof event.target.playVideo === 'function') {
+            event.target.playVideo()
+          }
           setIsPlaying(true)
           exposeMethods()
         },
@@ -179,9 +206,13 @@ export function PersistentYouTubePlayer() {
     const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
     
     if (songKey !== lastPlayedKeyRef.current) {
-      if (ytPlayerRef.current) {
-        ytPlayerRef.current.setVolume(volumeRef.current)
-        ytPlayerRef.current.loadVideoById(currentSong.youtube_id)
+      if (ytPlayerRef.current && isPlayerReadyRef.current) {
+        if (typeof ytPlayerRef.current.setVolume === 'function') {
+          ytPlayerRef.current.setVolume(volumeRef.current)
+        }
+        if (typeof ytPlayerRef.current.loadVideoById === 'function') {
+          ytPlayerRef.current.loadVideoById(currentSong.youtube_id)
+        }
         setIsPlaying(true)
         lastPlayedKeyRef.current = songKey
         currentVideoRef.current = currentSong.youtube_id
@@ -196,9 +227,9 @@ export function PersistentYouTubePlayer() {
   // Track playback progress
   useEffect(() => {
     const interval = setInterval(() => {
-      if (currentVideoRef.current && ytPlayerRef.current) {
-        const time = ytPlayerRef.current.getCurrentTime?.() || 0
-        const dur = ytPlayerRef.current.getDuration?.() || 0
+      if (currentVideoRef.current && ytPlayerRef.current && isPlayerReadyRef.current) {
+        const time = typeof ytPlayerRef.current.getCurrentTime === 'function' ? ytPlayerRef.current.getCurrentTime() : 0
+        const dur = typeof ytPlayerRef.current.getDuration === 'function' ? ytPlayerRef.current.getDuration() : 0
         setCurrentTime(time)
         setDuration(dur)
       }

@@ -1,9 +1,5 @@
-import { PlayerView } from '@/components/player-view'
+import { LandingPage } from '@/components/landing-page'
 
 export default function HomePage() {
-  return (
-    <main className="min-h-[100dvh] overflow-y-auto bg-background sm:h-[100dvh] sm:overflow-hidden">
-      <PlayerView />
-    </main>
-  )
+  return <LandingPage />
 }

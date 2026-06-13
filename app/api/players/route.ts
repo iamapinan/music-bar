@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin', 'staff'] })
+    if (isTenantError(ctx)) return ctx
+
     const players = await sql`
       SELECT * FROM active_players
+      WHERE tenant_id = ${ctx.tenant.id}
       ORDER BY is_active DESC, last_ping DESC
     `
     return NextResponse.json(players)
@@ -16,6 +21,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const ctx = await requireTenantContext(request, { public: true })
+    if (isTenantError(ctx)) return ctx
+
     const { device_id, device_name, device_type } = await request.json()
 
     if (!device_id || !device_name || !device_type) {
@@ -23,10 +31,10 @@ export async function POST(request: Request) {
     }
 
     const result = await sql`
-      INSERT INTO active_players (device_id, device_name, device_type, last_ping)
-      VALUES (${device_id}, ${device_name}, ${device_type}, CURRENT_TIMESTAMP)
-      ON CONFLICT (device_id) 
-      DO UPDATE SET 
+      INSERT INTO active_players (tenant_id, device_id, device_name, device_type, last_ping)
+      VALUES (${ctx.tenant.id}, ${device_id}, ${device_name}, ${device_type}, CURRENT_TIMESTAMP)
+      ON CONFLICT (tenant_id, device_id)
+      DO UPDATE SET
         device_name = EXCLUDED.device_name,
         device_type = EXCLUDED.device_type,
         last_ping = CURRENT_TIMESTAMP

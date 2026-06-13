@@ -1,11 +1,18 @@
 'use client'
 
-import { useState, useEffect, createContext, useContext } from 'react'
-import { PinEntry } from '@/components/pin-entry'
+import { useCallback, useEffect, useState, createContext, useContext } from 'react'
+import { LoginView } from '@/components/login-view'
 import { Loader2 } from 'lucide-react'
+import { AdminShell } from '@/components/admin-shell'
+import type { AppUser, TenantMembership } from '@/lib/types'
 
 type AdminAuthContextType = {
+  user: AppUser | null
+  tenants: TenantMembership[]
+  activeTenant: TenantMembership | null
   logout: () => Promise<void>
+  switchTenant: (tenantId: string) => Promise<void>
+  refreshSession: () => Promise<void>
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | null>(null)
@@ -18,37 +25,80 @@ export function useAdminAuth() {
   return context
 }
 
-import { AdminShell } from '@/components/admin-shell'
-
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [user, setUser] = useState<AppUser | null>(null)
+  const [tenants, setTenants] = useState<TenantMembership[]>([])
+  const [activeTenantId, setActiveTenantId] = useState<string | null>(null)
 
-  useEffect(() => {
-    document.documentElement.classList.add('admin-mode', 'dark')
-    checkAuth()
-    return () => {
-      document.documentElement.classList.remove('admin-mode')
-    }
-  }, [])
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
-      const res = await fetch('/api/auth')
+      const res = await fetch('/api/auth/me')
       const data = await res.json()
-      setIsAuthenticated(data.authenticated)
+      if (!res.ok || !data.authenticated) {
+        setIsAuthenticated(false)
+        setUser(null)
+        setTenants([])
+        setActiveTenantId(null)
+        return
+      }
+
+      setUser(data.user)
+      setTenants(data.tenants || [])
+      const nextActiveTenantId = data.activeTenantId || data.tenants?.[0]?.tenant_id || null
+      if (nextActiveTenantId) {
+        setActiveTenantId(nextActiveTenantId)
+        await fetch('/api/auth/active-tenant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenantId: nextActiveTenantId }),
+        })
+      }
+      setIsAuthenticated(true)
     } catch {
       setIsAuthenticated(false)
     }
-  }
+  }, [])
 
-  const handleLogin = () => {
-    setIsAuthenticated(true)
-  }
+  useEffect(() => {
+    document.documentElement.classList.add('admin-mode')
+    const theme = localStorage.getItem('music_bar_admin_theme') || 'dark'
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme')
+      document.documentElement.classList.remove('dark')
+    } else {
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light-theme')
+    }
+    checkAuth()
+    return () => {
+      document.documentElement.classList.remove('admin-mode', 'light-theme', 'dark')
+    }
+  }, [checkAuth])
 
   const handleLogout = async () => {
-    await fetch('/api/auth', { method: 'DELETE' })
+    await fetch('/api/auth/session', { method: 'DELETE' })
     setIsAuthenticated(false)
+    setUser(null)
+    setTenants([])
+    setActiveTenantId(null)
   }
+
+  const switchTenant = async (tenantId: string) => {
+    const res = await fetch('/api/auth/active-tenant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId }),
+    })
+    if (!res.ok) throw new Error('Failed to switch tenant')
+    setActiveTenantId(tenantId)
+    window.location.reload()
+  }
+
+  const activeTenant =
+    tenants.find(tenant => tenant.tenant_id === activeTenantId) ||
+    tenants[0] ||
+    null
 
   if (isAuthenticated === null) {
     return (
@@ -61,13 +111,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!isAuthenticated) {
     return (
       <main className="admin-shell min-h-[100dvh]">
-        <PinEntry onSuccess={handleLogin} />
+        <LoginView onSuccess={checkAuth} />
       </main>
     )
   }
 
   return (
-    <AdminAuthContext.Provider value={{ logout: handleLogout }}>
+    <AdminAuthContext.Provider value={{
+      user,
+      tenants,
+      activeTenant,
+      logout: handleLogout,
+      switchTenant,
+      refreshSession: checkAuth,
+    }}>
       <AdminShell>
         {children}
       </AdminShell>

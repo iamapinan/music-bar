@@ -16,5 +16,6 @@ node_modules
 .vercel
 mobile
 public/app-debug.apk
+database/backups/
 .env
 .env.example

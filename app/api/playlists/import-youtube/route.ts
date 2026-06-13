@@ -1,8 +1,12 @@
 import { sql } from '@/lib/db'
+import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
+    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin'] })
+    if (isTenantError(ctx)) return ctx
+
     const { playlistId: youtubePlaylistId, name } = await request.json()
 
     const apiKey = process.env.YOUTUBE_API_KEY
@@ -10,7 +14,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'YouTube API Key not configured' }, { status: 400 })
     }
 
-    // Get playlist items from YouTube
     let allItems: Array<{
       youtube_id: string
       title: string
@@ -50,22 +53,19 @@ export async function POST(request: Request) {
       pageToken = fetchData.nextPageToken || null
     } while (pageToken && allItems.length < 200)
 
-
-    // Create playlist in DB
     const playlist = await sql`
-      INSERT INTO playlists (name, description, is_enabled)
-      VALUES (${name || 'Imported from YouTube'}, ${'Imported from YouTube playlist: ' + youtubePlaylistId}, true)
+      INSERT INTO playlists (tenant_id, name, description, is_enabled)
+      VALUES (${ctx.tenant.id}, ${name || 'Imported from YouTube'}, ${'Imported from YouTube playlist: ' + youtubePlaylistId}, true)
       RETURNING *
     `
 
     const playlistDbId = playlist[0].id
 
-    // Insert songs
     for (let i = 0; i < allItems.length; i++) {
       const item = allItems[i]
       await sql`
-        INSERT INTO playlist_songs (playlist_id, youtube_id, title, thumbnail, artist, position)
-        VALUES (${playlistDbId}, ${item.youtube_id}, ${item.title}, ${item.thumbnail}, ${item.channelTitle}, ${i + 1})
+        INSERT INTO playlist_songs (tenant_id, playlist_id, youtube_id, title, thumbnail, artist, position)
+        VALUES (${ctx.tenant.id}, ${playlistDbId}, ${item.youtube_id}, ${item.title}, ${item.thumbnail}, ${item.channelTitle}, ${i + 1})
         ON CONFLICT DO NOTHING
       `
     }

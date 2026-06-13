@@ -1,49 +1,40 @@
-import { sql } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-
-export async function POST(request: Request) {
-  try {
-    const { pin } = await request.json()
-    
-    const settings = await sql`
-      SELECT value FROM app_settings WHERE key = 'admin_pin'
-    `
-    
-    if (settings.length === 0 || settings[0].value !== pin) {
-      return NextResponse.json({ error: 'PIN ไม่ถูกต้อง' }, { status: 401 })
-    }
-    
-    // Set auth cookie
-    const cookieStore = await cookies()
-    cookieStore.set('admin_auth', 'true', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
-    
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error verifying PIN:', error)
-    return NextResponse.json({ error: 'Authentication failed' }, { status: 500 })
-  }
-}
+import { ACTIVE_TENANT_COOKIE_NAME, clearFirebaseSession, getSessionUser } from '@/lib/auth/session'
+import { getMembershipsForUser, isSuperAdminEmail, upsertUserFromSession, userCanAccessAdmin } from '@/lib/tenancy'
 
 export async function GET() {
   try {
+    const sessionUser = await getSessionUser()
+    if (!sessionUser) {
+      return NextResponse.json({ authenticated: false }, { status: 401 })
+    }
+
+    const user = await upsertUserFromSession(sessionUser)
+    const canAccessAdmin = await userCanAccessAdmin(user)
+    if (!canAccessAdmin) {
+      return NextResponse.json({ authenticated: false }, { status: 403 })
+    }
+
+    const tenants = await getMembershipsForUser(user)
     const cookieStore = await cookies()
-    const isAuth = cookieStore.get('admin_auth')?.value === 'true'
-    return NextResponse.json({ authenticated: isAuth })
-  } catch {
-    return NextResponse.json({ authenticated: false })
+    const activeTenantId = cookieStore.get(ACTIVE_TENANT_COOKIE_NAME)?.value || tenants[0]?.tenant_id || null
+
+    return NextResponse.json({
+      authenticated: true,
+      user: { ...user, is_super_admin: isSuperAdminEmail(user.email) },
+      tenants,
+      activeTenantId,
+    })
+  } catch (error) {
+    console.error('Error reading auth session:', error)
+    return NextResponse.json({ authenticated: false }, { status: 401 })
   }
 }
 
 export async function DELETE() {
   try {
-    const cookieStore = await cookies()
-    cookieStore.delete('admin_auth')
+    await clearFirebaseSession()
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'Logout failed' }, { status: 500 })

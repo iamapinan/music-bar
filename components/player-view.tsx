@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 
-import { AudioLines, Clock3, Disc3, Maximize2, Minimize2, Music2, Play, Radio, RefreshCw } from "lucide-react";
+import { AudioLines, Clock3, Disc3, Maximize2, Minimize2, Music2, Play, Radio, RefreshCw, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { usePlayer } from "@/context/player-context";
 import type { SongRequest } from "@/lib/types";
@@ -36,6 +37,31 @@ export function PlayerView() {
   const [isUpdating, setIsUpdating] = useState(false);
   const handleForceUpdate = () => {
     forceUpdateApp(setIsUpdating);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: "Music Bar",
+      text: "ฟังเพลงและขอเพลงที่ร้านนี้กับพวกเรา!",
+      url: window.location.href,
+    };
+    if (typeof navigator !== "undefined" && navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        toast.success("แชร์สำเร็จ");
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          toast.error("ไม่สามารถแชร์ได้");
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("คัดลอกลิงก์แชร์ลงคลิปบอร์ดแล้ว");
+      } catch {
+        toast.error("ไม่สามารถคัดลอกลิงก์ได้");
+      }
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -128,14 +154,25 @@ export function PlayerView() {
             </div>
             <span className="text-sm font-semibold tracking-tight">Music Bar</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsFullscreen(false)}
-            className="rounded-full hover:bg-white/10"
-          >
-            <Minimize2 className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleShare}
+              className="rounded-full hover:bg-white/10 text-white"
+              title="แชร์"
+            >
+              <Share2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsFullscreen(false)}
+              className="rounded-full hover:bg-white/10 text-white"
+            >
+              <Minimize2 className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -151,6 +188,15 @@ export function PlayerView() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+              className="h-7 gap-1.5 rounded-full border-white/10 bg-white/5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/80 backdrop-blur transition-all hover:bg-white/10 hover:text-white"
+            >
+              <Share2 className="w-3 h-3 text-primary" />
+              แชร์
+            </Button>
             <Button
               variant="outline"
               size="sm"

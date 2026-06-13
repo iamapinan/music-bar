@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX,
-  Music2, Shuffle, ListMusic, LayoutDashboard, Home, Tv, Maximize2, Minimize2, MoreVertical
+  Music2, Shuffle, ListMusic, LayoutDashboard, Home, Tv, Maximize2, Minimize2, MoreVertical, Share2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -25,6 +25,7 @@ import {
 import { usePlayer } from '@/context/player-context'
 import { QueueList } from './queue-list'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 export function PlayerBottomBar() {
   const {
@@ -50,6 +51,31 @@ export function PlayerBottomBar() {
   }
 
   const displayTime = isDraggingTime ? dragTime : currentTime
+
+  const handleShare = async () => {
+    const shareData = {
+      title: "Music Bar",
+      text: "ฟังเพลงและขอเพลงที่ร้านนี้กับพวกเรา!",
+      url: window.location.href,
+    };
+    if (typeof navigator !== "undefined" && navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        toast.success("แชร์สำเร็จ");
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          toast.error("ไม่สามารถแชร์ได้");
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("คัดลอกลิงก์แชร์ลงคลิปบอร์ดแล้ว");
+      } catch {
+        toast.error("ไม่สามารถคัดลอกลิงก์ได้");
+      }
+    }
+  };
   const enabledPlaylists = playlists.filter(playlist => playlist.is_enabled)
   const activePlaylistKey = activePlaylistIds.join(',')
 
@@ -347,6 +373,16 @@ export function PlayerBottomBar() {
                 <Shuffle className="w-4 h-4" />
               </Button>
 
+              <Button
+                size="icon"
+                variant="ghost"
+                className="w-10 h-10 rounded-full text-muted-foreground hover:text-foreground"
+                onClick={handleShare}
+                title="แชร์"
+              >
+                <Share2 className="w-4 h-4 text-primary" />
+              </Button>
+
               {/* Volume */}
               <div className="flex items-center gap-2 w-24 lg:w-32 mr-2">
                 <Button size="icon" variant="ghost" className="w-8 h-8 rounded-full shrink-0" onClick={toggleMute}>
@@ -405,6 +441,10 @@ export function PlayerBottomBar() {
                   <DropdownMenuItem onClick={toggleShuffle} className="flex items-center gap-2 py-3">
                     <Shuffle className={cn("w-4 h-4", isShuffle && "text-primary")} />
                     <span>สุ่มเพลง: {isShuffle ? 'เปิด' : 'ปิด'}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleShare} className="flex items-center gap-2 py-3">
+                    <Share2 className="w-4 h-4 text-primary" />
+                    <span>แชร์เครื่องเล่น</span>
                   </DropdownMenuItem>
                   <div className="h-px bg-white/10 my-1" />
                   <Link href="/">

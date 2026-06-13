@@ -4,7 +4,9 @@ import {
   createContext, useContext, useState, useEffect,
   useCallback, useRef, ReactNode
 } from 'react'
+import { usePathname } from 'next/navigation'
 import useSWR from 'swr'
+import { Store } from 'lucide-react'
 import type { Playlist, PlaylistSong, SongRequest } from '@/lib/types'
 
 const fetcher = async (url: string) => {
@@ -90,7 +92,21 @@ export function usePlayer() {
 }
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+  const tenantSlug = pathname?.match(/^\/play\/([^/]+)/)?.[1] || null
+  const shouldLoadPlayerData = pathname !== '/'
+  const tenantStoragePrefix = tenantSlug ? `music_bar:${tenantSlug}` : 'music_bar'
+  const apiPath = useCallback((path: string) => {
+    if (!tenantSlug) return path
+    const separator = path.includes('?') ? '&' : '?'
+    return `${path}${separator}tenant=${encodeURIComponent(tenantSlug)}`
+  }, [tenantSlug])
+
   const [isPlaying, setIsPlaying] = useState(false)
+  const { data: tenantInfo } = useSWR(
+    tenantSlug ? `/api/tenants/by-slug/${tenantSlug}` : null,
+    fetcher
+  )
   const [currentIndex, setCurrentIndex] = useState(0)
   const [volume, setVolume] = useState(70)
   const [isMuted, setIsMuted] = useState(false)
@@ -115,8 +131,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem('music_bar_player_state')
-      if (saved) {
-        const parsed = JSON.parse(saved)
+      const tenantSaved = localStorage.getItem(`${tenantStoragePrefix}:player_state`)
+      const stateValue = tenantSaved || saved
+      if (stateValue) {
+        const parsed = JSON.parse(stateValue)
         if (parsed.currentIndex !== undefined) setCurrentIndex(parsed.currentIndex)
         if (parsed.playMode) setPlayMode(parsed.playMode)
         if (parsed.isVideoMode !== undefined) setIsVideoMode(parsed.isVideoMode)
@@ -125,12 +143,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
     setIsInitialized(true)
-  }, [])
+  }, [tenantStoragePrefix])
 
   // Save state
   useEffect(() => {
     if (isInitialized) {
-      localStorage.setItem('music_bar_player_state', JSON.stringify({
+      localStorage.setItem(`${tenantStoragePrefix}:player_state`, JSON.stringify({
         currentIndex,
         playMode,
         isVideoMode,
@@ -138,18 +156,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         showPlaylistRail
       }))
     }
-  }, [currentIndex, playMode, isVideoMode, isAutoPlayEnabled, showPlaylistRail, isInitialized])
+  }, [currentIndex, playMode, isVideoMode, isAutoPlayEnabled, showPlaylistRail, isInitialized, tenantStoragePrefix])
 
   // ===================== Player Ping & Registration =====================
   useEffect(() => {
     if (typeof window === 'undefined') return
+    if (!shouldLoadPlayerData) return
 
     const getOrCreateDeviceId = () => {
-      let id = localStorage.getItem('music_bar_device_id')
+      let id = localStorage.getItem(`${tenantStoragePrefix}:device_id`) || localStorage.getItem('music_bar_device_id')
       if (!id) {
         id = crypto.randomUUID()
-        localStorage.setItem('music_bar_device_id', id)
       }
+      localStorage.setItem(`${tenantStoragePrefix}:device_id`, id)
       return id
     }
 
@@ -163,18 +182,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const deviceId = getOrCreateDeviceId()
     const deviceType = getDeviceType()
     
-    if (!localStorage.getItem('music_bar_device_name')) {
-      localStorage.setItem('music_bar_device_name', `${deviceType} Player`)
+    if (!localStorage.getItem(`${tenantStoragePrefix}:device_name`)) {
+      localStorage.setItem(`${tenantStoragePrefix}:device_name`, `${deviceType} Player`)
     }
 
     const pingServer = async () => {
       try {
-        const res = await fetch('/api/players', {
+        const res = await fetch(apiPath('/api/players'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             device_id: deviceId,
-            device_name: localStorage.getItem('music_bar_device_name'),
+            device_name: localStorage.getItem(`${tenantStoragePrefix}:device_name`),
             device_type: deviceType,
           })
         })
@@ -196,7 +215,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     pingServer()
     const interval = setInterval(pingServer, 30000)
     return () => clearInterval(interval)
-  }, [isPlaying])
+  }, [isPlaying, apiPath, tenantStoragePrefix, shouldLoadPlayerData])
 
   // ===================== Auto-hide Controls =====================
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -237,7 +256,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [resetHideTimer])
 
   // ===================== Settings Sync =====================
-  const { data: dbSettings, mutate: mutateSettings } = useSWR('/api/settings', fetcher, {
+  const { data: dbSettings, mutate: mutateSettings } = useSWR(shouldLoadPlayerData ? apiPath('/api/settings') : null, fetcher, {
     refreshInterval: 3000
   })
 
@@ -254,14 +273,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const handleSetIsRequestsEnabled = useCallback(async (enabled: boolean) => {
     setIsRequestsEnabled(enabled)
     try {
-      await fetch('/api/settings', {
+      await fetch(apiPath('/api/settings'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'is_requests_enabled', value: enabled }),
       })
       mutateSettings()
     } catch {}
-  }, [mutateSettings])
+  }, [mutateSettings, apiPath])
 
   const setActivePlaylistIds = useCallback(async (ids: number[]) => {
     const nextIds = [...new Set(ids.map(Number).filter(Boolean))]
@@ -269,17 +288,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCurrentIndex(0)
     setPlayMode('playlist')
     try {
-      await fetch('/api/settings', {
+      await fetch(apiPath('/api/settings'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'active_playlist_ids', value: nextIds }),
       })
       mutateSettings()
     } catch {}
-  }, [mutateSettings])
+  }, [mutateSettings, apiPath])
 
   // ===================== Data =====================
-  const { data: playlists = [] } = useSWR<Playlist[]>('/api/playlists', fetcher, { refreshInterval: 5000 })
+  const { data: playlists = [] } = useSWR<Playlist[]>(shouldLoadPlayerData ? apiPath('/api/playlists') : null, fetcher, { refreshInterval: 5000 })
   const defaultPlaylistId = playlists.find((p: { is_default: boolean }) => p.is_default)?.id || playlists[0]?.id
   const enabledPlaylistIds = activePlaylistIds.filter(id => playlists.some(playlist => playlist.id === id && playlist.is_enabled))
   const playbackPlaylistIds = enabledPlaylistIds.length > 0
@@ -287,13 +306,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     : defaultPlaylistId
       ? [defaultPlaylistId]
       : []
-  const playlistSongsKey = playbackPlaylistIds.join(',')
+  const playlistSongsKey = playbackPlaylistIds.length > 0
+    ? `${tenantSlug || 'active'}:${playbackPlaylistIds.join(',')}`
+    : ''
 
   const { data: playlistSongs = [], isLoading: isPlaylistLoading, mutate: mutateSongs } = useSWR<PlaylistSong[]>(
     playlistSongsKey ? `playlist-songs:${playlistSongsKey}` : null,
     async () => {
       const songGroups = await Promise.all(
-        playbackPlaylistIds.map(id => fetcher(`/api/playlists/${id}/songs`) as Promise<PlaylistSong[]>)
+        playbackPlaylistIds.map(id => fetcher(apiPath(`/api/playlists/${id}/songs`)) as Promise<PlaylistSong[]>)
       )
       return songGroups.flat()
     },
@@ -301,7 +322,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   )
 
   const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>(
-    '/api/requests',
+    shouldLoadPlayerData ? apiPath('/api/requests') : null,
     fetcher,
     { refreshInterval: 3000 }
   )
@@ -401,7 +422,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
 
       // Update backend in background
-      fetch('/api/requests', {
+      fetch(apiPath('/api/requests'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: finishedId, status: 'played' }),
@@ -469,7 +490,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     if (mode === 'request' && reqs.length > 0) {
       try {
-        await fetch('/api/requests', {
+        await fetch(apiPath('/api/requests'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: reqs[0].id, status: 'skipped' }),
@@ -621,6 +642,36 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [])
 
   if (!isInitialized) return null
+
+  const isStoreClosed = tenantInfo && tenantInfo.is_active === false
+  const isAdminPath = pathname?.startsWith('/admin')
+
+  if (isStoreClosed && !isAdminPath) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background p-6 text-center overflow-hidden">
+        {/* Ambient glow washes */}
+        <div className="pointer-events-none absolute -left-1/4 -top-1/4 h-[80%] w-[80%] rounded-full bg-primary/10 blur-[120px] animate-pulse" />
+        <div className="pointer-events-none absolute -bottom-1/4 -right-1/4 h-[80%] w-[80%] rounded-full bg-emerald-500/10 blur-[120px] animate-pulse" />
+        
+        <div className="relative z-10 max-w-md w-full rounded-3xl border border-white/10 bg-black/40 p-8 sm:p-10 backdrop-blur-2xl shadow-2xl">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-[0_0_50px_rgba(16,185,129,0.15)]">
+            <Store className="h-10 w-10" />
+          </div>
+          
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Music Bar</p>
+          <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            ร้านปิดให้บริการชั่วคราว
+          </h1>
+          <p className="mt-4 text-sm leading-relaxed text-white/60">
+            ขออภัยในความไม่สะดวก ขณะนี้ร้าน <span className="font-semibold text-white">"{tenantInfo.display_name || tenantInfo.name}"</span> ยังไม่เปิดให้บริการระบบสตรีมเครื่องเล่นและขอเพลงในขณะนี้
+          </p>
+          <div className="mt-8 border-t border-white/10 pt-6">
+            <p className="text-xs text-white/40">กรุณาสอบถามพนักงานหรือผู้ดูแลร้านเพื่อเปิดให้บริการระบบ</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <PlayerContext.Provider value={{

@@ -1,5 +1,4 @@
-import { PersistentYouTubePlayer } from '@/components/persistent-player'
-import { PlayerBottomBar } from '@/components/player-bottom-bar'
+import { SystemChrome } from '@/components/system-chrome'
 
 export default function SystemLayout({
   children,
@@ -7,13 +6,6 @@ export default function SystemLayout({
   children: React.ReactNode
 }>) {
   return (
-    <>
-      {/* Persistent player — ไม่ unmount เมื่อสลับหน้าระหว่าง / และ /admin */}
-      <PersistentYouTubePlayer />
-      <div>
-        {children}
-      </div>
-      <PlayerBottomBar />
-    </>
+    <SystemChrome>{children}</SystemChrome>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import useSWR from 'swr'
 import { Search, Plus, Music2, Loader2, Check, QrCode, Download, X, RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -18,17 +19,25 @@ const fetcher = async (url: string) => {
   return res.json()
 }
 
-function getOrCreateDeviceId(): string {
+function getOrCreateDeviceId(storagePrefix: string): string {
   if (typeof window === 'undefined') return ''
-  let id = localStorage.getItem('music_bar_device_id')
+  let id = localStorage.getItem(`${storagePrefix}:device_id`) || localStorage.getItem('music_bar_device_id')
   if (!id) {
     id = 'dev_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36)
-    localStorage.setItem('music_bar_device_id', id)
   }
+  localStorage.setItem(`${storagePrefix}:device_id`, id)
   return id
 }
 
 export function RequestView() {
+  const pathname = usePathname()
+  const tenantSlug = pathname?.match(/^\/play\/([^/]+)/)?.[1] || null
+  const tenantStoragePrefix = tenantSlug ? `music_bar:${tenantSlug}` : 'music_bar'
+  const apiPath = (path: string) => {
+    if (!tenantSlug) return path
+    const separator = path.includes('?') ? '&' : '?'
+    return `${path}${separator}tenant=${encodeURIComponent(tenantSlug)}`
+  }
   const { isRequestsEnabled } = usePlayer()
   const [deviceId, setDeviceId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -47,19 +56,19 @@ export function RequestView() {
   }
 
   // All requests for queue position
-  const { data: allRequests = [] } = useSWR<SongRequest[]>('/api/requests', fetcher, { refreshInterval: 3000 })
+  const { data: allRequests = [] } = useSWR<SongRequest[]>(apiPath('/api/requests'), fetcher, { refreshInterval: 3000 })
   // My requests with queue_position
   const { data: myRequests = [], mutate } = useSWR<(SongRequest & { queue_position: number })[]>(
-    deviceId ? `/api/requests?device_id=${deviceId}` : null,
+    deviceId ? apiPath(`/api/requests?device_id=${deviceId}`) : null,
     fetcher,
     { refreshInterval: 3000 }
   )
 
   useEffect(() => {
-    const id = getOrCreateDeviceId()
+    const id = getOrCreateDeviceId(tenantStoragePrefix)
     setDeviceId(id)
-    setPageUrl(window.location.origin + '/request')
-  }, [])
+    setPageUrl(window.location.origin + (tenantSlug ? `/play/${tenantSlug}/request` : '/request'))
+  }, [tenantSlug, tenantStoragePrefix])
 
   // Generate QR code using qrcode.js via CDN canvas approach
   useEffect(() => {
@@ -113,7 +122,7 @@ export function RequestView() {
     if (addingIds.has(result.id) || addedIds.has(result.id)) return
     setAddingIds(prev => new Set(prev).add(result.id))
     try {
-      const res = await fetch('/api/requests', {
+      const res = await fetch(apiPath('/api/requests'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

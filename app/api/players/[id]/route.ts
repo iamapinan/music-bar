@@ -1,20 +1,24 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin'] })
+    if (isTenantError(ctx)) return ctx
+
     const { id } = await params
     const { is_active, device_name } = await request.json()
-    
-    // We can update either is_active or device_name, so we build the query dynamically or just check what is provided
+
     if (is_active !== undefined) {
       const result = await sql`
-        UPDATE active_players 
+        UPDATE active_players
         SET is_active = ${is_active}
         WHERE id = ${id}
+          AND tenant_id = ${ctx.tenant.id}
         RETURNING *
       `
       return NextResponse.json(result[0] || {})
@@ -22,9 +26,10 @@ export async function PATCH(
 
     if (device_name !== undefined) {
       const result = await sql`
-        UPDATE active_players 
+        UPDATE active_players
         SET device_name = ${device_name}
         WHERE id = ${id}
+          AND tenant_id = ${ctx.tenant.id}
         RETURNING *
       `
       return NextResponse.json(result[0] || {})
@@ -38,14 +43,18 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin'] })
+    if (isTenantError(ctx)) return ctx
+
     const { id } = await params
     await sql`
       DELETE FROM active_players
       WHERE id = ${id}
+        AND tenant_id = ${ctx.tenant.id}
     `
     return NextResponse.json({ success: true })
   } catch (error) {
