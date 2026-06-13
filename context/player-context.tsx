@@ -371,6 +371,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const isShuffleRef = useRef(isShuffle)
   const playlistSongsRef = useRef(playlistSongs)
   const nextShuffleIndexRef = useRef(nextShuffleIndex)
+  const finishingRequestIdsRef = useRef<Set<number>>(new Set())
 
   useEffect(() => {
     if (isShuffle && playlistSongs.length > 0) {
@@ -412,6 +413,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     if (mode === 'request' && reqs.length > 0) {
       const finishedId = reqs[0].id
+      if (finishingRequestIdsRef.current.has(finishedId)) return
+      finishingRequestIdsRef.current.add(finishedId)
       
       // Optimistically update local state to next request immediately
       const remainingReqs = reqs.slice(1)
@@ -426,7 +429,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: finishedId, status: 'played' }),
-      }).then(() => mutateRequests())
+      })
+        .then(() => mutateRequests())
+        .finally(() => finishingRequestIdsRef.current.delete(finishedId))
     } else {
       // Playlist mode: advance to next song
       if (songs.length === 0) return
@@ -441,7 +446,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setPlayMode('request')
       }
     }
-  }, [mutateRequests])
+  }, [apiPath, mutateRequests])
 
   const handlePrevious = useCallback(() => {
     if (customSongRef.current) {
@@ -489,19 +494,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const reqs = requestsRef.current
 
     if (mode === 'request' && reqs.length > 0) {
+      const skippedId = reqs[0].id
+      if (finishingRequestIdsRef.current.has(skippedId)) return
+      finishingRequestIdsRef.current.add(skippedId)
       try {
         await fetch(apiPath('/api/requests'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: reqs[0].id, status: 'skipped' }),
+          body: JSON.stringify({ id: skippedId, status: 'skipped' }),
         })
-      } catch {}
+      } catch {
+      } finally {
+        finishingRequestIdsRef.current.delete(skippedId)
+      }
       await mutateRequests()
       if (reqs.length <= 1) setPlayMode('playlist')
     } else {
       await handleSongEnd()
     }
-  }, [handleSongEnd, mutateRequests])
+  }, [apiPath, handleSongEnd, mutateRequests])
 
   // ===================== Play Controls =====================
   const togglePlay = useCallback(() => {

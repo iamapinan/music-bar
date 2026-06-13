@@ -2,9 +2,18 @@
 
 import useSWR from 'swr'
 import Link from 'next/link'
-import { 
-  ArrowRight, Headphones, LibraryBig, MonitorPlay, QrCode, Radio, 
-  Send, ShieldCheck, Store, Sparkles, Activity, Flame, Volume2 
+import {
+  ArrowRight,
+  BadgeCheck,
+  Headphones,
+  LibraryBig,
+  MonitorPlay,
+  QrCode,
+  SlidersHorizontal,
+  Sparkles,
+  Store,
+  Volume2,
+  Waves,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -26,216 +35,231 @@ const fetcher = async (url: string) => {
   return data
 }
 
+const highlights = [
+  ['Tenant แยกอิสระ', 'คลังเพลง คิว และสิทธิ์ของแต่ละสาขาไม่ปนกัน', Store],
+  ['QR request', 'ลูกค้าสแกนแล้วส่งเพลงเข้าคิวได้ทันที', QrCode],
+  ['Player สำหรับร้าน', 'คุมเสียง วิดีโอ และคิวเพลงบนจอเดียว', MonitorPlay],
+]
+
+const operatingNotes = [
+  'ตั้ง playlist หลักของแต่ละสาขา',
+  'รับ request แบบเรียงคิว',
+  'สลับจากเพลงร้านไปเพลงที่ลูกค้าขอ',
+  'กลับเข้า playlist อัตโนมัติเมื่อคิวหมด',
+]
+
 export function LandingPage() {
-  const { data: stations = [] } = useSWR<Station[]>('/api/stations', fetcher)
+  const { data: stations = [], isLoading } = useSWR<Station[]>('/api/stations', fetcher)
+  const totalSongs = stations.reduce((sum, station) => sum + Number(station.song_count || 0), 0)
+  const totalPlaylists = stations.reduce((sum, station) => sum + Number(station.playlist_count || 0), 0)
 
   return (
-    <main className="min-h-[100dvh] overflow-x-hidden bg-[#0a0f0d] text-foreground font-sans relative selection:bg-primary/30 selection:text-primary-foreground">
-      {/* Decorative Cyberpunk Background Elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-[radial-gradient(circle,oklch(0.55_0.18_158_/_0.15)_0%,transparent_70%)] blur-[80px]" />
-        <div className="absolute bottom-[20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[radial-gradient(circle,oklch(0.45_0.15_200_/_0.12)_0%,transparent_70%)] blur-[80px]" />
-        <div className="absolute top-[40%] right-[15%] w-[35vw] h-[35vw] rounded-full bg-[radial-gradient(circle,oklch(0.55_0.18_158_/_0.08)_0%,transparent_70%)] blur-[60px]" />
-        
-        {/* Subtle grid lines */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+    <main className="relative min-h-[100dvh] overflow-x-hidden bg-[#080b0a] text-white selection:bg-primary/30 selection:text-white">
+      <div className="pointer-events-none absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_4%,rgba(80,132,105,0.24),transparent_32rem),radial-gradient(circle_at_82%_18%,rgba(226,232,240,0.08),transparent_24rem),linear-gradient(180deg,#0b1110_0%,#080b0a_42%,#0d1110_100%)]" />
+        <div className="absolute inset-0 opacity-[0.045] [background-image:linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:72px_72px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.05)_44%,transparent_46%)]" />
       </div>
 
-      {/* Floating Header */}
-      <header className="sticky top-4 z-50 mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex h-16 items-center justify-between rounded-full border border-white/[0.08] bg-[#0c1210]/60 px-6 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-              <Radio className="h-4.5 w-4.5 animate-pulse" />
-              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-            </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-white">Music Bar</p>
-              <p className="text-[9px] font-bold text-primary tracking-wide">MULTIVERSE JUKEBOX</p>
-            </div>
-          </div>
+      <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#080b0a]/78 backdrop-blur-2xl">
+        <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-3" aria-label="Music Bar home">
+            <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+              <img src="/icon.svg" alt="" className="h-8 w-8 rounded-xl object-contain" />
+              <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_18px_rgba(52,211,153,0.9)]" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold leading-none tracking-wide text-white">Music Bar</span>
+              <span className="mt-1 block text-[11px] font-medium text-white/45">Request queue system</span>
+            </span>
+          </Link>
+
           <div className="flex items-center gap-2">
             <Link href="/admin">
-              <Button variant="ghost" className="rounded-full text-xs font-bold text-white/80 hover:text-white hover:bg-white/5 px-4 h-9">
-                ระบบจัดการ
+              <Button variant="ghost" className="mr-8 h-10 rounded-full px-3 text-sm font-medium text-white/72 hover:bg-white/[0.07] hover:text-white sm:mr-0 sm:px-4">
+                <span className="sm:hidden">จัดการ</span>
+                <span className="hidden sm:inline">ระบบจัดการ</span>
               </Button>
             </Link>
-            <Link href="/apply">
-              <Button className="rounded-full text-xs font-bold px-4 h-9 shadow-[0_4px_12px_rgba(16,185,129,0.2)]">
+            <Link href="/apply" className="hidden sm:block">
+              <Button className="h-10 rounded-full px-5 text-sm font-semibold shadow-[0_14px_36px_rgba(16,185,129,0.2)] transition-transform active:scale-[0.98]">
                 ขอเปิดสถานี
               </Button>
             </Link>
           </div>
-        </div>
+        </nav>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto z-10">
-        <div className="text-center max-w-3xl mx-auto">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-primary shadow-[0_0_15px_rgba(16,185,129,0.06)] animate-in fade-in slide-in-from-bottom-3 duration-500">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Smart Multi-Tenant Audio Controller</span>
+      <section className="relative z-10 mx-auto grid max-w-7xl gap-12 px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:grid-cols-[1.02fr_0.98fr] lg:px-8 lg:pb-24 lg:pt-20">
+        <div className="flex max-w-3xl flex-col justify-center">
+          <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-xs font-medium text-white/68 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            Multi-tenant music control
           </div>
 
-          {/* Heading */}
-          <h1 className="mt-6 text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.08] text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/60">
-            ระบบจัดคิวเพลง<br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-emerald-400 to-teal-200 drop-shadow-[0_2px_10px_rgba(52,211,153,0.15)]">
-              สำหรับร้านค้าทุกสาขา
-            </span>
+          <h1 className="max-w-4xl text-4xl font-semibold leading-[1.04] tracking-normal text-white sm:text-6xl lg:text-7xl">
+            คิวเพลงของร้านที่ดูดีเท่าบรรยากาศจริง
           </h1>
-
-          {/* Subtitle */}
-          <p className="mt-6 text-base sm:text-lg leading-relaxed text-white/60 max-w-2xl mx-auto">
-            ควบคุมเครื่องเล่นเพลง คลังเพลง และคิวขอเพลงของทุกสาขาได้ในระบบเดียว 
-            ให้ลูกค้าสแกน QR เพื่อเลือกและส่งเพลงจากโทรศัพท์ได้อย่างง่ายดาย
+          <p className="mt-6 max-w-2xl text-base leading-8 text-white/62 sm:text-lg">
+            ให้ลูกค้าขอเพลงผ่าน QR และให้ทีมร้านคุม playlist, queue, player ของทุกสาขาได้ในที่เดียว
           </p>
 
-          {/* Actions */}
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <a href="#stations">
-              <Button size="lg" className="h-12 rounded-full px-7 font-black gap-2 text-sm shadow-[0_8px_24px_rgba(16,185,129,0.25)] hover:shadow-[0_8px_32px_rgba(16,185,129,0.35)] transition-all duration-300">
-                เลือกสถานีร้านค้า
-                <ArrowRight className="h-4 w-4" />
+              <Button size="lg" className="h-12 w-full rounded-full px-7 text-sm font-semibold shadow-[0_18px_42px_rgba(16,185,129,0.22)] transition-transform active:scale-[0.98] sm:w-auto">
+                เลือกสถานี
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
             <Link href="/apply">
-              <Button size="lg" variant="outline" className="h-12 rounded-full border-primary/20 bg-primary/5 hover:bg-primary/10 px-7 font-bold text-primary text-sm gap-2">
-                ส่งคำขอเปิดร้าน
-                <Send className="h-4 w-4" />
+              <Button size="lg" variant="outline" className="h-12 w-full rounded-full border-white/12 bg-white/[0.035] px-7 text-sm font-semibold text-white hover:bg-white/[0.08] hover:text-white sm:w-auto">
+                เปิดใช้กับร้านของคุณ
               </Button>
             </Link>
           </div>
         </div>
 
-        {/* Feature Grid */}
-        <div className="mt-20 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              title: 'แยก Tenant อิสระ',
-              detail: 'จัดสรรคลังเพลง Playlist สถิติ และตั้งค่าแยกของแต่ละสาขาออกจากกันอย่างอิสระ',
-              icon: <Store className="h-5 w-5" />,
-              glow: 'rgba(16,185,129,0.08)'
-            },
-            {
-              title: 'ระบบ Admin ปลอดภัย',
-              detail: 'ควบคุมการดูแลระบบและกำหนดสิทธิ์ผู้เข้าใช้งานแผงควบคุมด้วย Google Sign-In',
-              icon: <ShieldCheck className="h-5 w-5" />,
-              glow: 'rgba(6,182,212,0.08)'
-            },
-            {
-              title: 'สแกน QR ส่งขอเพลง',
-              detail: 'ลูกค้าสแกน QR Code หน้าโต๊ะเพื่อส่งขอเพลงตามคิวได้ทันทีโดยไม่ต้องลงแอป',
-              icon: <QrCode className="h-5 w-5" />,
-              glow: 'rgba(236,72,153,0.08)'
-            },
-            {
-              title: 'Player ไร้รอยต่อ',
-              detail: 'หน้าเครื่องเล่นเบราว์เซอร์รับคำสั่งเรียลไทม์ พร้อมแผงควบคุมเสียงสไตล์มิกเซอร์',
-              icon: <MonitorPlay className="h-5 w-5" />,
-              glow: 'rgba(245,158,11,0.08)'
-            },
-          ].map((feat) => (
-            <div 
-              key={feat.title} 
-              className="group rounded-2xl border border-white/[0.06] bg-[#0c1210]/40 p-6 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-primary/30"
-              style={{ boxShadow: `0 10px 30px -10px ${feat.glow}` }}
-            >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/15 transition-transform group-hover:scale-110">
-                {feat.icon}
+        <div className="relative min-h-[460px] lg:min-h-[560px]">
+          <div className="absolute left-0 top-6 w-[78%] overflow-hidden rounded-[2rem] border border-white/10 bg-[#121817] shadow-[0_40px_90px_rgba(0,0,0,0.45)] sm:left-8">
+            <div className="aspect-[4/5] bg-[radial-gradient(circle_at_50%_22%,rgba(52,211,153,0.24),transparent_18rem),linear-gradient(160deg,#1a2421,#090d0c_62%)] p-5">
+              <div className="flex items-center justify-between text-xs text-white/44">
+                <span>MAIN ROOM</span>
+                <span className="font-mono">21:48</span>
               </div>
-              <h3 className="font-extrabold text-white text-base group-hover:text-primary transition-colors">{feat.title}</h3>
-              <p className="mt-2 text-xs leading-relaxed text-white/50">{feat.detail}</p>
+              <div className="mt-14 flex justify-center">
+                <div className="relative h-56 w-56 rounded-full border border-white/10 bg-black/30 p-5 shadow-[inset_0_0_42px_rgba(255,255,255,0.04)]">
+                  <div className="h-full w-full rounded-full bg-[conic-gradient(from_20deg,#dbe7df,#2dd58d,#1b2a25,#edf3ef,#2dd58d,#111)] p-[2px]">
+                    <div className="grid h-full w-full place-items-center rounded-full bg-[#111816]">
+                      <Waves className="h-16 w-16 text-primary" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-12">
+                <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full w-[64%] rounded-full bg-primary" />
+                </div>
+                <div className="mt-5 flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-semibold">Now playing</p>
+                    <p className="mt-1 text-sm text-white/45">Playlist switches when requests arrive</p>
+                  </div>
+                  <Volume2 className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute bottom-8 right-0 w-[68%] rounded-[1.5rem] border border-white/10 bg-white/[0.075] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.42)] backdrop-blur-2xl sm:right-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 place-items-center rounded-2xl bg-primary/14 text-primary">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">Live queue</p>
+                  <p className="text-xs text-white/42">Requests move by play order</p>
+                </div>
+              </div>
+              <BadgeCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div className="mt-4 space-y-3">
+              {operatingNotes.map((note, index) => (
+                <div key={note} className="flex items-center gap-3 rounded-2xl bg-black/20 px-3 py-2.5">
+                  <span className="font-mono text-xs text-primary">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="text-sm text-white/72">{note}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
+        <div className="grid gap-px overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/10 md:grid-cols-3">
+          {highlights.map(([title, detail, Icon]) => (
+            <div key={title as string} className="bg-[#0d1211]/95 p-6 transition-colors hover:bg-[#111816]">
+              <Icon className="h-5 w-5 text-primary" />
+              <h2 className="mt-5 text-lg font-semibold text-white">{title}</h2>
+              <p className="mt-2 max-w-sm text-sm leading-6 text-white/50">{detail}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Stations List Section */}
-      <section id="stations" className="relative px-4 pb-24 sm:px-6 lg:px-8 max-w-6xl mx-auto z-10 scroll-mt-20">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-white/[0.06] pb-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-primary animate-ping" />
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-primary">LIVE TRANSMISSION</p>
-            </div>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              เลือกสถานีร้านค้าเพื่อเปิดฟัง
-            </h2>
-          </div>
-          <p className="text-sm text-white/45 max-w-sm">
-            เลือกสาขาที่ท่านต้องการควบคุมเพื่อเปิดเครื่องเล่นเพลง หรือเข้าจัดการรายชื่อเพลง
+      <section id="stations" className="relative z-10 mx-auto max-w-7xl scroll-mt-24 px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="max-w-3xl">
+          <h2 className="text-3xl font-semibold tracking-normal text-white sm:text-5xl">เลือกสถานีที่เปิดให้บริการ</h2>
+          <p className="mt-4 text-base leading-7 text-white/55">
+            เปิด player ของสาขา หรือให้ทีมร้านเข้าไปจัดการเพลงจากระบบหลังบ้าน
           </p>
         </div>
 
-        {/* Stations Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {stations.length === 0 ? (
-            <div className="col-span-full py-16 text-center rounded-2xl border border-dashed border-white/10 bg-white/[0.01]">
-              <Headphones className="h-12 w-12 text-white/20 mx-auto mb-4 animate-bounce" />
-              <p className="text-sm font-bold text-white/60">ยังไม่พบสถานีเปิดให้บริการในขณะนี้</p>
-              <p className="text-xs text-white/40 mt-1">สามารถส่งคำขอเปิดสถานีสาขาของคุณได้ที่ปุ่มด้านบน</p>
+        <div className="mt-8 grid gap-4 border-y border-white/10 py-5 sm:grid-cols-3">
+          <div>
+            <p className="font-mono text-3xl text-white">{stations.length}</p>
+            <p className="mt-1 text-sm text-white/45">สถานี</p>
+          </div>
+          <div>
+            <p className="font-mono text-3xl text-white">{totalPlaylists}</p>
+            <p className="mt-1 text-sm text-white/45">เพลย์ลิสต์</p>
+          </div>
+          <div>
+            <p className="font-mono text-3xl text-white">{totalSongs}</p>
+            <p className="mt-1 text-sm text-white/45">เพลงในระบบ</p>
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-[336px] animate-pulse rounded-[1.5rem] border border-white/10 bg-white/[0.045]" />
+            ))
+          ) : stations.length === 0 ? (
+            <div className="col-span-full rounded-[1.5rem] border border-dashed border-white/12 bg-white/[0.035] px-6 py-14 text-center">
+              <Headphones className="mx-auto h-10 w-10 text-white/24" />
+              <p className="mt-5 text-base font-semibold text-white/72">ยังไม่พบสถานีที่เปิดให้บริการ</p>
+              <p className="mt-2 text-sm text-white/42">ส่งคำขอเปิดสถานี แล้วระบบจะพร้อมให้เลือกจากหน้านี้</p>
+              <Link href="/apply" className="mt-6 inline-flex">
+                <Button className="rounded-full px-5">ส่งคำขอเปิดร้าน</Button>
+              </Link>
             </div>
           ) : (
-            stations.map(station => (
-              <Link 
-                key={station.id} 
-                href={`/play/${station.slug}`} 
-                className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/[0.07] bg-[#0c1210]/50 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40 hover:shadow-[0_12px_40px_rgba(16,185,129,0.12)]"
+            stations.map((station, index) => (
+              <Link
+                key={station.id}
+                href={`/play/${station.slug}`}
+                className={`group relative flex min-h-[336px] overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#111615] transition duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-[0_26px_70px_rgba(0,0,0,0.42)] ${index === 0 ? 'md:col-span-2 xl:col-span-1' : ''}`}
               >
-                {/* Image Cover */}
-                <div className="aspect-[16/10] w-full bg-black/40 overflow-hidden relative shrink-0">
-                  {station.cover_thumbnail ? (
-                    <img 
-                      src={station.cover_thumbnail} 
-                      alt="" 
-                      className="h-full w-full object-cover opacity-70 transition duration-500 group-hover:scale-105 group-hover:opacity-95" 
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0c1210] to-[#121c18] text-primary">
-                      <Headphones className="h-12 w-12 transition-transform duration-300 group-hover:scale-110" />
-                    </div>
-                  )}
-                  {/* Subtle dark gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                  
-                  {/* Status Overlay Badge */}
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/50 border border-white/15 px-2.5 py-1 backdrop-blur-md">
-                    <Activity className="h-3 w-3 text-primary animate-pulse" />
-                    <span className="text-[9px] font-black text-white/90 uppercase tracking-widest">ONLINE</span>
+                {station.cover_thumbnail ? (
+                  <img
+                    src={station.cover_thumbnail}
+                    alt={`หน้าปกสถานี ${station.display_name || station.name}`}
+                    className="absolute inset-0 h-full w-full object-cover opacity-62 transition duration-700 group-hover:scale-105 group-hover:opacity-78"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_54%_22%,rgba(52,211,153,0.2),transparent_18rem),linear-gradient(145deg,#1b2421,#0b0f0e)]" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/62 to-black/10" />
+                <div className="relative mt-auto w-full p-5">
+                  <div className="mb-16 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1.5 text-xs font-medium text-white/82 backdrop-blur-md">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      เปิดให้บริการ
+                    </span>
+                    <ArrowRight className="h-5 w-5 text-white/72 transition-transform group-hover:translate-x-1" />
                   </div>
-                  
-                  {/* Slugs URL text overlay at bottom-left */}
-                  <div className="absolute bottom-3 left-4">
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest font-mono">
-                      /play/{station.slug}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Content info */}
-                <div className="p-5 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="truncate text-lg font-extrabold text-white group-hover:text-primary transition-colors">
-                        {station.display_name || station.name}
-                      </h3>
-                      <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-primary transition duration-300 group-hover:translate-x-1" />
-                    </div>
-                  </div>
-
-                  {/* Counters */}
-                  <div className="mt-5 flex gap-2 text-xs">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-white/5 bg-white/[0.04] px-3 py-1 font-bold text-white/70">
-                      <Volume2 className="h-3.5 w-3.5 text-primary" />
+                  <p className="font-mono text-xs text-primary/90">/play/{station.slug}</p>
+                  <h3 className="mt-2 line-clamp-2 text-2xl font-semibold leading-tight text-white">
+                    {station.display_name || station.name}
+                  </h3>
+                  <div className="mt-5 flex flex-wrap gap-2 text-xs text-white/72">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 backdrop-blur-md">
+                      <LibraryBig className="h-3.5 w-3.5 text-primary" />
                       {station.playlist_count} เพลย์ลิสต์
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-white/5 bg-white/[0.04] px-3 py-1 font-bold text-white/55">
-                      <Flame className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 backdrop-blur-md">
+                      <Volume2 className="h-3.5 w-3.5 text-primary" />
                       {station.song_count} เพลง
                     </span>
                   </div>
@@ -245,6 +269,16 @@ export function LandingPage() {
           )}
         </div>
       </section>
+
+      <footer className="relative z-10 border-t border-white/10 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-white/42 sm:flex-row sm:items-center sm:justify-between">
+          <p>Music Bar keeps each branch in its own queue.</p>
+          <div className="flex gap-4">
+            <Link href="/admin" className="hover:text-white">ระบบจัดการ</Link>
+            <Link href="/apply" className="hover:text-white">ขอเปิดสถานี</Link>
+          </div>
+        </div>
+      </footer>
     </main>
   )
 }

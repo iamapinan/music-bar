@@ -85,10 +85,13 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin', 'staff'] })
+    const ctx = await requireTenantContext(request, { public: true })
     if (isTenantError(ctx)) return ctx
 
     const { id, status } = await request.json()
+    if (!id || !['played', 'skipped'].includes(status)) {
+      return NextResponse.json({ error: 'Invalid request update' }, { status: 400 })
+    }
 
     const updateFields = status === 'played'
       ? sql`status = ${status}, played_at = NOW()`
@@ -99,8 +102,13 @@ export async function PATCH(request: Request) {
       SET ${updateFields}
       WHERE id = ${id}
         AND tenant_id = ${ctx.tenant.id}
+        AND status = 'pending'
       RETURNING *
     `
+
+    if (!result[0]) {
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+    }
 
     return NextResponse.json(result[0])
   } catch (error) {
