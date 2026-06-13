@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, createContext, useContext } from 'react'
+import { cn } from '@/lib/utils'
 import { LoginView } from '@/components/login-view'
 import { Loader2 } from 'lucide-react'
 import { AdminShell } from '@/components/admin-shell'
@@ -30,6 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<AppUser | null>(null)
   const [tenants, setTenants] = useState<TenantMembership[]>([])
   const [activeTenantId, setActiveTenantId] = useState<string | null>(null)
+  const [isLight, setIsLight] = useState<boolean>(false)
 
   const checkAuth = useCallback(async () => {
     try {
@@ -66,9 +68,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (theme === 'light') {
       document.documentElement.classList.add('light-theme')
       document.documentElement.classList.remove('dark')
+      setIsLight(true)
     } else {
       document.documentElement.classList.add('dark')
       document.documentElement.classList.remove('light-theme')
+      setIsLight(false)
     }
     checkAuth()
     return () => {
@@ -102,7 +106,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isAuthenticated === null) {
     return (
-      <main className="admin-shell flex min-h-[100dvh] items-center justify-center">
+      <main className={cn("admin-shell flex min-h-[100dvh] items-center justify-center", isLight && "light-theme")}>
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </main>
     )
@@ -110,7 +114,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!isAuthenticated) {
     return (
-      <main className="admin-shell min-h-[100dvh]">
+      <main className={cn("admin-shell min-h-[100dvh]", isLight && "light-theme")}>
         <LoginView onSuccess={checkAuth} />
       </main>
     )

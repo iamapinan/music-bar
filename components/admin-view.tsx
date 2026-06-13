@@ -464,7 +464,7 @@ export function AdminView() {
     <main className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-4 px-4 py-4 sm:px-6 xl:gap-6 xl:px-8 xl:py-7">
       <section className="admin-library-panel flex flex-col gap-3 rounded-md">
         {/* Playlist Manager */}
-        <div className="flex items-center justify-between px-1">
+        <div className="flex items-center justify-between px-3 py-1">
           <div className="flex items-center gap-2">
             <button
               type="button"

@@ -293,18 +293,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       >
         <div
           className={cn(
-            "flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3",
-            isSidebarCollapsed && "justify-center px-2",
+            "flex items-center gap-3 px-1.5 py-1",
+            isSidebarCollapsed && "justify-center px-0",
           )}
         >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary shadow-[0_0_32px_rgba(52,211,153,0.12)]">
-            <Settings className="h-5 w-5" />
-          </div>
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+            <img src="/icon-512.png" alt="" className="h-8 w-8 rounded-xl object-cover" />
+            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_18px_rgba(52,211,153,0.9)]" />
+          </span>
           <div className={cn("min-w-0", isSidebarCollapsed && "hidden")}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary leading-none">
               Music Bar
             </p>
-            <p className="mt-1 truncate text-sm font-semibold text-white/90">
+            <p className="mt-1 truncate text-[11px] font-medium text-white/50 leading-none">
               Admin console
             </p>
           </div>
@@ -315,19 +316,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               className={cn(
-                "mt-4 h-auto w-full justify-between rounded-2xl border border-white/10 bg-black/20 px-3 py-3 text-left hover:bg-white/[0.07]",
-                isSidebarCollapsed && "justify-center px-2",
+                "mt-3.5 h-auto w-full justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-left hover:bg-white/[0.07]",
+                isSidebarCollapsed && "justify-center px-2 py-2.5",
               )}
             >
-              <span className="flex min-w-0 items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <Store className="h-4 w-4" />
+              <span className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <Store className="h-3.5 w-3.5" />
                 </span>
                 <span className={cn("min-w-0", isSidebarCollapsed && "hidden")}>
-                  <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
                     ร้านที่ใช้งาน
                   </span>
-                  <span className="mt-0.5 block truncate text-sm font-semibold text-white">
+                  <span className="mt-0.5 block truncate text-xs font-semibold text-white">
                     {activeTenant?.display_name ||
                       activeTenant?.name ||
                       user?.email ||
@@ -337,7 +338,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </span>
               <ChevronDown
                 className={cn(
-                  "h-4 w-4 shrink-0 text-white/45",
+                  "h-3.5 w-3.5 shrink-0 text-white/45",
                   isSidebarCollapsed && "hidden",
                 )}
               />
@@ -412,227 +413,245 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <nav className="mt-5 flex min-h-0 flex-1 flex-col gap-1.5">
-          <Link href="/admin/dashboard" title="สถิติและภาพรวม">
-            <Button
-              variant="ghost"
-              className={cn(
-                "h-11 w-full gap-3 rounded-xl px-3",
-                isSidebarCollapsed ? "justify-center" : "justify-start",
-                pathname === "/admin/dashboard"
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:text-primary",
-              )}
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              <span className={cn(isSidebarCollapsed && "hidden")}>ภาพรวม</span>
-            </Button>
-          </Link>
-          <Link href="/admin" title="คลังเพลง">
-            <Button
-              variant="ghost"
-              className={cn(
-                "h-11 w-full gap-3 rounded-xl px-3",
-                isSidebarCollapsed ? "justify-center" : "justify-start",
-                pathname === "/admin"
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:text-primary",
-              )}
-            >
-              <LibraryBig className="h-4 w-4" />
-              <span className={cn(isSidebarCollapsed && "hidden")}>
-                คลังเพลง
-              </span>
-            </Button>
-          </Link>
-          <Link href="/admin?tab=requests" title="คำขอเพลง">
-            <Button
-              variant="ghost"
-              className={cn(
-                "relative h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
-                isSidebarCollapsed ? "justify-center" : "justify-start",
-              )}
-            >
-              <Radio className="h-4 w-4" />
-              <span className={cn(isSidebarCollapsed && "hidden")}>
-                คำขอเพลง
-              </span>
-              {requests.length > 0 && !isSidebarCollapsed && (
-                <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
-                  {requests.length}
-                </span>
-              )}
-            </Button>
-          </Link>
-          {user?.is_super_admin && (
-            <>
-              <Link href="/admin/applications" title="คำขอเปิดร้าน">
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "relative h-11 w-full gap-3 rounded-xl px-3",
-                    isSidebarCollapsed ? "justify-center" : "justify-start",
-                    pathname === "/admin/applications"
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:text-primary",
-                  )}
-                >
-                  <ClipboardList className="h-4 w-4" />
-                  <span className={cn(isSidebarCollapsed && "hidden")}>
-                    คำขอเปิดร้าน
-                  </span>
-                  {storeApplications.length > 0 && !isSidebarCollapsed && (
-                    <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
-                      {storeApplications.length}
-                    </span>
-                  )}
-                </Button>
-              </Link>
-              <Link href="/admin/users" title="จัดการ admin">
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "h-11 w-full gap-3 rounded-xl px-3",
-                    isSidebarCollapsed ? "justify-center" : "justify-start",
-                    pathname === "/admin/users"
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:text-primary",
-                  )}
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  <span className={cn(isSidebarCollapsed && "hidden")}>
-                    จัดการ admin
-                  </span>
-                </Button>
-              </Link>
-            </>
-          )}
-          <Link href="/admin/security" title="ตั้งค่า PIN">
-            <Button
-              variant="ghost"
-              className={cn(
-                "h-11 w-full gap-3 rounded-xl px-3",
-                isSidebarCollapsed ? "justify-center" : "justify-start",
-                pathname === "/admin/security"
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:text-primary",
-              )}
-            >
-              <ShieldCheck className="h-4 w-4" />
-              <span className={cn(isSidebarCollapsed && "hidden")}>
-                ความปลอดภัย
-              </span>
-            </Button>
-          </Link>
-          <Button
-            variant="ghost"
-            className={cn(
-              "h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
-              isSidebarCollapsed ? "justify-center" : "justify-start",
+        <ScrollArea className="mt-4 flex-1 min-h-0 pr-2 -mr-2">
+          <nav className="flex flex-col gap-1">
+            {/* Group 1: ภาพรวม */}
+            {isSidebarCollapsed ? (
+              <div className="border-t border-white/10 my-1.5 mx-3 first:hidden" />
+            ) : (
+              <div className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mt-2.5 mb-1 first:mt-0">
+                ภาพรวม
+              </div>
             )}
-            onClick={() => setShowPlayersModal(true)}
-            title="จัดการเครื่องเล่น"
-          >
-            <MonitorPlay className="h-4 w-4" />
-            <span className={cn(isSidebarCollapsed && "hidden")}>
-              เครื่องเล่น
-            </span>
-          </Button>
-          {isAllowedToManage && (
+            <Link href="/admin/dashboard" title="สถิติและภาพรวม">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "h-10 w-full gap-3 rounded-xl px-3",
+                  isSidebarCollapsed ? "justify-center" : "justify-start",
+                  pathname === "/admin/dashboard"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-primary",
+                )}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                <span className={cn(isSidebarCollapsed && "hidden")}>ภาพรวม</span>
+              </Button>
+            </Link>
+
+            {/* Group 2: จัดการเพลง */}
+            {isSidebarCollapsed ? (
+              <div className="border-t border-white/10 my-1.5 mx-3" />
+            ) : (
+              <div className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mt-3.5 mb-1">
+                จัดการเพลง
+              </div>
+            )}
+            <Link href="/admin" title="คลังเพลง">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "h-10 w-full gap-3 rounded-xl px-3",
+                  isSidebarCollapsed ? "justify-center" : "justify-start",
+                  pathname === "/admin"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-primary",
+                )}
+              >
+                <LibraryBig className="h-4 w-4" />
+                <span className={cn(isSidebarCollapsed && "hidden")}>
+                  คลังเพลง
+                </span>
+              </Button>
+            </Link>
+
+            {/* Group 3: จัดการร้านค้า */}
+            {isSidebarCollapsed ? (
+              <div className="border-t border-white/10 my-1.5 mx-3" />
+            ) : (
+              <div className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mt-3.5 mb-1">
+                จัดการร้านค้า
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              className={cn(
+                "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
+                isSidebarCollapsed ? "justify-center" : "justify-start",
+              )}
+              onClick={() => setShowPlayersModal(true)}
+              title="จัดการเครื่องเล่น"
+            >
+              <MonitorPlay className="h-4 w-4" />
+              <span className={cn(isSidebarCollapsed && "hidden")}>
+                เครื่องเล่น
+              </span>
+            </Button>
+            <Button
+              variant="ghost"
+              className={cn(
+                "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
+                isSidebarCollapsed ? "justify-center" : "justify-start",
+              )}
+              onClick={() => setShowQR(true)}
+              title="QR สำหรับลูกค้า"
+            >
+              <QrCode className="h-4 w-4" />
+              <span className={cn(isSidebarCollapsed && "hidden")}>
+                QR ลูกค้า
+              </span>
+            </Button>
+            {activeTenant?.slug && (
+              <div
+                className={cn(
+                  "flex items-center gap-1 w-full pr-1",
+                  isSidebarCollapsed ? "justify-center" : "justify-between",
+                )}
+              >
+                <Link
+                  href={`/play/${activeTenant.slug}`}
+                  target="_blank"
+                  className="flex-1"
+                  title="เปิดหน้าเครื่องเล่น"
+                >
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary justify-start",
+                      isSidebarCollapsed && "justify-center px-0",
+                    )}
+                  >
+                    <ExternalLink className="h-4 w-4 shrink-0" />
+                    <span className={cn(isSidebarCollapsed && "hidden")}>
+                      เปิดเครื่องเล่น
+                    </span>
+                  </Button>
+                </Link>
+                {!isSidebarCollapsed && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-primary hover:bg-white/10"
+                    onClick={handleCopyPlayerUrl}
+                    disabled={!playerUrl}
+                    title="คัดลอก URL เครื่องเล่น"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            )}
+            {isAllowedToManage && (
+              <Button
+                variant="ghost"
+                className={cn(
+                  "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
+                  isSidebarCollapsed ? "justify-center" : "justify-start",
+                )}
+                onClick={() => {
+                  setEditStoreName(
+                    activeTenant?.display_name || activeTenant?.name || "",
+                  );
+                  setEditStoreSlug(activeTenant?.slug || "");
+                  setEditStoreActive(activeTenant?.is_active ?? true);
+                  setShowStoreSettings(true);
+                }}
+                title="ตั้งค่าร้านค้า"
+              >
+                <Settings className="h-4 w-4" />
+                <span className={cn(isSidebarCollapsed && "hidden")}>
+                  ตั้งค่าร้านค้า
+                </span>
+              </Button>
+            )}
+
+            {/* Group 4: ระบบและความปลอดภัย */}
+            {isSidebarCollapsed ? (
+              <div className="border-t border-white/10 my-1.5 mx-3" />
+            ) : (
+              <div className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mt-3.5 mb-1">
+                ระบบและความปลอดภัย
+              </div>
+            )}
+            <Link href="/admin/security" title="ตั้งค่า PIN">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "h-10 w-full gap-3 rounded-xl px-3",
+                  isSidebarCollapsed ? "justify-center" : "justify-start",
+                  pathname === "/admin/security"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-primary",
+                )}
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span className={cn(isSidebarCollapsed && "hidden")}>
+                  ความปลอดภัย
+                </span>
+              </Button>
+            </Link>
+            {user?.is_super_admin && (
+              <>
+                <Link href="/admin/applications" title="คำขอเปิดร้าน">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "relative h-10 w-full gap-3 rounded-xl px-3",
+                      isSidebarCollapsed ? "justify-center" : "justify-start",
+                      pathname === "/admin/applications"
+                        ? "bg-primary/15 text-primary"
+                        : "text-muted-foreground hover:text-primary",
+                    )}
+                  >
+                    <ClipboardList className="h-4 w-4" />
+                    <span className={cn(isSidebarCollapsed && "hidden")}>
+                      คำขอเปิดร้าน
+                    </span>
+                    {storeApplications.length > 0 && !isSidebarCollapsed && (
+                      <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+                        {storeApplications.length}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+                <Link href="/admin/users" title="จัดการ admin">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "h-10 w-full gap-3 rounded-xl px-3",
+                      isSidebarCollapsed ? "justify-center" : "justify-start",
+                      pathname === "/admin/users"
+                        ? "bg-primary/15 text-primary"
+                        : "text-muted-foreground hover:text-primary",
+                    )}
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    <span className={cn(isSidebarCollapsed && "hidden")}>
+                      จัดการ admin
+                    </span>
+                  </Button>
+                </Link>
+              </>
+            )}
             <Button
               variant="ghost"
               className={cn(
                 "h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
                 isSidebarCollapsed ? "justify-center" : "justify-start",
               )}
-              onClick={() => {
-                setEditStoreName(
-                  activeTenant?.display_name || activeTenant?.name || "",
-                );
-                setEditStoreSlug(activeTenant?.slug || "");
-                setEditStoreActive(activeTenant?.is_active ?? true);
-                setShowStoreSettings(true);
-              }}
-              title="ตั้งค่าร้านค้า"
+              onClick={handleForceUpdate}
+              disabled={isUpdating}
+              title="อัปเดตแอป"
             >
-              <Settings className="h-4 w-4" />
+              <RefreshCw
+                className={cn("h-4 w-4", isUpdating && "animate-spin")}
+              />
               <span className={cn(isSidebarCollapsed && "hidden")}>
-                ตั้งค่าร้านค้า
+                อัปเดตแอป
               </span>
             </Button>
-          )}
-          {activeTenant?.slug && (
-            <div
-              className={cn(
-                "flex items-center gap-1 w-full pr-1",
-                isSidebarCollapsed ? "justify-center" : "justify-between",
-              )}
-            >
-              <Link
-                href={`/play/${activeTenant.slug}`}
-                target="_blank"
-                className="flex-1"
-                title="เปิดหน้าเครื่องเล่น"
-              >
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary justify-start",
-                    isSidebarCollapsed && "justify-center px-0",
-                  )}
-                >
-                  <ExternalLink className="h-4 w-4 shrink-0" />
-                  <span className={cn(isSidebarCollapsed && "hidden")}>
-                    เปิดเครื่องเล่น
-                  </span>
-                </Button>
-              </Link>
-              {!isSidebarCollapsed && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-primary hover:bg-white/10"
-                  onClick={handleCopyPlayerUrl}
-                  disabled={!playerUrl}
-                  title="คัดลอก URL เครื่องเล่น"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
-              )}
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            className={cn(
-              "h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
-              isSidebarCollapsed ? "justify-center" : "justify-start",
-            )}
-            onClick={() => setShowQR(true)}
-            title="QR สำหรับลูกค้า"
-          >
-            <QrCode className="h-4 w-4" />
-            <span className={cn(isSidebarCollapsed && "hidden")}>
-              QR ลูกค้า
-            </span>
-          </Button>
-          <Button
-            variant="ghost"
-            className={cn(
-              "h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
-              isSidebarCollapsed ? "justify-center" : "justify-start",
-            )}
-            onClick={handleForceUpdate}
-            disabled={isUpdating}
-            title="อัปเดตแอป"
-          >
-            <RefreshCw
-              className={cn("h-4 w-4", isUpdating && "animate-spin")}
-            />
-            <span className={cn(isSidebarCollapsed && "hidden")}>
-              อัปเดตแอป
-            </span>
-          </Button>
-        </nav>
+          </nav>
+        </ScrollArea>
 
         <div className="mt-4 border-t border-white/10 pt-3 space-y-1">
           <Button
