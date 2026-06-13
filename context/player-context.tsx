@@ -108,7 +108,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     fetcher
   )
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [volume, setVolume] = useState(70)
+  const [volume, setVolume] = useState(100)
   const [isMuted, setIsMuted] = useState(false)
   const [isShuffle, setIsShuffle] = useState(false)
   const [isVideoMode, setIsVideoMode] = useState(false)
@@ -162,6 +162,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!shouldLoadPlayerData) return
+    if (!tenantSlug) return // Must have a tenant context to register
 
     const getOrCreateDeviceId = () => {
       let id = localStorage.getItem(`${tenantStoragePrefix}:device_id`) || localStorage.getItem('music_bar_device_id')

@@ -523,6 +523,22 @@ body.admin-mode {
   background-color: oklch(0.76 0.17 158 / 0.16);
 }
 
+html.light-theme .admin-player-dock {
+  --background: oklch(0.97 0.005 165);
+  --foreground: oklch(0.15 0.012 165);
+  --muted: oklch(0.92 0.006 165);
+  --muted-foreground: oklch(0.45 0.02 165);
+  --primary: oklch(0.55 0.18 158);
+  --primary-foreground: oklch(0.99 0.002 165);
+  background:
+    radial-gradient(circle at 12% 0%, oklch(0.55 0.18 158 / 0.14), transparent 28rem),
+    linear-gradient(100deg, oklch(0.96 0.008 165 / 0.99), oklch(0.94 0.006 165 / 0.97)) !important;
+  border-color: oklch(0.55 0.18 158 / 0.2) !important;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.5),
+    0 -18px 70px oklch(0.15 0.012 165 / 0.08) !important;
+}
+
 .admin-shell .admin-surface,
 .admin-shell .admin-content-panel {
   border-radius: 1.5rem;
@@ -1167,8 +1183,244 @@ body.admin-mode.light-theme {
   color: oklch(0.15 0.012 165 / 0.05) !important;
 }
 
+/* Dashboard light theme */
+.admin-shell.light-theme .admin-dashboard-hero {
+  background:
+    radial-gradient(circle at 82% -16%, oklch(0.55 0.18 158 / 0.14), transparent 24rem),
+    linear-gradient(135deg, oklch(0.92 0.01 165 / 0.98), oklch(0.96 0.005 165 / 0.98));
+  border-color: oklch(0.15 0.012 165 / 0.08);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.6),
+    0 26px 70px oklch(0.15 0.012 165 / 0.08);
+}
+
+.admin-shell.light-theme .admin-dashboard-qr-card {
+  background:
+    linear-gradient(145deg, oklch(0.985 0.004 165 / 0.96), oklch(0.95 0.006 165 / 0.96));
+  border-color: oklch(0.15 0.012 165 / 0.08);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.5),
+    0 18px 40px oklch(0.15 0.012 165 / 0.06);
+}
+
+.admin-shell.light-theme .admin-dashboard-qr-header {
+  border-bottom-color: oklch(0.15 0.012 165 / 0.08);
+}
+
+.admin-shell.light-theme .admin-dashboard-tips {
+  background: oklch(0.985 0.004 165 / 0.88);
+  border-color: oklch(0.15 0.012 165 / 0.07);
+}
+
+.admin-shell.light-theme .admin-dashboard-coming-soon {
+  background: oklch(0.98 0.004 165 / 0.5);
+  border-color: oklch(0.15 0.012 165 / 0.04);
+}
+
 .admin-shell.light-theme .bg-black\/20 {
   background-color: oklch(0.15 0.012 165 / 0.05) !important;
+}
+
+/* ===== Player Light Theme ===== */
+html.light-theme .player-ambient {
+  background-image:
+    linear-gradient(110deg, oklch(0.96 0.008 165 / 0.94), oklch(0.92 0.015 158 / 0.82), oklch(0.94 0.01 205 / 0.94));
+}
+
+html.light-theme .player-stage-ambient {
+  background: oklch(0.94 0.008 165);
+}
+
+html.light-theme .player-stage-ambient::after {
+  background:
+    radial-gradient(circle at 22% 36%, oklch(0.66 0.14 158 / 0.08), transparent 22rem),
+    radial-gradient(circle at 78% 62%, oklch(0.56 0.11 205 / 0.06), transparent 26rem);
+}
+
+html.light-theme .player-stage-art {
+  opacity: 0.55;
+}
+
+html.light-theme .player-stage-wash {
+  background:
+    linear-gradient(115deg, oklch(0.96 0.006 165 / 0.12), transparent 52%, oklch(0.96 0.006 165 / 0.14)),
+    radial-gradient(circle at 50% 50%, transparent 24%, oklch(0.94 0.006 165 / 0.14) 96%);
+}
+
+html.light-theme .app-shell {
+  background:
+    radial-gradient(circle at 80% 0%, oklch(0.55 0.15 158 / 0.06), transparent 24rem),
+    linear-gradient(180deg, oklch(0.96 0.006 165 / 0.5), transparent 22rem);
+}
+
+html.light-theme .surface-panel {
+  background: oklch(0.97 0.004 165 / 0.88);
+  border-color: oklch(0.15 0.012 165 / 0.1);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5), 0 18px 60px oklch(0.15 0.012 165 / 0.06);
+}
+
+html.light-theme .player-glass-card {
+  background: oklch(0.98 0.004 165 / 0.88);
+  border-color: oklch(0.15 0.012 165 / 0.08);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.5),
+    0 24px 70px oklch(0.15 0.012 165 / 0.06);
+}
+
+html.light-theme .player-glass-card:hover {
+  background: oklch(0.95 0.008 165 / 0.94);
+  border-color: oklch(0.55 0.18 158 / 0.3);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.4),
+    0 28px 86px oklch(0.15 0.012 165 / 0.08),
+    0 0 32px oklch(0.62 0.14 158 / 0.08);
+}
+
+html.light-theme .glass {
+  background: oklch(0.98 0.004 165 / 0.82);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5);
+}
+
+html.light-theme .glass-subtle {
+  background: oklch(0.97 0.004 165 / 0.72);
+}
+
+html.light-theme .hover\:bg-white\/\[0\.075\]:hover {
+  background-color: oklch(0.15 0.012 165 / 0.06) !important;
+}
+
+html.light-theme .hover\:bg-white\/10:hover {
+  background-color: oklch(0.15 0.012 165 / 0.08) !important;
+}
+
+/* Bottom bar light theme key overrides */
+html.light-theme .text-white {
+  color: oklch(0.15 0.012 165) !important;
+}
+
+html.light-theme .text-white\/30 {
+  color: oklch(0.15 0.012 165 / 0.3) !important;
+}
+
+html.light-theme .text-white\/35 {
+  color: oklch(0.15 0.012 165 / 0.35) !important;
+}
+
+html.light-theme .text-white\/40 {
+  color: oklch(0.15 0.012 165 / 0.4) !important;
+}
+
+html.light-theme .text-white\/45 {
+  color: oklch(0.15 0.012 165 / 0.45) !important;
+}
+
+html.light-theme .text-white\/50 {
+  color: oklch(0.15 0.012 165 / 0.5) !important;
+}
+
+html.light-theme .text-white\/55 {
+  color: oklch(0.15 0.012 165 / 0.55) !important;
+}
+
+html.light-theme .text-white\/60 {
+  color: oklch(0.15 0.012 165 / 0.6) !important;
+}
+
+html.light-theme .text-white\/65 {
+  color: oklch(0.15 0.012 165 / 0.65) !important;
+}
+
+html.light-theme .text-white\/70 {
+  color: oklch(0.15 0.012 165 / 0.7) !important;
+}
+
+html.light-theme .text-white\/72 {
+  color: oklch(0.15 0.012 165 / 0.72) !important;
+}
+
+html.light-theme .text-white\/75 {
+  color: oklch(0.15 0.012 165 / 0.75) !important;
+}
+
+html.light-theme .text-white\/78 {
+  color: oklch(0.15 0.012 165 / 0.78) !important;
+}
+
+html.light-theme .text-white\/80 {
+  color: oklch(0.15 0.012 165 / 0.8) !important;
+}
+
+html.light-theme .text-white\/85 {
+  color: oklch(0.15 0.012 165 / 0.85) !important;
+}
+
+/* Bottom bar hardcoded bg overrides */
+html.light-theme .bg-white\/5 {
+  background-color: oklch(0.15 0.012 165 / 0.05) !important;
+}
+
+html.light-theme .bg-white\/10 {
+  background-color: oklch(0.15 0.012 165 / 0.08) !important;
+}
+
+html.light-theme .bg-white\/\[0\.02\] {
+  background-color: oklch(0.15 0.012 165 / 0.02) !important;
+}
+
+html.light-theme .bg-white\/\[0\.04\] {
+  background-color: oklch(0.15 0.012 165 / 0.04) !important;
+}
+
+html.light-theme .bg-black\/10 {
+  background-color: oklch(0.15 0.012 165 / 0.04) !important;
+}
+
+html.light-theme .bg-black\/20 {
+  background-color: oklch(0.15 0.012 165 / 0.06) !important;
+}
+
+html.light-theme .bg-black\/30 {
+  background-color: oklch(0.15 0.012 165 / 0.04) !important;
+}
+
+html.light-theme .bg-black\/35 {
+  background-color: oklch(0.15 0.012 165 / 0.05) !important;
+}
+
+html.light-theme .bg-black\/50 {
+  background-color: oklch(0.85 0.006 165 / 0.5) !important;
+}
+
+html.light-theme .bg-black\/60 {
+  background-color: oklch(0.85 0.006 165 / 0.35) !important;
+}
+
+html.light-theme .border-white\/5 {
+  border-color: oklch(0.15 0.012 165 / 0.05) !important;
+}
+
+html.light-theme .border-white\/8 {
+  border-color: oklch(0.15 0.012 165 / 0.08) !important;
+}
+
+html.light-theme .border-white\/10 {
+  border-color: oklch(0.15 0.012 165 / 0.1) !important;
+}
+
+html.light-theme .border-white\/12 {
+  border-color: oklch(0.15 0.012 165 / 0.12) !important;
+}
+
+html.light-theme .border-white\/15 {
+  border-color: oklch(0.15 0.012 165 / 0.15) !important;
+}
+
+html.light-theme .border-white\/20 {
+  border-color: oklch(0.15 0.012 165 / 0.2) !important;
+}
+
+html.light-theme .ring-white\/5 {
+  --tw-ring-color: oklch(0.15 0.012 165 / 0.05) !important;
 }
 
 .admin-shell.light-theme .bg-black\/\[0\.01\] {

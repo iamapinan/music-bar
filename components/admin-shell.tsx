@@ -28,23 +28,14 @@ import {
   Settings,
   LibraryBig,
   Radio,
-  MonitorPlay,
-  QrCode,
-  RefreshCw,
   PowerOff,
   Music2,
-  Download,
-  Smartphone,
-  Tablet,
-  Monitor,
   X,
   LayoutDashboard,
   Plus,
   ChevronDown,
   Store,
   Check,
-  Copy,
-  ExternalLink,
   PanelLeftClose,
   PanelLeftOpen,
   ShieldCheck,
@@ -54,7 +45,6 @@ import {
 } from "lucide-react";
 import useSWR from "swr";
 import { cn } from "@/lib/utils";
-import { forceUpdateApp } from "@/lib/app-update";
 import { toast } from "sonner";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -68,15 +58,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     useAdminAuth();
   const pathname = usePathname();
 
-  const [showQR, setShowQR] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState("");
-  const [pageUrl, setPageUrl] = useState("");
-  const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [showCreateTenant, setShowCreateTenant] = useState(false);
   const [newTenantName, setNewTenantName] = useState("");
   const [newTenantSlug, setNewTenantSlug] = useState("");
   const [isCreatingTenant, setIsCreatingTenant] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isLightTheme, setIsLightTheme] = useState(false);
 
@@ -95,11 +80,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       : null,
     fetcher,
     { refreshInterval: 8000 },
-  );
-  const { data: players = [], mutate: mutatePlayers } = useSWR(
-    showPlayersModal ? "/api/players" : null,
-    fetcher,
-    { refreshInterval: 5000 },
   );
 
   useEffect(() => {
@@ -124,14 +104,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    if (!activeTenant?.slug) return;
-    setPageUrl(window.location.origin + `/play/${activeTenant.slug}/request`);
-  }, [activeTenant?.slug]);
-
-  useEffect(() => {
     const stored = localStorage.getItem("music_bar_admin_sidebar_collapsed");
     if (stored) setIsSidebarCollapsed(stored === "true");
   }, []);
+
+  // Persist active tenant slug for cross-page usage (e.g. player bottom bar)
+  useEffect(() => {
+    if (activeTenant?.slug) {
+      localStorage.setItem("music_bar_active_tenant_slug", activeTenant.slug);
+    }
+  }, [activeTenant?.slug]);
 
   const setSidebarCollapsed = (collapsed: boolean) => {
     setIsSidebarCollapsed(collapsed);
@@ -139,65 +121,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       "music_bar_admin_sidebar_collapsed",
       String(collapsed),
     );
-  };
-
-  useEffect(() => {
-    if (!showQR || !pageUrl) return;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pageUrl)}&bgcolor=ffffff&color=059669&format=png&margin=20`;
-    setQrDataUrl(qrUrl);
-  }, [showQR, pageUrl]);
-
-  const handleDownloadQR = async () => {
-    try {
-      const res = await fetch(qrDataUrl);
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "music-bar-qr.png";
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch {
-      toast.error("ไม่สามารถดาวน์โหลดได้");
-    }
-  };
-
-  const handleForceUpdate = () => forceUpdateApp(setIsUpdating);
-
-  const playerUrl = activeTenant?.slug
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/play/${activeTenant.slug}`
-    : "";
-
-  const handleCopyPlayerUrl = async () => {
-    if (!playerUrl) return;
-    try {
-      await navigator.clipboard.writeText(playerUrl);
-      toast.success("คัดลอก URL เครื่องเล่นแล้ว");
-    } catch {
-      toast.error("ไม่สามารถคัดลอก URL ได้");
-    }
-  };
-
-  const handleTogglePlayer = async (id: string, currentStatus: boolean) => {
-    try {
-      await fetch(`/api/players/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: !currentStatus }),
-      });
-      mutatePlayers();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleDeletePlayer = async (id: string) => {
-    if (!confirm("ต้องการลบเครื่องเล่นนี้หรือไม่?")) return;
-    try {
-      await fetch(`/api/players/${id}`, { method: "DELETE" });
-      mutatePlayers();
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const handleCreateTenant = async () => {
@@ -415,7 +338,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <ScrollArea className="mt-4 flex-1 min-h-0 pr-2 -mr-2">
           <nav className="flex flex-col gap-1">
-            {/* Group 1: ภาพรวม */}
+            {/* Group 1: ภาพรวม + คลังเพลง */}
             {isSidebarCollapsed ? (
               <div className="mx-3 my-1.5 border-t border-border/60 first:hidden" />
             ) : (
@@ -438,15 +361,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <span className={cn(isSidebarCollapsed && "hidden")}>ภาพรวม</span>
               </Button>
             </Link>
-
-            {/* Group 2: จัดการเพลง */}
-            {isSidebarCollapsed ? (
-              <div className="mx-3 my-1.5 border-t border-border/60" />
-            ) : (
-              <div className="mb-1 mt-3.5 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                จัดการเพลง
-              </div>
-            )}
             <Link href="/admin" title="คลังเพลง">
               <Button
                 variant="ghost"
@@ -464,83 +378,29 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 </span>
               </Button>
             </Link>
-
-            {/* Group 3: จัดการร้านค้า */}
-            {isSidebarCollapsed ? (
-              <div className="mx-3 my-1.5 border-t border-border/60" />
-            ) : (
-              <div className="mb-1 mt-3.5 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                จัดการร้านค้า
-              </div>
-            )}
-            <Button
-              variant="ghost"
-              className={cn(
-                "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
-                isSidebarCollapsed ? "justify-center" : "justify-start",
-              )}
-              onClick={() => setShowPlayersModal(true)}
-              title="จัดการเครื่องเล่น"
-            >
-              <MonitorPlay className="h-4 w-4" />
-              <span className={cn(isSidebarCollapsed && "hidden")}>
-                เครื่องเล่น
-              </span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={cn(
-                "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
-                isSidebarCollapsed ? "justify-center" : "justify-start",
-              )}
-              onClick={() => setShowQR(true)}
-              title="QR สำหรับลูกค้า"
-            >
-              <QrCode className="h-4 w-4" />
-              <span className={cn(isSidebarCollapsed && "hidden")}>
-                QR ลูกค้า
-              </span>
-            </Button>
-            {activeTenant?.slug && (
-              <div
+            <Link href="/admin/requests" title="คำขอเพลง">
+              <Button
+                variant="ghost"
                 className={cn(
-                  "flex items-center gap-1 w-full pr-1",
-                  isSidebarCollapsed ? "justify-center" : "justify-between",
+                  "h-10 w-full gap-3 rounded-xl px-3",
+                  isSidebarCollapsed ? "justify-center" : "justify-start",
+                  pathname === "/admin/requests"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-primary",
                 )}
               >
-                <Link
-                  href={`/play/${activeTenant.slug}`}
-                  target="_blank"
-                  className="flex-1"
-                  title="เปิดหน้าเครื่องเล่น"
-                >
-                  <Button
-                    variant="ghost"
-                    className={cn(
-                      "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary justify-start",
-                      isSidebarCollapsed && "justify-center px-0",
-                    )}
-                  >
-                    <ExternalLink className="h-4 w-4 shrink-0" />
-                    <span className={cn(isSidebarCollapsed && "hidden")}>
-                      เปิดเครื่องเล่น
-                    </span>
-                  </Button>
-                </Link>
-                {!isSidebarCollapsed && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:bg-accent hover:text-primary"
-                    onClick={handleCopyPlayerUrl}
-                    disabled={!playerUrl}
-                    title="คัดลอก URL เครื่องเล่น"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
+                <Radio className="h-4 w-4" />
+                <span className={cn(isSidebarCollapsed && "hidden")}>
+                  คำขอเพลง
+                </span>
+                {requests.length > 0 && !isSidebarCollapsed && (
+                  <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+                    {requests.length}
+                  </span>
                 )}
-              </div>
-            )}
+              </Button>
+            </Link>
+
             {isAllowedToManage && (
               <Button
                 variant="ghost"
@@ -565,7 +425,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </Button>
             )}
 
-            {/* Group 4: ระบบและความปลอดภัย */}
+            {/* Group 3: ระบบและความปลอดภัย */}
             {isSidebarCollapsed ? (
               <div className="mx-3 my-1.5 border-t border-border/60" />
             ) : (
@@ -633,23 +493,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 </Link>
               </>
             )}
-            <Button
-              variant="ghost"
-              className={cn(
-                "h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
-                isSidebarCollapsed ? "justify-center" : "justify-start",
-              )}
-              onClick={handleForceUpdate}
-              disabled={isUpdating}
-              title="อัปเดตแอป"
-            >
-              <RefreshCw
-                className={cn("h-4 w-4", isUpdating && "animate-spin")}
-              />
-              <span className={cn(isSidebarCollapsed && "hidden")}>
-                อัปเดตแอป
-              </span>
-            </Button>
           </nav>
         </ScrollArea>
 
@@ -743,6 +586,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <LibraryBig className="h-3.5 w-3.5" />
               </Button>
             </Link>
+            <Link href="/admin/requests">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+                title="คำขอเพลง"
+              >
+                <Radio className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
             {user?.is_super_admin && (
               <Link href="/admin/applications">
                 <Button
@@ -768,48 +621,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </Button>
             </Link>
 
-            {activeTenant?.slug && (
-              <>
-                <Link href={`/play/${activeTenant.slug}`} target="_blank">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
-                    title="เปิดหน้าเครื่องเล่น"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
-                  onClick={handleCopyPlayerUrl}
-                  disabled={!playerUrl}
-                  title="คัดลอก URL เครื่องเล่น"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
-              </>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
-              onClick={() => setShowQR(true)}
-              title="QR ลูกค้า"
-            >
-              <QrCode className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
-              onClick={() => setShowPlayersModal(true)}
-              title="จัดการเครื่องเล่น"
-            >
-              <MonitorPlay className="h-3.5 w-3.5" />
-            </Button>
             {isAllowedToManage && (
               <Button
                 variant="ghost"
@@ -867,146 +678,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {children}
       </div>
 
-      {/* QR Code Modal */}
-      <Dialog open={showQR} onOpenChange={setShowQR}>
-        <DialogContent className="border-border bg-popover/95 text-popover-foreground backdrop-blur-xl sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">
-              QR Code สั่งเพลง
-            </DialogTitle>
-            <DialogDescription>
-              ให้ลูกค้าสแกนเพื่อเข้าสู่หน้าระบบขอเพลงของร้าน
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center p-6 gap-6">
-            <div className="w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-center text-sm text-muted-foreground">
-              {activeTenant?.display_name || activeTenant?.name || user?.email}
-            </div>
-            <div className="p-4 bg-white rounded-xl shadow-xl">
-              {qrDataUrl ? (
-                <img
-                  src={qrDataUrl}
-                  alt="QR Code"
-                  className="w-48 h-48 sm:w-64 sm:h-64 object-contain"
-                />
-              ) : (
-                <div className="w-48 h-48 sm:w-64 sm:h-64 bg-muted animate-pulse rounded-lg flex items-center justify-center">
-                  <span className="text-muted-foreground text-sm font-medium">
-                    กำลังสร้าง QR...
-                  </span>
-                </div>
-              )}
-            </div>
-            <Button
-              onClick={handleDownloadQR}
-              className="w-full sm:w-auto px-8 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-full"
-            >
-              <Download className="w-4 h-4" />
-              บันทึกภาพ QR Code
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Players Modal */}
-      <Dialog open={showPlayersModal} onOpenChange={setShowPlayersModal}>
-        <DialogContent className="border-border bg-popover/95 text-popover-foreground backdrop-blur-xl sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">
-              เครื่องเล่นที่เชื่อมต่อ
-            </DialogTitle>
-            <DialogDescription>
-              เครื่องเล่นที่กำลังเปิดหน้าสตรีมเพลงของร้านนี้อยู่ในปัจจุบัน
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <ScrollArea className="h-[400px] mt-4 -mx-2 px-2">
-              <div className="flex flex-col gap-2 pb-2">
-                {players.length === 0 ? (
-                  <div className="py-8 text-center text-sm text-muted-foreground">
-                    ไม่พบเครื่องเล่นที่เชื่อมต่ออยู่
-                  </div>
-                ) : (
-                  players.map((player: any) => {
-                    const isOnline =
-                      new Date().getTime() -
-                        new Date(player.last_ping).getTime() <
-                      60000;
-                    return (
-                      <div
-                        key={player.id}
-                        className="flex items-center justify-between rounded-lg border border-border bg-secondary/40 p-3 transition-colors hover:bg-accent"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "p-2 rounded-full border shadow-sm",
-                              player.is_active
-                                ? "bg-primary/20 border-primary/30 text-primary"
-                                : "border-border bg-secondary text-muted-foreground",
-                            )}
-                          >
-                            {player.device_type === "Mobile" ? (
-                              <Smartphone className="w-4 h-4" />
-                            ) : player.device_type === "Tablet" ? (
-                              <Tablet className="w-4 h-4" />
-                            ) : (
-                              <Monitor className="w-4 h-4" />
-                            )}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="max-w-[150px] truncate text-xs font-bold text-foreground">
-                              {player.device_name}
-                            </span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span
-                                className={cn(
-                                  "w-1.5 h-1.5 rounded-full animate-pulse",
-                                  isOnline ? "bg-green-500" : "bg-red-500",
-                                )}
-                              ></span>
-                              <span className="text-sm text-muted-foreground">
-                                {isOnline ? "ออนไลน์" : "ออฟไลน์"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant={player.is_active ? "default" : "outline"}
-                            className={cn(
-                              "h-7 px-3 text-xs rounded-full",
-                              player.is_active
-                                ? "bg-primary text-primary-foreground"
-                                : "border-border text-foreground",
-                            )}
-                            onClick={() =>
-                              handleTogglePlayer(player.id, player.is_active)
-                            }
-                          >
-                            {player.is_active ? "เปิดใช้งาน" : "ระงับ"}
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 rounded-full text-muted-foreground hover:bg-red-400/10 hover:text-red-400"
-                            onClick={() => handleDeletePlayer(player.id)}
-                            title="ลบเครื่องเล่น"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </DialogContent>
-      </Dialog>
-
+      {/* Create Tenant Modal */}
       <Dialog open={showCreateTenant} onOpenChange={setShowCreateTenant}>
         <DialogContent className="border-border bg-popover/95 text-popover-foreground backdrop-blur-xl sm:max-w-md">
           <DialogHeader>

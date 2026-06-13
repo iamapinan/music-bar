@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 
-import { AudioLines, Clock3, Disc3, Maximize2, Minimize2, Music2, Play, Radio, RefreshCw, Share2 } from "lucide-react";
+import {
+  AudioLines,
+  Clock3,
+  Disc3,
+  Maximize2,
+  Minimize2,
+  Music2,
+  Play,
+  Radio,
+  RefreshCw,
+  Share2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -46,7 +57,12 @@ export function PlayerView() {
       text: "ฟังเพลงและขอเพลงที่ร้านนี้กับพวกเรา!",
       url: window.location.href,
     };
-    if (typeof navigator !== "undefined" && navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.share &&
+      navigator.canShare &&
+      navigator.canShare(shareData)
+    ) {
       try {
         await navigator.share(shareData);
         toast.success("แชร์สำเร็จ");
@@ -79,7 +95,10 @@ export function PlayerView() {
       .concat(playlistSongs.slice(0, currentIndex));
   })();
   const nextSongIsFromPlaylist = nextSong && "playlist_id" in nextSong;
-  const miniPlaylist = queuePreview.slice(nextSongIsFromPlaylist ? 1 : 0, nextSongIsFromPlaylist ? 4 : 3);
+  const miniPlaylist = queuePreview.slice(
+    nextSongIsFromPlaylist ? 1 : 0,
+    nextSongIsFromPlaylist ? 4 : 3,
+  );
 
   if (!currentSong) {
     return (
@@ -89,7 +108,9 @@ export function PlayerView() {
             <Music2 className="h-10 w-10 text-primary/75" />
           </div>
         </div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.35em] text-primary">Music bar</p>
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.35em] text-primary">
+          Music bar
+        </p>
         <h2 className="mb-2 text-2xl font-semibold tracking-tight text-foreground">
           {isPlaylistLoading ? "กำลังโหลดเพลง" : "ยังไม่มีเพลง"}
         </h2>
@@ -102,10 +123,13 @@ export function PlayerView() {
     );
   }
 
-  const requestedBy = "requested_by" in currentSong ? currentSong.requested_by : null;
-  const currentPlaylistName = "playlist_id" in currentSong
-    ? playlists.find((playlist) => playlist.id === currentSong.playlist_id)?.name || "House playlist"
-    : "Guest request";
+  const requestedBy =
+    "requested_by" in currentSong ? currentSong.requested_by : null;
+  const currentPlaylistName =
+    "playlist_id" in currentSong
+      ? playlists.find((playlist) => playlist.id === currentSong.playlist_id)
+          ?.name || "House playlist"
+      : "Guest request";
 
   return (
     <div
@@ -153,7 +177,9 @@ export function PlayerView() {
             <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
               <Music2 className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-sm font-semibold tracking-tight">Music Bar</span>
+            <span className="text-sm font-semibold tracking-tight">
+              Music Bar
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -180,11 +206,17 @@ export function PlayerView() {
       {!isFullscreen && (
         <header className="absolute top-0 right-0 left-0 z-30 flex items-center justify-between px-4 py-4 sm:px-8 sm:py-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/25 bg-primary/10">
-              <AudioLines className="h-4 w-4 text-primary" />
+            <div className="flex h-9 w-9 items-center justify-center">
+              <img
+                src="/icon-512.png"
+                alt="Music Bar"
+                className="h-8 w-8 rounded-xl"
+              />
             </div>
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-primary">Music bar</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.3em]">
+                Music bar
+              </p>
               <p className="mt-0.5 text-xs text-white/50">Now playing</p>
             </div>
           </div>
@@ -205,7 +237,9 @@ export function PlayerView() {
               disabled={isUpdating}
               className="h-7 gap-1.5 rounded-full border-white/10 bg-white/5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/80 backdrop-blur transition-all hover:bg-white/10 hover:text-white"
             >
-              <RefreshCw className={cn("w-3 h-3", isUpdating && "animate-spin")} />
+              <RefreshCw
+                className={cn("w-3 h-3", isUpdating && "animate-spin")}
+              />
               อัปเดตแอป
             </Button>
             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55 backdrop-blur">
@@ -222,94 +256,100 @@ export function PlayerView() {
             <div
               className={cn(
                 "relative w-full max-w-4xl overflow-hidden border border-white/10 bg-black/50 shadow-[0_26px_80px_rgba(0,0,0,0.36)] ring-1 ring-white/5 transition-all duration-500 aspect-video rounded-xl sm:rounded-2xl",
-                isFullscreen && "fixed inset-0 z-[60] h-[100dvh] w-full max-w-none rounded-none border-none",
+                isFullscreen &&
+                  "fixed inset-0 z-[60] h-[100dvh] w-full max-w-none rounded-none border-none",
               )}
             >
-            {/* The actual target where PersistentYouTubePlayer will move the iframe */}
-            <div
-              id="video-target-rect"
-              className="w-full h-full absolute inset-0"
-            />
+              {/* The actual target where PersistentYouTubePlayer will move the iframe */}
+              <div
+                id="video-target-rect"
+                className="w-full h-full absolute inset-0"
+              />
 
-            {/* Interaction Overlay on video: toggle play when controls visible */}
-            <div
-              className="absolute inset-0 z-[70] cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (showControls) {
-                  togglePlay();
-                } else {
-                  setShowControls(true);
-                }
-              }}
-            />
-
-            {/* Top Controls (Video/Fullscreen buttons) */}
-            <div
-              className={cn(
-                "absolute inset-0 z-[95] flex items-start justify-between p-3 transition-opacity pointer-events-none sm:p-5",
-                showControls ? "opacity-100" : "opacity-0",
-              )}
-            >
-              <button
-                className="pointer-events-auto flex h-10 w-10 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
+              {/* Interaction Overlay on video: toggle play when controls visible */}
+              <div
+                className="absolute inset-0 z-[70] cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsVideoMode(!isVideoMode);
+                  if (showControls) {
+                    togglePlay();
+                  } else {
+                    setShowControls(true);
+                  }
                 }}
-                title={isVideoMode ? "โหมดเพลง" : "โหมดวิดีโอ"}
-              >
-                <AudioLines className={cn("h-4 w-4", isVideoMode ? "text-primary" : "text-white/70")} />
-              </button>
+              />
 
-              <button
-                className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsFullscreen(!isFullscreen);
-                }}
-                title={isFullscreen ? "ย่อหน้าจอ" : "ขยายเต็มจอ"}
+              {/* Top Controls (Video/Fullscreen buttons) */}
+              <div
+                className={cn(
+                  "absolute inset-0 z-[95] flex items-start justify-between p-3 transition-opacity pointer-events-none sm:p-5",
+                  showControls ? "opacity-100" : "opacity-0",
+                )}
               >
-                {isFullscreen ? (
-                  <Minimize2 className="w-5 h-5 text-white" />
-                ) : (
-                  <Maximize2 className="w-5 h-5 text-white" />
-                )}
-              </button>
-            </div>
+                <button
+                  className="pointer-events-auto flex h-10 w-10 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsVideoMode(!isVideoMode);
+                  }}
+                  title={isVideoMode ? "โหมดเพลง" : "โหมดวิดีโอ"}
+                >
+                  <AudioLines
+                    className={cn(
+                      "h-4 w-4",
+                      isVideoMode ? "text-primary" : "text-white/70",
+                    )}
+                  />
+                </button>
 
-            {/* Song Info Overlay (bottom of video) */}
-            <div
-              className={cn(
-                "pointer-events-none absolute right-0 bottom-0 left-0 z-[90] bg-gradient-to-t from-black/90 via-black/45 to-transparent p-5 pt-20 transition-opacity sm:p-9 sm:pt-28",
-                showControls ? "opacity-100" : "opacity-0",
-              )}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                {playMode === "request" && (
-                  <Badge className="bg-accent text-accent-foreground border-none text-[10px] uppercase tracking-widest px-3 py-0.5 rounded-full">
-                    Requested
-                  </Badge>
-                )}
-                {isShuffle && (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] uppercase tracking-widest px-3 py-0.5 border-white/20 text-white rounded-full bg-white/5 backdrop-blur-sm"
-                  >
-                    Shuffle
-                  </Badge>
-                )}
+                <button
+                  className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsFullscreen(!isFullscreen);
+                  }}
+                  title={isFullscreen ? "ย่อหน้าจอ" : "ขยายเต็มจอ"}
+                >
+                  {isFullscreen ? (
+                    <Minimize2 className="w-5 h-5 text-white" />
+                  ) : (
+                    <Maximize2 className="w-5 h-5 text-white" />
+                  )}
+                </button>
               </div>
-              <h2 className="mb-2 line-clamp-2 max-w-3xl text-2xl font-semibold leading-[1.1] tracking-tight text-white drop-shadow-lg sm:text-4xl">
-                {currentSong.title}
-              </h2>
-              <p className="text-sm font-medium text-white/65 drop-shadow-md sm:text-base">
-                {"requested_by" in currentSong &&
-                (currentSong as SongRequest).requested_by
-                  ? `Requested by: ${(currentSong as SongRequest).requested_by}`
-                  : "Music Bar Selection"}
-              </p>
-            </div>
+
+              {/* Song Info Overlay (bottom of video) */}
+              <div
+                className={cn(
+                  "pointer-events-none absolute right-0 bottom-0 left-0 z-[90] bg-gradient-to-t from-black/90 via-black/45 to-transparent p-5 pt-20 transition-opacity sm:p-9 sm:pt-28",
+                  showControls ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  {playMode === "request" && (
+                    <Badge className="bg-accent text-accent-foreground border-none text-[10px] uppercase tracking-widest px-3 py-0.5 rounded-full">
+                      Requested
+                    </Badge>
+                  )}
+                  {isShuffle && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] uppercase tracking-widest px-3 py-0.5 border-white/20 text-white rounded-full bg-white/5 backdrop-blur-sm"
+                    >
+                      Shuffle
+                    </Badge>
+                  )}
+                </div>
+                <h2 className="mb-2 line-clamp-2 max-w-3xl text-2xl font-semibold leading-[1.1] tracking-tight text-white drop-shadow-lg sm:text-4xl">
+                  {currentSong.title}
+                </h2>
+                <p className="text-sm font-medium text-white/65 drop-shadow-md sm:text-base">
+                  {"requested_by" in currentSong &&
+                  (currentSong as SongRequest).requested_by
+                    ? `Requested by: ${(currentSong as SongRequest).requested_by}`
+                    : "Music Bar Selection"}
+                </p>
+              </div>
             </div>
           ) : (
             <section className="grid w-full max-w-6xl gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.65fr)]">
@@ -321,7 +361,10 @@ export function PlayerView() {
                       <img
                         src={currentSong.thumbnail}
                         alt={currentSong.title}
-                        className={cn("h-full w-full object-cover transition-transform duration-700", isPlaying && "scale-105")}
+                        className={cn(
+                          "h-full w-full object-cover transition-transform duration-700",
+                          isPlaying && "scale-105",
+                        )}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
@@ -337,8 +380,14 @@ export function PlayerView() {
                       {[40, 78, 55, 92, 62].map((height, index) => (
                         <span
                           key={height}
-                          className={cn("w-0.5 rounded-full bg-primary", isPlaying && "animate-pulse")}
-                          style={{ height: `${height}%`, animationDelay: `${index * 120}ms` }}
+                          className={cn(
+                            "w-0.5 rounded-full bg-primary",
+                            isPlaying && "animate-pulse",
+                          )}
+                          style={{
+                            height: `${height}%`,
+                            animationDelay: `${index * 120}ms`,
+                          }}
                         />
                       ))}
                     </div>
@@ -346,15 +395,33 @@ export function PlayerView() {
 
                   <div className="min-w-0">
                     <div className="mb-4 flex flex-wrap items-center gap-2">
-                      <Badge className="border-primary/20 bg-primary/10 text-primary">Now playing</Badge>
-                      {playMode === "request" && <Badge variant="outline" className="border-white/15 text-white/65">Requested</Badge>}
-                      {isShuffle && <Badge variant="outline" className="border-white/15 text-white/65">Shuffle</Badge>}
+                      <Badge className="border-primary/20 bg-primary/10 text-primary">
+                        Now playing
+                      </Badge>
+                      {playMode === "request" && (
+                        <Badge
+                          variant="outline"
+                          className="border-white/15 text-white/65"
+                        >
+                          Requested
+                        </Badge>
+                      )}
+                      {isShuffle && (
+                        <Badge
+                          variant="outline"
+                          className="border-white/15 text-white/65"
+                        >
+                          Shuffle
+                        </Badge>
+                      )}
                     </div>
                     <h1 className="line-clamp-3 text-2xl font-semibold leading-[1.08] tracking-tight text-white sm:text-4xl">
                       {currentSong.title}
                     </h1>
                     <p className="mt-3 text-sm text-white/55">
-                      {requestedBy ? `Requested by ${requestedBy}` : "Curated for Music Bar"}
+                      {requestedBy
+                        ? `Requested by ${requestedBy}`
+                        : "Curated for Music Bar"}
                     </p>
 
                     <div className="mt-8">
@@ -363,18 +430,29 @@ export function PlayerView() {
                         <span>{formatTime(duration)}</span>
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                        <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
+                        <div
+                          className="h-full rounded-full bg-primary transition-[width] duration-300"
+                          style={{ width: `${progress}%` }}
+                        />
                       </div>
                     </div>
 
                     <div className="mt-6 grid grid-cols-2 gap-2">
                       <div className="rounded-xl border border-white/10 bg-black/10 p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">Source</p>
-                        <p className="mt-1.5 truncate text-sm font-medium text-white/80">{currentPlaylistName}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                          Source
+                        </p>
+                        <p className="mt-1.5 truncate text-sm font-medium text-white/80">
+                          {currentPlaylistName}
+                        </p>
                       </div>
                       <div className="rounded-xl border border-white/10 bg-black/10 p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">Playback</p>
-                        <p className="mt-1.5 text-sm font-medium text-white/80">{isPlaying ? "Playing live" : "Paused"}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/35">
+                          Playback
+                        </p>
+                        <p className="mt-1.5 text-sm font-medium text-white/80">
+                          {isPlaying ? "Playing live" : "Paused"}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -384,21 +462,39 @@ export function PlayerView() {
               <aside className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <div className="player-glass-card rounded-2xl p-4 sm:p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-primary">Up next</p>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">01</span>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-primary">
+                      Up next
+                    </p>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">
+                      01
+                    </span>
                   </div>
                   {nextSong ? (
                     <div className="mt-4 flex items-center gap-3">
                       <div className="h-16 w-16 shrink-0 overflow-hidden rounded border border-white/10 bg-white/5">
-                        {nextSong.thumbnail ? <img src={nextSong.thumbnail} alt={nextSong.title} className="h-full w-full object-cover" /> : <Music2 className="m-5 h-6 w-6 text-white/30" />}
+                        {nextSong.thumbnail ? (
+                          <img
+                            src={nextSong.thumbnail}
+                            alt={nextSong.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Music2 className="m-5 h-6 w-6 text-white/30" />
+                        )}
                       </div>
                       <div className="min-w-0">
-                        <p className="line-clamp-2 text-sm font-medium leading-snug text-white/85">{nextSong.title}</p>
-                        <p className="mt-1 text-xs text-white/40">Next in queue</p>
+                        <p className="line-clamp-2 text-sm font-medium leading-snug text-white/85">
+                          {nextSong.title}
+                        </p>
+                        <p className="mt-1 text-xs text-white/40">
+                          Next in queue
+                        </p>
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-4 text-sm text-white/45">ไม่มีเพลงถัดไปในคิว</p>
+                    <p className="mt-4 text-sm text-white/45">
+                      ไม่มีเพลงถัดไปในคิว
+                    </p>
                   )}
                 </div>
                 <div className="player-glass-card rounded-2xl p-4 sm:p-5">
@@ -407,7 +503,9 @@ export function PlayerView() {
                       <Clock3 className="h-4 w-4 text-primary" />
                       <p className="text-sm font-medium">Mini playlist</p>
                     </div>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">Later</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">
+                      Later
+                    </span>
                   </div>
                   {miniPlaylist.length > 0 ? (
                     <div className="mt-3 divide-y divide-white/10">
@@ -418,17 +516,31 @@ export function PlayerView() {
                           onClick={() => playSong(song)}
                           className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-all duration-300 hover:bg-white/[0.075] hover:pl-3 hover:text-primary"
                         >
-                          <span className="w-4 text-[10px] font-medium tabular-nums text-white/30">{index + 1}</span>
+                          <span className="w-4 text-[10px] font-medium tabular-nums text-white/30">
+                            {index + 1}
+                          </span>
                           <div className="h-9 w-9 shrink-0 overflow-hidden rounded border border-white/10 bg-white/5">
-                            {song.thumbnail ? <img src={song.thumbnail} alt={song.title} className="h-full w-full object-cover" /> : <Music2 className="m-2.5 h-4 w-4 text-white/30" />}
+                            {song.thumbnail ? (
+                              <img
+                                src={song.thumbnail}
+                                alt={song.title}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Music2 className="m-2.5 h-4 w-4 text-white/30" />
+                            )}
                           </div>
-                          <p className="line-clamp-2 text-xs font-medium leading-snug text-white/70 transition-colors group-hover:text-primary">{song.title}</p>
+                          <p className="line-clamp-2 text-xs font-medium leading-snug text-white/70 transition-colors group-hover:text-primary">
+                            {song.title}
+                          </p>
                           <Play className="ml-auto h-3.5 w-3.5 shrink-0 text-white/0 transition-colors group-hover:text-primary" />
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <p className="mt-3 text-xs text-white/45">ยังไม่มีเพลงเพิ่มเติมในคิว</p>
+                    <p className="mt-3 text-xs text-white/45">
+                      ยังไม่มีเพลงเพิ่มเติมในคิว
+                    </p>
                   )}
                 </div>
               </aside>

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { ServiceWorkerRegistration } from '@/components/sw-registration'
+import { ThemeInitializer } from '@/components/theme-initializer'
 import { PlayerProvider } from '@/context/player-context'
 import './globals.css'
 
@@ -58,6 +59,7 @@ export default function RootLayout({
       </head>
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased min-h-screen`}>
         <PlayerProvider>
+          <ThemeInitializer />
           <ServiceWorkerRegistration />
           {children}
         </PlayerProvider>
