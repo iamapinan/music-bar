@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -38,6 +38,98 @@ import { usePlayer } from "@/context/player-context";
 import { QueueList } from "./queue-list";
 import { cn } from "@/lib/utils";
 
+function formatTime(seconds: number) {
+  if (!seconds || isNaN(seconds)) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+/** Lightweight seek bar — no Radix, no React reconciliation flicker */
+function SeekBar({
+  currentTime: ct,
+  duration: dur,
+  onSeek,
+}: {
+  currentTime: number;
+  duration: number;
+  onSeek: (t: number) => void;
+}) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const [dragPct, setDragPct] = useState(0);
+  const isDragging = useRef(false);
+
+  const max = dur || 100;
+  const pct = dragging
+    ? dragPct
+    : max > 0
+      ? Math.min((ct / max) * 100, 100)
+      : 0;
+
+  const getPct = useCallback((clientX: number) => {
+    if (!barRef.current) return 0;
+    const rect = barRef.current.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      isDragging.current = true;
+      setDragging(true);
+      const p = getPct(e.clientX);
+      setDragPct(p * 100);
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [getPct],
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging.current) return;
+      const p = getPct(e.clientX);
+      setDragPct(p * 100);
+    },
+    [getPct],
+  );
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      setDragging(false);
+      const p = getPct(e.clientX);
+      onSeek(p * max);
+    },
+    [getPct, max, onSeek],
+  );
+
+  return (
+    <div
+      ref={barRef}
+      className="group absolute right-0 bottom-[4.5rem] left-0 z-20 h-5 flex items-center cursor-pointer sm:bottom-24"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+      style={{ touchAction: "none" }}
+    >
+      <div className="relative w-full h-1 rounded-full overflow-hidden bg-white/10 group-hover:h-1.5 transition-[height] duration-150">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-primary"
+          style={{ width: `${pct}%` }}
+        />
+        {/* Thumb */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-3.5 rounded-full border-2 border-primary bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+          style={{ left: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function PlayerBottomBar() {
   const {
     isPlaying,
@@ -66,7 +158,7 @@ export function PlayerBottomBar() {
   const [isDraggingTime, setIsDraggingTime] = useState(false);
   const [dragTime, setDragTime] = useState(0);
 
-  // Resolve tenant slug: from pathname (player page) or localStorage (saved by admin-shell)
+  // Resolve tenant slug
   const [tenantSlug, setTenantSlug] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,14 +170,14 @@ export function PlayerBottomBar() {
     }
   }, [pathname]);
 
-  const formatTime = (seconds: number) => {
-    if (!seconds || isNaN(seconds)) return "0:00";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
-
   const displayTime = isDraggingTime ? dragTime : currentTime;
+
+  const handleSeek = useCallback(
+    (t: number) => {
+      playerRef.current?.seekTo(t);
+    },
+    [playerRef],
+  );
 
   if (!currentSong) {
     return (
@@ -101,7 +193,7 @@ export function PlayerBottomBar() {
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-[100] transition-all duration-500",
+        "fixed bottom-0 left-0 right-0 z-[100] transition-[transform,opacity] duration-500",
         pathname === "/" && isVideoMode && isFullscreen && !showControls
           ? "translate-y-24 opacity-0 pointer-events-none"
           : "translate-y-0 opacity-100 pointer-events-auto",
@@ -113,23 +205,14 @@ export function PlayerBottomBar() {
           pathname === "/admin" && "admin-player-dock",
         )}
       >
-        {/* Progress Bar (Integrated at top) */}
-        <div className="group absolute right-0 bottom-[4.5rem] left-0 z-20 h-5 flex items-center cursor-pointer sm:bottom-24">
-          <Slider
-            value={[displayTime]}
-            max={duration || 100}
-            step={1}
-            onValueChange={(vals) => {
-              setIsDraggingTime(true);
-              setDragTime(vals[0]);
-            }}
-            onValueCommit={(vals) => {
-              setIsDraggingTime(false);
-              playerRef.current?.seekTo(vals[0]);
-            }}
-            className="w-full [&_[data-slot=slider-track]]:h-1 group-hover:[&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:transition-[height] [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:opacity-0 group-hover:[&_[data-slot=slider-thumb]]:opacity-100 focus-within:[&_[data-slot=slider-thumb]]:opacity-100 [&_[data-slot=slider-thumb]]:transition-opacity [&_[data-slot=slider-thumb]]:size-3.5 [&_[data-slot=slider-thumb]]:border-primary"
-          />
-        </div>
+        <SeekBar
+          currentTime={displayTime}
+          duration={duration}
+          onSeek={(t) => {
+            setIsDraggingTime(false);
+            handleSeek(t);
+          }}
+        />
 
         <div className="relative z-10 flex h-[4.5rem] items-center justify-between gap-1 px-2.5 sm:h-24 sm:gap-4 sm:px-4">
           {/* Left: Navigation & Song Info */}
@@ -177,7 +260,7 @@ export function PlayerBottomBar() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Music2 className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground/30" />
+                    <Music2 className="w-5 h-5 sm:w-6 sm:h-6 text-white/20" />
                   </div>
                 )}
               </div>
@@ -186,7 +269,7 @@ export function PlayerBottomBar() {
               <h3 className="text-xs sm:text-base font-bold truncate text-white leading-tight">
                 {currentSong.title}
               </h3>
-              <p className="text-[9px] sm:text-xs text-base font-medium mt-0.5 truncate uppercase tracking-wider">
+              <p className="text-[9px] sm:text-xs text-white/90 font-medium mt-0.5 truncate uppercase tracking-wider">
                 {"requested_by" in currentSong
                   ? `${currentSong.requested_by || "ลูกค้า"}`
                   : "Playlist"}
@@ -330,7 +413,7 @@ export function PlayerBottomBar() {
 
             {/* Mobile/Tablet "More" Menu & Primary Actions */}
             <div className="flex items-center gap-0.5 sm:gap-2 lg:hidden">
-              {/* Video Toggle (Always useful) */}
+              {/* Video Toggle */}
               <Button
                 variant="ghost"
                 size="icon"
