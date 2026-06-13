@@ -65,7 +65,7 @@ export function LandingPage() {
         <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3" aria-label="Music Bar home">
             <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-              <img src="/icon.svg" alt="" className="h-8 w-8 rounded-xl object-contain" />
+              <img src="/icon-512.png" alt="" className="h-8 w-8 rounded-xl object-cover" />
               <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_18px_rgba(52,211,153,0.9)]" />
             </span>
             <span>
