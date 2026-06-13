@@ -206,38 +206,6 @@ function PlaylistCard({
         {/* Gradient overlay + Hover actions */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-        {/* Checkbox for stream selection */}
-        <button
-          type="button"
-          aria-label={`เลือก ${playlist.name} สำหรับเล่นต่อเนื่อง`}
-          className={cn(
-            "absolute left-2.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-md border border-white/25 bg-black/40 text-white/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-black/60 hover:text-white",
-            isSelected && "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_oklch(0.76_0.17_158/0.35)]",
-          )}
-          onClick={onToggleSelect}
-        >
-          {isSelected ? (
-            <CheckSquare className="h-3 w-3" />
-          ) : (
-            <Square className="h-3 w-3" />
-          )}
-        </button>
-
-        {/* Default badge */}
-        {playlist.is_default && (
-          <span className="absolute right-2.5 top-2.5 z-10 rounded-md border border-white/15 bg-black/50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-white/80 backdrop-blur-sm">
-            หลัก
-          </span>
-        )}
-
-        {/* Now Playing indicator */}
-        {isPlaying && isCurrent && (
-          <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-sm">
-            <EqualizerBars />
-            <span className="text-[10px] font-bold text-white/90">กำลังเล่น</span>
-          </div>
-        )}
-
         {/* Hover overlay actions - centered, clean, no slide */}
         <div
           className={cn(
@@ -294,6 +262,38 @@ function PlaylistCard({
             </button>
           )}
         </div>
+
+        {/* Checkbox for stream selection - Rendered AFTER hover overlay so it sits on top and remains clickable */}
+        <button
+          type="button"
+          aria-label={`เลือก ${playlist.name} สำหรับเล่นต่อเนื่อง`}
+          className={cn(
+            "absolute left-2.5 top-2.5 z-20 flex h-6 w-6 items-center justify-center rounded-md border border-white/25 bg-black/40 text-white/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-black/60 hover:text-white",
+            isSelected && "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_oklch(0.76_0.17_158/0.35)]",
+          )}
+          onClick={onToggleSelect}
+        >
+          {isSelected ? (
+            <CheckSquare className="h-3 w-3" />
+          ) : (
+            <Square className="h-3 w-3" />
+          )}
+        </button>
+
+        {/* Default badge */}
+        {playlist.is_default && (
+          <span className="absolute right-2.5 top-2.5 z-20 rounded-md border border-white/15 bg-black/50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-white/80 backdrop-blur-sm">
+            หลัก
+          </span>
+        )}
+
+        {/* Now Playing indicator */}
+        {isPlaying && isCurrent && (
+          <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-sm">
+            <EqualizerBars />
+            <span className="text-[10px] font-bold text-white/90">กำลังเล่น</span>
+          </div>
+        )}
       </div>
 
       {/* Info + Always-visible action row */}
