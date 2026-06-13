@@ -68,10 +68,10 @@ export async function upsertUserFromSession(sessionUser: SessionUser) {
   const result = await sql<DbUser[]>`
     INSERT INTO users (firebase_uid, email, name, photo_url, last_login_at)
     VALUES (${sessionUser.firebaseUid}, ${sessionUser.email}, ${sessionUser.name}, ${sessionUser.picture}, NOW())
-    ON CONFLICT (firebase_uid) DO UPDATE
-    SET email = EXCLUDED.email,
-        name = EXCLUDED.name,
-        photo_url = EXCLUDED.photo_url,
+    ON CONFLICT (email) DO UPDATE
+    SET firebase_uid = EXCLUDED.firebase_uid,
+        name = COALESCE(EXCLUDED.name, users.name),
+        photo_url = COALESCE(EXCLUDED.photo_url, users.photo_url),
         last_login_at = NOW(),
         updated_at = NOW()
     RETURNING *

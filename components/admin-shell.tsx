@@ -209,8 +209,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     >
       <aside
         className={cn(
-          "admin-command-rail sticky top-0 z-30 hidden h-[calc(100dvh-7rem)] shrink-0 flex-col border-r border-border/60 p-4 transition-[width] duration-300 xl:flex",
-          isSidebarCollapsed ? "w-[92px]" : "w-[280px]",
+          "admin-command-rail sticky top-0 z-30 hidden h-[calc(100dvh-7rem)] shrink-0 flex-col border-r border-border/60 p-3 transition-[width] duration-300 xl:flex",
+          isSidebarCollapsed ? "w-[76px]" : "w-[240px]",
         )}
       >
         <div
@@ -495,11 +495,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </nav>
         </ScrollArea>
 
-        <div className="mt-4 space-y-1 border-t border-border/60 pt-3">
+        <div className="mt-3.5 space-y-1 border-t border-border/60 pt-2.5">
           <Button
             variant="ghost"
             className={cn(
-              "h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
+              "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
               isSidebarCollapsed ? "justify-center" : "justify-start",
             )}
             onClick={toggleTheme}
@@ -517,7 +517,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Button
             variant="ghost"
             className={cn(
-              "h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
+              "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-primary",
               isSidebarCollapsed ? "justify-center" : "justify-start",
             )}
             onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
@@ -535,7 +535,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Button
             variant="ghost"
             className={cn(
-              "h-11 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-destructive",
+              "h-10 w-full gap-3 rounded-xl px-3 text-muted-foreground hover:text-destructive",
               isSidebarCollapsed ? "justify-center" : "justify-start",
             )}
             onClick={logout}
