@@ -204,7 +204,7 @@ function StatCard({
         </p>
         <p
           className={cn(
-            "mt-0.5 text-lg font-extrabold tracking-tight tabular-nums",
+            "mt-0.5 text-lg font-extrabold tracking-tight tabular-nums truncate",
             accent ? "text-primary" : "text-foreground",
           )}
         >
@@ -960,6 +960,59 @@ export function AdminView() {
       </section>
 
       {/* ════════════════════════════════════════════════════
+         RECOMMENDED PLAYLISTS
+      ════════════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 shadow-lg sm:p-5">
+        <div className="pointer-events-none absolute -left-16 -bottom-16 h-36 w-36 rounded-full bg-primary/[0.03] blur-[70px]" />
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+              Recommended
+            </p>
+            <h2 className="mt-1 text-base font-extrabold tracking-tight text-foreground">
+              เพลย์ลิสต์แนะนำและกำลังนิยม
+            </h2>
+          </div>
+          <p className="max-w-xs text-xs leading-relaxed text-muted-foreground sm:text-right">
+            กดที่การ์ดเพื่อค้นหาเพลย์ลิสต์บน YouTube และนำเข้าคลังเพลงของร้าน
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {recommendedPlaylists.map((item, i) => {
+            const Icon = IconMap[item.icon];
+            return (
+              <button
+                key={item.query}
+                type="button"
+                onClick={() => handleRecommendedPlaylist(item.query)}
+                className={cn(
+                  "group relative overflow-hidden rounded-xl border bg-gradient-to-br p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.98]",
+                  item.color,
+                )}
+                style={{ animation: `slide-up 0.3s ease-out ${i * 0.06}s both` }}
+              >
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-foreground to-transparent opacity-0 transition-opacity group-hover:opacity-[0.04]" />
+                <div
+                  className={cn(
+                    "mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110",
+                    item.iconColor,
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-sm font-bold text-foreground transition-colors duration-300 group-hover:text-primary">
+                  {item.title}
+                </h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground transition-colors duration-300 group-hover:text-foreground/70">
+                  {item.detail}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
          WORKSPACE: TRACKS / SEARCH / REQUESTS
       ════════════════════════════════════════════════════ */}
       <section className="flex min-h-[60vh] flex-col gap-4 xl:min-h-[68vh]">
@@ -1442,48 +1495,6 @@ export function AdminView() {
               )}
             </ScrollArea>
 
-            {/* Recommended playlists banner */}
-            {!isSearching && searchResults.length === 0 && ytPlaylistResults.length === 0 && (
-              <div className="shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowRecommended(!showRecommended)}
-                  className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {showRecommended ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                  เพลย์ลิสต์แนะนำ
-                </button>
-                {showRecommended && (
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5 animate-in slide-in-from-top-2 fade-in duration-300">
-                    {recommendedPlaylists.map((item) => {
-                      const Icon = IconMap[item.icon];
-                      return (
-                        <button
-                          key={item.query}
-                          type="button"
-                          onClick={() => handleRecommendedPlaylist(item.query)}
-                          className={cn(
-                            "group relative overflow-hidden rounded-xl border bg-gradient-to-br p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
-                            item.color,
-                          )}
-                        >
-                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-foreground to-transparent opacity-0 transition-opacity group-hover:opacity-[0.04]" />
-                          <div className={cn("mb-3 flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300 group-hover:scale-110", item.iconColor)}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <h3 className="text-sm font-bold text-foreground transition-colors group-hover:text-primary">
-                            {item.title}
-                          </h3>
-                          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                            {item.detail}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 
