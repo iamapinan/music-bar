@@ -229,9 +229,9 @@ export function PlayerBottomBar() {
               </Button>
             </div>
             <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/60 font-medium tabular-nums">
-              <span>{duration > 0 ? formatTime(displayTime) : '--:--'}</span>
+              <span>{formatTime(displayTime)}</span>
               <span>/</span>
-              <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
+              <span>{formatTime(duration)}</span>
             </div>
           </div>
 
