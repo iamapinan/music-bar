@@ -253,102 +253,134 @@ export function PlayerView() {
       <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center p-3 pb-[11rem] sm:p-8 sm:pb-[13rem]">
         <div className="relative flex h-full w-full max-w-6xl flex-col items-center justify-center pt-14 sm:pt-16">
           {isVideoMode ? (
-            <div
-              className={cn(
-                "relative w-full max-w-4xl overflow-hidden border border-white/10 bg-black/50 shadow-[0_26px_80px_rgba(0,0,0,0.36)] ring-1 ring-white/5 transition-all duration-500 aspect-video rounded-xl sm:rounded-2xl",
-                isFullscreen &&
-                  "fixed inset-0 z-[60] h-[100dvh] w-full max-w-none rounded-none border-none",
-              )}
-            >
-              {/* The actual target where PersistentYouTubePlayer will move the iframe */}
-              <div
-                id="video-target-rect"
-                className="w-full h-full absolute inset-0"
-              />
-
-              {/* Interaction Overlay on video: toggle play when controls visible */}
-              <div
-                className="absolute inset-0 z-[70] cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (showControls) {
-                    togglePlay();
-                  } else {
-                    setShowControls(true);
-                  }
-                }}
-              />
-
-              {/* Top Controls (Video/Fullscreen buttons) */}
-              <div
-                className={cn(
-                  "absolute inset-0 z-[95] flex items-start justify-between p-3 transition-opacity pointer-events-none sm:p-5",
-                  showControls ? "opacity-100" : "opacity-0",
-                )}
-              >
-                <button
-                  className="pointer-events-auto flex h-10 w-10 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsVideoMode(!isVideoMode);
-                  }}
-                  title={isVideoMode ? "โหมดเพลง" : "โหมดวิดีโอ"}
-                >
-                  <AudioLines
+            <div className="relative w-full max-w-4xl flex items-center justify-center">
+              {/* Theater Light / Motion Glow effect */}
+              {!isFullscreen && currentSong.thumbnail && (
+                <div className="absolute inset-0 -z-10 pointer-events-none select-none overflow-visible">
+                  {/* Layer 1: Outer wide blur */}
+                  <img
+                    src={currentSong.thumbnail}
+                    alt=""
                     className={cn(
-                      "h-4 w-4",
-                      isVideoMode ? "text-primary" : "text-white/70",
+                      "absolute inset-[-10%] h-[120%] w-[120%] object-cover opacity-75 mix-blend-screen transition-opacity duration-1000",
+                      isPlaying ? "animate-theater-drift animate-theater-pulse" : "opacity-35"
                     )}
+                    style={{
+                      filter: "blur(64px) saturate(1.8) brightness(1.1)",
+                    }}
                   />
-                </button>
+                  {/* Layer 2: Tight bright glow */}
+                  <img
+                    src={currentSong.thumbnail}
+                    alt=""
+                    className={cn(
+                      "absolute inset-[-4%] h-[108%] w-[108%] object-cover opacity-60 mix-blend-screen transition-opacity duration-1000",
+                      isPlaying ? "animate-theater-drift-reverse animate-theater-pulse" : "opacity-25"
+                    )}
+                    style={{
+                      filter: "blur(36px) saturate(2) brightness(1)",
+                    }}
+                  />
+                </div>
+              )}
 
-                <button
-                  className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsFullscreen(!isFullscreen);
-                  }}
-                  title={isFullscreen ? "ย่อหน้าจอ" : "ขยายเต็มจอ"}
-                >
-                  {isFullscreen ? (
-                    <Minimize2 className="w-5 h-5 text-white" />
-                  ) : (
-                    <Maximize2 className="w-5 h-5 text-white" />
-                  )}
-                </button>
-              </div>
-
-              {/* Song Info Overlay (bottom of video) */}
               <div
                 className={cn(
-                  "pointer-events-none absolute right-0 bottom-0 left-0 z-[90] bg-gradient-to-t from-black/90 via-black/45 to-transparent p-5 pt-20 transition-opacity sm:p-9 sm:pt-28",
-                  showControls ? "opacity-100" : "opacity-0",
+                  "relative w-full overflow-hidden border border-white/10 bg-black/50 shadow-[0_26px_80px_rgba(0,0,0,0.36)] ring-1 ring-white/5 transition-all duration-500 aspect-video rounded-xl sm:rounded-2xl",
+                  isFullscreen &&
+                    "fixed inset-0 z-[60] h-[100dvh] w-full max-w-none rounded-none border-none",
                 )}
               >
-                <div className="flex items-center gap-3 mb-3">
-                  {playMode === "request" && (
-                    <Badge className="bg-accent text-accent-foreground border-none text-[10px] uppercase tracking-widest px-3 py-0.5 rounded-full">
-                      Requested
-                    </Badge>
+                {/* The actual target where PersistentYouTubePlayer will move the iframe */}
+                <div
+                  id="video-target-rect"
+                  className="w-full h-full absolute inset-0"
+                />
+
+                {/* Interaction Overlay on video: toggle play when controls visible */}
+                <div
+                  className="absolute inset-0 z-[70] cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (showControls) {
+                      togglePlay();
+                    } else {
+                      setShowControls(true);
+                    }
+                  }}
+                />
+
+                {/* Top Controls (Video/Fullscreen buttons) */}
+                <div
+                  className={cn(
+                    "absolute inset-0 z-[95] flex items-start justify-between p-3 transition-opacity pointer-events-none sm:p-5",
+                    showControls ? "opacity-100" : "opacity-0",
                   )}
-                  {isShuffle && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] uppercase tracking-widest px-3 py-0.5 border-white/20 text-white rounded-full bg-white/5 backdrop-blur-sm"
-                    >
-                      Shuffle
-                    </Badge>
-                  )}
+                >
+                  <button
+                    className="pointer-events-auto flex h-10 w-10 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsVideoMode(!isVideoMode);
+                    }}
+                    title={isVideoMode ? "โหมดเพลง" : "โหมดวิดีโอ"}
+                  >
+                    <AudioLines
+                      className={cn(
+                        "h-4 w-4",
+                        isVideoMode ? "text-primary" : "text-white/70",
+                      )}
+                    />
+                  </button>
+
+                  <button
+                    className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 backdrop-blur-md transition-all hover:bg-black/60 active:scale-95"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsFullscreen(!isFullscreen);
+                    }}
+                    title={isFullscreen ? "ย่อหน้าจอ" : "ขยายเต็มจอ"}
+                  >
+                    {isFullscreen ? (
+                      <Minimize2 className="w-5 h-5 text-white" />
+                    ) : (
+                      <Maximize2 className="w-5 h-5 text-white" />
+                    )}
+                  </button>
                 </div>
-                <h2 className="mb-2 line-clamp-2 max-w-3xl text-2xl font-semibold leading-[1.1] tracking-tight text-white drop-shadow-lg sm:text-4xl">
-                  {currentSong.title}
-                </h2>
-                <p className="text-sm font-medium text-white/65 drop-shadow-md sm:text-base">
-                  {"requested_by" in currentSong &&
-                  (currentSong as SongRequest).requested_by
-                    ? `Requested by: ${(currentSong as SongRequest).requested_by}`
-                    : "Music Bar Selection"}
-                </p>
+
+                {/* Song Info Overlay (bottom of video) */}
+                <div
+                  className={cn(
+                    "pointer-events-none absolute right-0 bottom-0 left-0 z-[90] bg-gradient-to-t from-black/90 via-black/45 to-transparent p-5 pt-20 transition-opacity sm:p-9 sm:pt-28",
+                    showControls ? "opacity-100" : "opacity-0",
+                  )}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    {playMode === "request" && (
+                      <Badge className="bg-accent text-accent-foreground border-none text-[10px] uppercase tracking-widest px-3 py-0.5 rounded-full">
+                        Requested
+                      </Badge>
+                    )}
+                    {isShuffle && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] uppercase tracking-widest px-3 py-0.5 border-white/20 text-white rounded-full bg-white/5 backdrop-blur-sm"
+                      >
+                        Shuffle
+                      </Badge>
+                    )}
+                  </div>
+                  <h2 className="mb-2 line-clamp-2 max-w-3xl text-2xl font-semibold leading-[1.1] tracking-tight text-white drop-shadow-lg sm:text-4xl">
+                    {currentSong.title}
+                  </h2>
+                  <p className="text-sm font-medium text-white/65 drop-shadow-md sm:text-base">
+                    {"requested_by" in currentSong &&
+                    (currentSong as SongRequest).requested_by
+                      ? `Requested by: ${(currentSong as SongRequest).requested_by}`
+                      : "Music Bar Selection"}
+                  </p>
+                </div>
               </div>
             </div>
           ) : (

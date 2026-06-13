@@ -94,7 +94,19 @@ export function usePlayer() {
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const tenantSlug = pathname?.match(/^\/play\/([^/]+)/)?.[1] || null
+  const initialSlug = pathname?.match(/^\/play\/([^/]+)/)?.[1] || null
+  const [tenantSlug, setTenantSlug] = useState<string | null>(initialSlug)
+
+  useEffect(() => {
+    const fromPath = pathname?.match(/^\/play\/([^/]+)/)?.[1] || null
+    if (fromPath) {
+      setTenantSlug(fromPath)
+    } else {
+      const active = localStorage.getItem('music_bar_active_tenant_slug')
+      setTenantSlug(active)
+    }
+  }, [pathname])
+
   const shouldLoadPlayerData = pathname !== '/'
   const tenantStoragePrefix = tenantSlug ? `music_bar:${tenantSlug}` : 'music_bar'
   const apiPath = useCallback((path: string) => {

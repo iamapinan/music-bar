@@ -1585,3 +1585,38 @@ html.light-theme .ring-white\/5 {
     transition: none !important;
   }
 }
+
+/* ===== Theater Light & Motion Glow Animations ===== */
+@keyframes theater-glow-drift {
+  0% {
+    transform: translate3d(-3%, -2%, 0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(3%, 3%, 0) scale(1.08) rotate(180deg);
+  }
+  100% {
+    transform: translate3d(-3%, -2%, 0) scale(1) rotate(360deg);
+  }
+}
+
+@keyframes theater-glow-pulse {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+.animate-theater-drift {
+  animation: theater-glow-drift 15s ease-in-out infinite alternate;
+}
+
+.animate-theater-drift-reverse {
+  animation: theater-glow-drift 12s ease-in-out infinite alternate-reverse;
+}
+
+.animate-theater-pulse {
+  animation: theater-glow-pulse 4s ease-in-out infinite;
+}
+
