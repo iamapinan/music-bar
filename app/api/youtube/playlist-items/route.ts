@@ -1,5 +1,36 @@
 import { NextResponse } from 'next/server'
 
+function getDemoPlaylistItems(errorMsg?: string) {
+  const suffix = errorMsg ? ` (Demo Mode: ${errorMsg})` : ' (No API Key)'
+  return {
+    items: [
+      {
+        id: 'dQw4w9WgXcQ',
+        youtube_id: 'dQw4w9WgXcQ',
+        title: `Demo Song 1${suffix} - Rick Astley - Never Gonna Give You Up`,
+        thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+        channelTitle: 'Demo Channel'
+      },
+      {
+        id: 'L_jWHffIx5E',
+        youtube_id: 'L_jWHffIx5E',
+        title: `Demo Song 2${suffix} - Smash Mouth - All Star`,
+        thumbnail: 'https://i.ytimg.com/vi/L_jWHffIx5E/mqdefault.jpg',
+        channelTitle: 'Demo Channel'
+      },
+      {
+        id: '9bZkp7q19f0',
+        youtube_id: '9bZkp7q19f0',
+        title: `Demo Song 3${suffix} - PSY - GANGNAM STYLE`,
+        thumbnail: 'https://i.ytimg.com/vi/9bZkp7q19f0/mqdefault.jpg',
+        channelTitle: 'Demo Channel'
+      }
+    ],
+    demo: true,
+    error: errorMsg
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const playlistId = searchParams.get('playlistId')
@@ -11,32 +42,7 @@ export async function GET(request: Request) {
   const apiKey = process.env.YOUTUBE_API_KEY
   
   if (!apiKey) {
-    // Return mock data for demo when no API key is set
-    return NextResponse.json({
-      items: [
-        {
-          id: 'dQw4w9WgXcQ',
-          youtube_id: 'dQw4w9WgXcQ',
-          title: 'Demo Song 1 (No API Key) - Rick Astley - Never Gonna Give You Up',
-          thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
-          channelTitle: 'Demo Channel'
-        },
-        {
-          id: 'L_jWHffIx5E',
-          youtube_id: 'L_jWHffIx5E',
-          title: 'Demo Song 2 (No API Key) - Smash Mouth - All Star',
-          thumbnail: 'https://i.ytimg.com/vi/L_jWHffIx5E/mqdefault.jpg',
-          channelTitle: 'Demo Channel'
-        },
-        {
-          id: '9bZkp7q19f0',
-          youtube_id: '9bZkp7q19f0',
-          title: 'Demo Song 3 (No API Key) - PSY - GANGNAM STYLE',
-          thumbnail: 'https://i.ytimg.com/vi/9bZkp7q19f0/mqdefault.jpg',
-          channelTitle: 'Demo Channel'
-        }
-      ]
-    })
+    return NextResponse.json(getDemoPlaylistItems())
   }
   
   try {
@@ -45,8 +51,9 @@ export async function GET(request: Request) {
     const data = await response.json()
     
     if (data.error) {
-      console.error('YouTube API error:', data.error)
-      return NextResponse.json({ error: 'YouTube API error' }, { status: 500 })
+      console.warn('YouTube API playlistItems error, falling back to demo data:', data.error)
+      const errorMsg = data.error.message || 'YouTube API error'
+      return NextResponse.json(getDemoPlaylistItems(errorMsg))
     }
     
     const formattedItems = data.items?.map((item: any) => ({
@@ -59,7 +66,8 @@ export async function GET(request: Request) {
     
     return NextResponse.json({ items: formattedItems })
   } catch (error) {
-    console.error('Error fetching playlist items:', error)
-    return NextResponse.json({ error: 'Failed to fetch playlist items' }, { status: 500 })
+    console.error('Error fetching playlist items, falling back to demo data:', error)
+    const errorMsg = error instanceof Error ? error.message : 'Failed to fetch playlist items'
+    return NextResponse.json(getDemoPlaylistItems(errorMsg))
   }
 }

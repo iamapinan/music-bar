@@ -39,7 +39,9 @@ export async function POST(request: Request) {
       } = await fetchRes.json()
 
       if (fetchData.error) {
-        return NextResponse.json({ error: 'YouTube API error' }, { status: 500 })
+        const errorMsg = (fetchData.error as any)?.message || 'YouTube API error'
+        console.error('YouTube API error during import:', fetchData.error)
+        return NextResponse.json({ error: `YouTube API error: ${errorMsg}` }, { status: 400 })
       }
 
       const items = fetchData.items?.map(item => ({
