@@ -160,12 +160,12 @@ export function PlayerBottomBar() {
                     pathname === "/admin"
                       ? "bg-primary/10 text-primary"
                       : "text-white/60 hover:text-white",
-                    )}
-                  >
-                    <LayoutDashboard className="w-5 h-5" />
-                  </Button>
-                </Link>
-              </div>
+                  )}
+                >
+                  <LayoutDashboard className="w-5 h-5" />
+                </Button>
+              </Link>
+            </div>
 
             <div className="relative group shrink-0">
               <div className="h-10 w-10 overflow-hidden rounded border border-white/10 bg-muted sm:h-16 sm:w-16">
@@ -186,7 +186,7 @@ export function PlayerBottomBar() {
               <h3 className="text-xs sm:text-base font-bold truncate text-white leading-tight">
                 {currentSong.title}
               </h3>
-              <p className="text-[9px] sm:text-xs text-white/90 font-medium mt-0.5 truncate uppercase tracking-wider">
+              <p className="text-[9px] sm:text-xs text-base font-medium mt-0.5 truncate uppercase tracking-wider">
                 {"requested_by" in currentSong
                   ? `${currentSong.requested_by || "ลูกค้า"}`
                   : "Playlist"}

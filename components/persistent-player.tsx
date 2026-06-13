@@ -233,7 +233,7 @@ export function PersistentYouTubePlayer() {
         setCurrentTime(time)
         setDuration(dur)
       }
-    }, 500)
+    }, 1000)
     return () => clearInterval(interval)
   }, [setCurrentTime, setDuration])
 

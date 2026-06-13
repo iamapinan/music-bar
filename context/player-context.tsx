@@ -642,6 +642,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [isPlaying])
 
   // ===================== Save/Resume Playback Position =====================
+  // Keep a ref to latest currentTime so the save interval doesn't re-run on every tick
+  const currentTimeRef = useRef(currentTime)
+  useEffect(() => { currentTimeRef.current = currentTime }, [currentTime])
+
   // Save current song + position every 5 seconds while playing
   useEffect(() => {
     if (!isInitialized || !currentSong) return
@@ -656,7 +660,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             artist: 'artist' in currentSong && currentSong.artist ? currentSong.artist : '',
             requested_by: 'requested_by' in currentSong ? (currentSong.requested_by || '') : '',
           },
-          position: currentTime,
+          position: currentTimeRef.current,
           savedAt: Date.now(),
         }))
       } catch {}
@@ -667,7 +671,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       clearInterval(interval)
       savePosition() // Save on unmount / song change
     }
-  }, [currentSong?.youtube_id, isInitialized, tenantStoragePrefix, currentTime])
+  }, [currentSong?.youtube_id, isInitialized, tenantStoragePrefix])
 
   // Seek to saved resume position once player is ready
   useEffect(() => {
