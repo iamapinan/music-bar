@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import useSWR from "swr";
 import {
   ChevronDown,
@@ -31,6 +31,16 @@ import {
   Coffee,
   Moon,
   Laptop,
+  Disc3,
+  Music,
+  Headphones,
+  Clock,
+  Album,
+  Mic2,
+  Library,
+  ArrowUpRight,
+  X,
+  ListMusic,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -53,77 +63,67 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
+/* ─── Configuration ─── */
 const recommendedPlaylists = [
   {
     title: "Thai pop hits 2026",
     detail: "เพลงไทยใหม่ ฟังง่าย เหมาะกับคาเฟ่และร้านอาหาร",
     query: "Thai pop hits 2026 playlist",
-    color:
-      "from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/15 hover:border-rose-500/40 hover:shadow-rose-500/5",
-    iconColor: "text-rose-400 bg-rose-500/10 border border-rose-500/20",
+    color: "from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/15 hover:border-rose-500/40",
+    iconColor: "text-rose-400 bg-rose-500/10 border-rose-500/20",
     icon: "Flame" as const,
   },
   {
     title: "Acoustic cafe",
     detail: "อะคูสติกเบา ๆ สำหรับช่วงกลางวัน",
     query: "acoustic cafe playlist",
-    color:
-      "from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/15 hover:border-amber-500/40 hover:shadow-amber-500/5",
-    iconColor: "text-amber-400 bg-amber-500/10 border border-amber-500/20",
+    color: "from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/15 hover:border-amber-500/40",
+    iconColor: "text-amber-400 bg-amber-500/10 border-amber-500/20",
     icon: "Coffee" as const,
   },
   {
     title: "Dinner lounge",
     detail: "โทนอุ่น สุภาพ เหมาะกับช่วงอาหารเย็น",
     query: "dinner lounge playlist",
-    color:
-      "from-indigo-500/10 via-indigo-500/5 to-transparent border-indigo-500/15 hover:border-indigo-500/40 hover:shadow-indigo-500/5",
-    iconColor: "text-indigo-400 bg-indigo-500/10 border border-indigo-500/20",
+    color: "from-indigo-500/10 via-indigo-500/5 to-transparent border-indigo-500/15 hover:border-indigo-500/40",
+    iconColor: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
     icon: "Moon" as const,
   },
   {
     title: "T-Pop popular",
     detail: "เพลงยอดนิยมที่ลูกค้ามักขอเปิด",
     query: "T-pop popular playlist",
-    color:
-      "from-violet-500/10 via-violet-500/5 to-transparent border-violet-500/15 hover:border-violet-500/40 hover:shadow-violet-500/5",
-    iconColor: "text-violet-400 bg-violet-500/10 border border-violet-500/20",
+    color: "from-violet-500/10 via-violet-500/5 to-transparent border-violet-500/15 hover:border-violet-500/40",
+    iconColor: "text-violet-400 bg-violet-500/10 border-violet-500/20",
     icon: "Sparkles" as const,
   },
   {
     title: "Lo-fi working bar",
     detail: "จังหวะนิ่งสำหรับร้านที่มีโซนนั่งทำงาน",
     query: "lofi cafe playlist",
-    color:
-      "from-cyan-500/10 via-cyan-500/5 to-transparent border-cyan-500/15 hover:border-cyan-500/40 hover:shadow-cyan-500/5",
-    iconColor: "text-cyan-400 bg-cyan-500/10 border border-cyan-500/20",
+    color: "from-cyan-500/10 via-cyan-500/5 to-transparent border-cyan-500/15 hover:border-cyan-500/40",
+    iconColor: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
     icon: "Laptop" as const,
   },
 ];
 
-const IconMap = {
-  Flame,
-  Coffee,
-  Moon,
-  Sparkles,
-  Laptop,
-};
+const IconMap = { Flame, Coffee, Moon, Sparkles, Laptop };
 
-// Beautiful Premium Playlist Cover Component (Standard rounded roundness)
-const PlaylistCover = ({
+/* ─── Beautiful Playlist Cover ─── */
+function PlaylistCover({
   playlist,
   className,
 }: {
   playlist: Playlist;
   className?: string;
-}) => {
+}) {
   if (playlist.cover_thumbnail) {
     return (
       <img
         src={playlist.cover_thumbnail}
         alt={playlist.name}
         className={cn(
-          "rounded object-cover shadow-sm border border-white/10 shrink-0",
+          "rounded object-cover shadow-sm border border-white/10 shrink-0 transition-all duration-500 group-hover:scale-105",
           className,
         )}
       />
@@ -151,8 +151,400 @@ const PlaylistCover = ({
       {firstLetters}
     </div>
   );
-};
+}
 
+/* ─── Animated Equalizer Bars ─── */
+function EqualizerBars() {
+  return (
+    <span className="playing-bars" aria-label="กำลังเล่น">
+      {[1, 2, 3, 4].map((i) => (
+        <span key={i} className="playing-bar" />
+      ))}
+    </span>
+  );
+}
+
+/* ─── Stat Card ─── */
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  accent = false,
+  delay = 0,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  accent?: boolean;
+  delay?: number;
+}) {
+  return (
+    <div
+      className={cn(
+        "group relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-500 hover:-translate-y-0.5",
+        accent
+          ? "border-primary/25 bg-primary/[0.04] shadow-[0_0_30px_oklch(0.76_0.17_158/0.08)]"
+          : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]",
+      )}
+      style={{ animation: `slide-up 0.4s ease-out ${delay}s both` }}
+    >
+      <div
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110",
+          accent
+            ? "bg-primary/15 text-primary shadow-[0_0_20px_oklch(0.76_0.17_158/0.15)]"
+            : "bg-white/[0.06] text-foreground/70",
+        )}
+      >
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          {label}
+        </p>
+        <p
+          className={cn(
+            "mt-0.5 text-lg font-extrabold tracking-tight tabular-nums",
+            accent ? "text-primary" : "text-foreground",
+          )}
+        >
+          {value}
+        </p>
+      </div>
+      {/* Subtle glow dot */}
+      {accent && (
+        <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_12px_oklch(0.76_0.17_158/0.6)]" />
+      )}
+    </div>
+  );
+}
+
+/* ─── Playlist Card (Horizontal Rack) ─── */
+function PlaylistCard({
+  playlist,
+  isCurrent,
+  isSelected,
+  isPlaying,
+  onSelect,
+  onToggleSelect,
+  onSetDefault,
+  onToggleEnabled,
+  onExport,
+  onDelete,
+}: {
+  playlist: Playlist;
+  isCurrent: boolean;
+  isSelected: boolean;
+  isPlaying: boolean;
+  onSelect: () => void;
+  onToggleSelect: (e: React.MouseEvent) => void;
+  onSetDefault: () => void;
+  onToggleEnabled: () => void;
+  onExport: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "group relative flex w-[130px] shrink-0 cursor-pointer flex-col gap-2 transition-all duration-500 sm:w-[148px] xl:w-[164px]",
+        isCurrent && "scale-[1.02]",
+        !playlist.is_enabled && "opacity-40",
+      )}
+      onClick={onSelect}
+    >
+      {/* Cover art */}
+      <div
+        className={cn(
+          "relative aspect-square w-full shrink-0 overflow-hidden rounded-2xl bg-muted shadow-lg transition-all duration-500",
+          isCurrent
+            ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_30px_oklch(0.76_0.17_158/0.2)]"
+            : "ring-1 ring-white/[0.06] group-hover:-translate-y-1.5 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] group-hover:ring-primary/30",
+        )}
+      >
+        <PlaylistCover playlist={playlist} className="h-full w-full text-lg" />
+
+        {/* Gradient overlay */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+        {/* Checkbox for stream selection */}
+        <button
+          type="button"
+          aria-label={`เลือก ${playlist.name} สำหรับเล่นต่อเนื่อง`}
+          className={cn(
+            "absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white shadow-sm backdrop-blur-md transition-all duration-300 hover:bg-black/50",
+            isSelected && "bg-primary text-primary-foreground border-primary shadow-[0_0_16px_oklch(0.76_0.17_158/0.4)]",
+          )}
+          onClick={onToggleSelect}
+        >
+          {isSelected ? (
+            <CheckSquare className="h-3.5 w-3.5" />
+          ) : (
+            <Square className="h-3.5 w-3.5" />
+          )}
+        </button>
+
+        {/* Default badge */}
+        {playlist.is_default && (
+          <span className="absolute right-2 top-2 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/90 backdrop-blur-md">
+            Default
+          </span>
+        )}
+
+        {/* Now Playing indicator */}
+        {isPlaying && isCurrent && (
+          <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 backdrop-blur-md">
+            <EqualizerBars />
+            <span className="text-[10px] font-bold text-white/90">กำลังเล่น</span>
+          </div>
+        )}
+
+        {/* Hover actions */}
+        <div
+          className={cn(
+            "absolute inset-x-2 bottom-2 flex items-center justify-between rounded-full border border-white/15 bg-black/50 px-1.5 py-1 text-white backdrop-blur-xl transition-all duration-300",
+            "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0",
+            isCurrent && "opacity-100 translate-y-0",
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-0.5">
+            {!playlist.is_default && (
+              <button
+                type="button"
+                onClick={onSetDefault}
+                className="flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-all hover:bg-white/15 hover:text-white"
+                title="ตั้งเป็นหลัก"
+              >
+                <Star className="h-3 w-3" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onToggleEnabled}
+              className="flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-all hover:bg-white/15 hover:text-white"
+              title={playlist.is_enabled ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
+            >
+              {playlist.is_enabled ? (
+                <PowerOff className="h-3 w-3" />
+              ) : (
+                <Power className="h-3 w-3" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onExport}
+              className="flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-all hover:bg-white/15 hover:text-white"
+              title="ส่งออก"
+            >
+              <Download className="h-3 w-3" />
+            </button>
+          </div>
+          {!playlist.is_default && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="flex h-6 w-6 items-center justify-center rounded-full text-white/70 transition-all hover:bg-red-500/40 hover:text-white"
+              title="ลบ"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="min-w-0 px-0.5">
+        <p className="truncate text-xs font-bold leading-tight text-foreground">
+          {playlist.name}
+        </p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          {playlist.song_count ?? 0} เพลง
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Song Row (List View) ─── */
+function SongRow({
+  song,
+  index,
+  isCurrentSong,
+  isPlaying,
+  onPlayPause,
+  onRemove,
+}: {
+  song: PlaylistSong;
+  index: number;
+  isCurrentSong: boolean;
+  isPlaying: boolean;
+  onPlayPause: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-300",
+        isCurrentSong && isPlaying
+          ? "border-primary/30 bg-primary/[0.04] shadow-[0_0_20px_oklch(0.76_0.17_158/0.06)]"
+          : "border-white/[0.04] bg-white/[0.015] hover:border-white/[0.1] hover:bg-white/[0.03] hover:translate-x-1",
+      )}
+    >
+      {/* Index / Playing indicator */}
+      <span className="flex w-6 items-center justify-center">
+        {isCurrentSong && isPlaying ? (
+          <EqualizerBars />
+        ) : (
+          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+        )}
+      </span>
+
+      {/* Thumbnail */}
+      {song.thumbnail && (
+        <img
+          src={song.thumbnail}
+          alt={song.title}
+          className="h-10 w-14 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-white/[0.06]"
+        />
+      )}
+
+      {/* Title + Artist */}
+      <div className="min-w-0 flex-1">
+        <p
+          className={cn(
+            "truncate text-xs font-bold transition-colors duration-200",
+            isCurrentSong ? "text-primary" : "text-foreground group-hover:text-primary",
+          )}
+        >
+          {song.title}
+        </p>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          {song.artist || "ไม่ระบุผู้แต่ง"}
+        </p>
+      </div>
+
+      {/* Duration */}
+      {song.duration && (
+        <span className="hidden text-[11px] font-medium text-muted-foreground tabular-nums sm:block">
+          {song.duration}
+        </span>
+      )}
+
+      {/* Play/Pause */}
+      <button
+        type="button"
+        onClick={onPlayPause}
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+          isCurrentSong && isPlaying
+            ? "bg-primary text-primary-foreground shadow-[0_0_16px_oklch(0.76_0.17_158/0.3)]"
+            : "text-foreground/60 hover:bg-primary/10 hover:text-primary opacity-0 group-hover:opacity-100",
+        )}
+        aria-label={isPlaying && isCurrentSong ? `หยุด ${song.title}` : `เล่น ${song.title}`}
+      >
+        {isCurrentSong && isPlaying ? (
+          <Pause className="h-3.5 w-3.5" />
+        ) : (
+          <Play className="h-3.5 w-3.5 ml-0.5" />
+        )}
+      </button>
+
+      {/* Delete */}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-destructive/60 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100"
+        aria-label={`ลบ ${song.title}`}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
+/* ─── Song Grid Card ─── */
+function SongGridCard({
+  song,
+  isCurrentSong,
+  isPlaying,
+  onPlayPause,
+  onRemove,
+}: {
+  song: PlaylistSong;
+  isCurrentSong: boolean;
+  isPlaying: boolean;
+  onPlayPause: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "group relative rounded-xl border bg-card/80 p-2.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
+        isCurrentSong && isPlaying
+          ? "border-primary/30 shadow-[0_0_24px_oklch(0.76_0.17_158/0.1)]"
+          : "border-white/[0.06] hover:border-primary/20",
+      )}
+    >
+      {/* Thumbnail */}
+      <div className="relative mb-2 aspect-square w-full overflow-hidden rounded-lg shadow-inner">
+        <img
+          src={song.thumbnail || ""}
+          alt={song.title}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+        {/* Hover overlay */}
+        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={onPlayPause}
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 hover:scale-110",
+              isCurrentSong && isPlaying
+                ? "bg-primary text-primary-foreground shadow-[0_0_20px_oklch(0.76_0.17_158/0.4)]"
+                : "bg-primary/90 text-white hover:bg-primary",
+            )}
+          >
+            {isCurrentSong && isPlaying ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4 ml-0.5" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/80 text-white transition-all hover:bg-red-500 hover:scale-110"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+        {/* Now playing badge */}
+        {isCurrentSong && isPlaying && (
+          <div className="absolute bottom-1.5 left-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+              <EqualizerBars />
+              กำลังเล่น
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="space-y-0.5">
+        <p className="truncate text-xs font-bold text-foreground" title={song.title}>
+          {song.title}
+        </p>
+        <p className="truncate text-[11px] text-muted-foreground">
+          {song.artist || "ไม่ระบุผู้แต่ง"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Admin Library View ─── */
 export function AdminView() {
   const {
     activePlaylistIds,
@@ -162,12 +554,11 @@ export function AdminView() {
     isPlaying,
     togglePlay,
   } = usePlayer();
+
   const [activePlaylistId, setActivePlaylistId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<YouTubeSearchResult[]>([]);
-  const [ytPlaylistResults, setYtPlaylistResults] = useState<
-    YouTubePlaylistResult[]
-  >([]);
+  const [ytPlaylistResults, setYtPlaylistResults] = useState<YouTubePlaylistResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState<"video" | "playlist">("video");
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
@@ -175,101 +566,60 @@ export function AdminView() {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  const [activePreviewPlaylist, setActivePreviewPlaylist] =
-    useState<YouTubePlaylistResult | null>(null);
+  const [activePreviewPlaylist, setActivePreviewPlaylist] = useState<YouTubePlaylistResult | null>(null);
   const [previewSongs, setPreviewSongs] = useState<
-    {
-      id: string;
-      youtube_id: string;
-      title: string;
-      thumbnail: string | null;
-      channelTitle: string;
-    }[]
+    { id: string; youtube_id: string; title: string; thumbnail: string | null; channelTitle: string }[]
   >([]);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
-  const handlePlayPauseSong = (song: {
-    youtube_id: string;
-    title: string;
-    thumbnail?: string | null;
-    artist?: string | null;
-  }) => {
-    if (currentSong?.youtube_id === song.youtube_id) {
-      togglePlay();
-    } else {
-      playSongImmediately(song);
-    }
-  };
-
-  const handlePreviewPlaylist = async (pl: YouTubePlaylistResult) => {
-    setActivePreviewPlaylist(pl);
-    setIsPreviewModalOpen(true);
-    setIsLoadingPreview(true);
-    setPreviewSongs([]);
-    try {
-      const res = await fetch(
-        `/api/youtube/playlist-items?playlistId=${pl.id}`,
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setPreviewSongs(data.items || []);
-      } else {
-        toast.error("ไม่สามารถโหลดรายชื่อเพลงได้");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-    } finally {
-      setIsLoadingPreview(false);
-    }
-  };
-
-  const [selectedPlaylists, setSelectedPlaylists] = useState<Set<number>>(
-    new Set(),
-  );
+  const [selectedPlaylists, setSelectedPlaylists] = useState<Set<number>>(new Set());
   const [targetPlaylistId, setTargetPlaylistId] = useState<number | null>(null);
   const [showAddPlaylistInput, setShowAddPlaylistInput] = useState(false);
-  const [activeWorkspaceTab, setActiveWorkspaceTab] =
-    useState<string>("tracks");
-  const [isPlaylistsExpanded, setIsPlaylistsExpanded] = useState(true);
-
-  // Music List Toggle View (List vs Grid)
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<string>("tracks");
   const [musicListView, setMusicListView] = useState<"list" | "grid">("list");
+  const [showRecommended, setShowRecommended] = useState(false);
 
-  const { data: playlists = [], mutate: mutatePlaylists } = useSWR<Playlist[]>(
-    "/api/playlists",
-    fetcher,
-  );
+  const addInputRef = useRef<HTMLInputElement>(null);
+
+  /* ── Data ── */
+  const { data: playlists = [], mutate: mutatePlaylists } = useSWR<Playlist[]>("/api/playlists", fetcher);
   const currentPlaylist = activePlaylistId
     ? playlists.find((p) => p.id === activePlaylistId)
     : playlists.find((p) => p.is_default) || playlists[0];
 
-  const { data: playlistSongs = [], mutate: mutateSongs } = useSWR<
-    PlaylistSong[]
-  >(
+  const { data: playlistSongs = [], mutate: mutateSongs } = useSWR<PlaylistSong[]>(
     currentPlaylist ? `/api/playlists/${currentPlaylist.id}/songs` : null,
     fetcher,
   );
 
-  const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>(
-    "/api/requests",
-    fetcher,
-    { refreshInterval: 3000 },
-  );
+  const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>("/api/requests", fetcher, {
+    refreshInterval: 3000,
+  });
+
+  /* ── Derived ── */
+  const totalSongs = useMemo(() => playlists.reduce((sum, pl) => sum + (pl.song_count ?? 0), 0), [playlists]);
+  const totalPlaylists = playlists.length;
+  const activeRequests = requests.length;
+  const nowPlayingTitle = currentSong?.title || "—";
 
   useEffect(() => {
     setSelectedPlaylists(new Set(activePlaylistIds));
   }, [activePlaylistIds]);
 
-  const handleSearch = async (overrideQuery?: string) => {
+  useEffect(() => {
+    if (showAddPlaylistInput && addInputRef.current) {
+      addInputRef.current.focus();
+    }
+  }, [showAddPlaylistInput]);
+
+  /* ── Handlers ── */
+  const handleSearch = useCallback(async (overrideQuery?: string) => {
     const query = overrideQuery !== undefined ? overrideQuery : searchQuery;
     if (!query.trim()) return;
     setIsSearching(true);
     try {
-      const res = await fetch(
-        `/api/youtube/search?q=${encodeURIComponent(query)}&type=${searchType}`,
-      );
+      const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}&type=${searchType}`);
       const data = await res.json();
       if (searchType === "playlist") {
         setYtPlaylistResults(data.items || []);
@@ -283,14 +633,7 @@ export function AdminView() {
     } finally {
       setIsSearching(false);
     }
-  };
-
-  const handleRecommendedPlaylist = (query: string) => {
-    setSearchType("playlist");
-    setActiveWorkspaceTab("search");
-    setSearchQuery(query);
-    handleSearch(query);
-  };
+  }, [searchQuery, searchType]);
 
   const handleAddToPlaylist = async (result: YouTubeSearchResult) => {
     const targetId = targetPlaylistId || currentPlaylist?.id;
@@ -314,13 +657,11 @@ export function AdminView() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "ไม่สามารถเพิ่มเพลงได้");
       mutateSongs();
-      mutatePlaylists(); // refresh cover thumbnail
+      mutatePlaylists();
       const targetName = playlists.find((p) => p.id === targetId)?.name || "";
       toast.success(`เพิ่มเพลงไปยัง ${targetName} แล้ว`);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "ไม่สามารถเพิ่มเพลงได้",
-      );
+      toast.error(error instanceof Error ? error.message : "ไม่สามารถเพิ่มเพลงได้");
     } finally {
       setAddingIds((prev) => {
         const n = new Set(prev);
@@ -330,18 +671,13 @@ export function AdminView() {
     }
   };
 
-  const handleImportYoutubePlaylist = async (
-    ytPlaylist: YouTubePlaylistResult,
-  ) => {
+  const handleImportYoutubePlaylist = async (ytPlaylist: YouTubePlaylistResult) => {
     setImportingId(ytPlaylist.id);
     try {
       const res = await fetch("/api/playlists/import-youtube", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          playlistId: ytPlaylist.id,
-          name: ytPlaylist.title,
-        }),
+        body: JSON.stringify({ playlistId: ytPlaylist.id, name: ytPlaylist.title }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -363,7 +699,7 @@ export function AdminView() {
         body: JSON.stringify({ songId }),
       });
       mutateSongs();
-      mutatePlaylists(); // refresh cover thumbnail
+      mutatePlaylists();
       toast.success("ลบเพลงแล้ว");
     } catch {
       toast.error("ไม่สามารถลบเพลงได้");
@@ -381,6 +717,7 @@ export function AdminView() {
       });
       mutatePlaylists();
       setNewPlaylistName("");
+      setShowAddPlaylistInput(false);
       toast.success("สร้าง playlist แล้ว");
     } catch {
       toast.error("ไม่สามารถสร้างได้");
@@ -439,6 +776,41 @@ export function AdminView() {
     toast.success("ลบคำขอแล้ว");
   };
 
+  const handlePlayPauseSong = (song: { youtube_id: string; title: string; thumbnail?: string | null; artist?: string | null }) => {
+    if (currentSong?.youtube_id === song.youtube_id) {
+      togglePlay();
+    } else {
+      playSongImmediately(song);
+    }
+  };
+
+  const handlePreviewPlaylist = async (pl: YouTubePlaylistResult) => {
+    setActivePreviewPlaylist(pl);
+    setIsPreviewModalOpen(true);
+    setIsLoadingPreview(true);
+    setPreviewSongs([]);
+    try {
+      const res = await fetch(`/api/youtube/playlist-items?playlistId=${pl.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPreviewSongs(data.items || []);
+      } else {
+        toast.error("ไม่สามารถโหลดรายชื่อเพลงได้");
+      }
+    } catch {
+      toast.error("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  const handleRecommendedPlaylist = (query: string) => {
+    setSearchType("playlist");
+    setActiveWorkspaceTab("search");
+    setSearchQuery(query);
+    handleSearch(query);
+  };
+
   const toggleSelectPlaylist = (id: number) => {
     setSelectedPlaylists((prev) => {
       const n = new Set(prev);
@@ -450,675 +822,340 @@ export function AdminView() {
 
   const handleApplySelectedPlaylists = async () => {
     await setActivePlaylistIds([...selectedPlaylists]);
-    if (selectedPlaylists.size === 0) {
-      toast.success("ยกเลิกการเลือกทั้งหมดแล้ว ระบบจะใช้ Playlist เริ่มต้น");
-    } else {
-      toast.success(`ใช้ ${selectedPlaylists.size} playlist เล่นต่อเนื่องแล้ว`);
-    }
+    toast.success(
+      selectedPlaylists.size === 0
+        ? "ยกเลิกการเลือกทั้งหมดแล้ว ระบบจะใช้ Playlist เริ่มต้น"
+        : `ใช้ ${selectedPlaylists.size} playlist เล่นต่อเนื่องแล้ว`,
+    );
   };
 
-  const isInPlaylist = (youtubeId: string) =>
-    playlistSongs.some((s) => s.youtube_id === youtubeId);
+  const isInPlaylist = (youtubeId: string) => playlistSongs.some((s) => s.youtube_id === youtubeId);
+
+  const isSongCurrent = (song: { youtube_id: string }) =>
+    currentSong?.youtube_id === song.youtube_id;
 
   return (
-    <main className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-4 px-4 py-4 sm:px-6 xl:gap-6 xl:px-8 xl:py-7">
-      <section className="admin-library-panel flex flex-col gap-3 rounded-md">
-        {/* Playlist Manager */}
-        <div className="flex items-center justify-between px-3 py-1">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsPlaylistsExpanded(!isPlaylistsExpanded)}
-              className="flex items-center gap-1.5 text-sm font-bold text-foreground hover:text-primary transition-colors"
-            >
-              {isPlaylistsExpanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-              เพลย์ลิสต์ของร้าน
-            </button>
-          </div>
-          <div className="flex items-center gap-1">
-            <a
-              href="#playlist-studio"
-              className="hidden rounded-full px-2 py-1.5 text-sm font-bold uppercase tracking-[0.08em] text-primary transition-colors hover:bg-primary/10 sm:block"
-            >
-              จัดการเพลง
-            </a>
+    <div className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-5 px-4 py-5 sm:px-6 xl:gap-6 xl:px-8 xl:py-6">
+      {/* ════════════════════════════════════════════════════
+         HEADER: STATS BAR
+      ════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard icon={Music2} label="เพลงทั้งหมด" value={totalSongs} accent delay={0} />
+        <StatCard icon={Album} label="เพลย์ลิสต์" value={totalPlaylists} delay={0.05} />
+        <StatCard icon={Radio} label="คำขอที่รอ" value={activeRequests} accent={activeRequests > 0} delay={0.1} />
+        <StatCard icon={Disc3} label="กำลังเล่น" value={nowPlayingTitle} delay={0.15} />
+      </div>
+
+      {/* ════════════════════════════════════════════════════
+         PLAYLIST RACK SECTION
+      ════════════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 shadow-lg sm:p-5">
+        {/* Subtle glow */}
+        <div className="pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/[0.04] blur-[80px]" />
+
+        {/* Header */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setShowAddPlaylistInput(!showAddPlaylistInput)}
-              className={cn(
-                "flex h-8 items-center gap-1.5 px-2 text-xs font-bold uppercase tracking-[0.12em] transition-colors",
-                showAddPlaylistInput
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-primary",
-              )}
-              title="เพิ่มเพลย์ลิสต์ใหม่"
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_20px_oklch(0.76_0.17_158/0.2)]"
+              title="เพิ่มเพลย์ลิสต์"
             >
               <Plus className="h-4 w-4" />
-              เพิ่ม
             </button>
+            <div>
+              <h2 className="text-sm font-extrabold tracking-tight text-foreground">
+                คลังเพลย์ลิสต์
+              </h2>
+              <p className="text-[11px] text-muted-foreground">
+                {playlists.length} รายการ · {totalSongs} เพลง
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Create Playlist Input (Conditionally rendered) */}
-        {showAddPlaylistInput && (
-          <div className="flex gap-2 relative group px-1 animate-in slide-in-from-top-2 fade-in duration-200">
-            <Input
-              placeholder="เพิ่มเพลย์ลิสต์ใหม่..."
-              value={newPlaylistName}
-              onChange={(e) => setNewPlaylistName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreatePlaylist()}
-              autoFocus
-              className="h-9 pl-4 pr-10 border-primary/20 bg-primary/5 hover:bg-primary/10 focus:bg-primary/10 text-xs rounded-full shadow-inner transition-colors text-foreground placeholder:text-muted-foreground"
-            />
-            <Button
-              size="sm"
-              onClick={handleCreatePlaylist}
-              disabled={isCreating || !newPlaylistName.trim()}
-              aria-label="สร้างเพลย์ลิสต์"
-              className="absolute right-2 top-1 bottom-1 h-7 w-7 rounded-full p-0 shadow-sm transition-transform hover:scale-105 bg-primary/80 hover:bg-primary text-primary-foreground"
-            >
-              {isCreating ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Plus className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-        )}
-
-        {/* Quiet stream selection bar */}
-        {isPlaylistsExpanded && (
-          <>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-y border-border/50 px-1 py-2">
-              <div className="flex min-w-0 items-center gap-2 px-1">
-                <div className="flex h-5 w-5 items-center justify-center text-primary">
-                  <CheckSquare className="w-3 h-3" />
-                </div>
-                <span className="whitespace-nowrap text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
-                  สตรีมต่อเนื่อง{" "}
-                  <span className="ml-0.5 text-primary">
-                    {selectedPlaylists.size} รายการ
-                  </span>
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                {selectedPlaylists.size > 0 && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-2 text-sm text-muted-foreground hover:text-destructive"
-                    onClick={() => setSelectedPlaylists(new Set())}
-                    title="ล้างการเลือก"
-                  >
-                    ล้าง
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 px-2 text-sm font-bold uppercase tracking-[0.08em] text-primary hover:bg-primary/5 hover:text-primary"
+          <div className="flex items-center gap-2">
+            {selectedPlaylists.size > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlaylists(new Set())}
+                  className="rounded-full px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-destructive"
+                >
+                  ล้าง
+                </button>
+                <button
+                  type="button"
                   onClick={handleApplySelectedPlaylists}
+                  className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary transition-all hover:bg-primary/20"
                 >
-                  ใช้งานชุดนี้
-                </Button>
-              </div>
-            </div>
-
-            {/* Scrollable area of Playlists */}
-            <div className="w-full overflow-x-auto scrollbar-none pb-2">
-              <div className="flex w-max min-w-full gap-3 px-1">
-                {playlists.length === 0 ? (
-                  <div className="py-8 w-full text-center text-xs text-muted-foreground">
-                    ไม่มีเพลย์ลิสต์
-                  </div>
-                ) : (
-                  playlists.map((pl) => {
-                    const isCurrent = currentPlaylist?.id === pl.id;
-                    return (
-                      <div
-                        key={pl.id}
-                        className={cn(
-                          "admin-playlist-collection group relative flex w-[126px] shrink-0 cursor-pointer flex-col gap-2 transition-all duration-300 sm:w-[138px] xl:w-[154px]",
-                          isCurrent
-                            ? "text-foreground"
-                            : "text-foreground/85 hover:text-foreground",
-                          !pl.is_enabled && "opacity-45",
-                        )}
-                        onClick={() => setActivePlaylistId(pl.id)}
-                      >
-                        <div
-                          className={cn(
-                            "relative aspect-square w-full shrink-0 overflow-hidden rounded-2xl bg-muted shadow-sm transition-all duration-300",
-                            isCurrent
-                              ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                              : "ring-1 ring-white/[0.08] group-hover:-translate-y-1 group-hover:shadow-[0_8px_20px_rgba(0,0,0,0.32)]",
-                          )}
-                        >
-                          <PlaylistCover
-                            playlist={pl}
-                            className="h-full w-full text-lg"
-                          />
-                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10 opacity-0 transition-opacity group-hover:opacity-100" />
-
-                          <button
-                            type="button"
-                            aria-label={`เลือก ${pl.name} สำหรับเล่นต่อเนื่อง`}
-                            className={cn(
-                              "absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/25 text-white shadow-sm backdrop-blur-md transition-all hover:bg-black/45",
-                              selectedPlaylists.has(pl.id) &&
-                                "bg-primary text-primary-foreground border-primary",
-                            )}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSelectPlaylist(pl.id);
-                            }}
-                          >
-                            {selectedPlaylists.has(pl.id) ? (
-                              <CheckSquare className="w-3.5 h-3.5" />
-                            ) : (
-                              <Square className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-
-                          {pl.is_default && (
-                            <span className="absolute right-2 top-2 rounded-full border border-white/20 bg-black/40 px-2 py-0.5 text-sm font-bold uppercase tracking-[0.1em] text-white/95 backdrop-blur-md">
-                              Default
-                            </span>
-                          )}
-
-                          {isCurrent && (
-                            <div
-                              className="absolute inset-x-2 bottom-2 flex items-center justify-between rounded-full border border-white/15 bg-black/40 px-1.5 py-1 text-white backdrop-blur-xl"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="flex items-center gap-0.5">
-                                {!pl.is_default && (
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
-                                    onClick={() => handleSetDefault(pl.id)}
-                                    title="ตั้งเป็นหลัก"
-                                  >
-                                    <Star className="h-3 w-3" />
-                                  </Button>
-                                )}
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
-                                  onClick={() =>
-                                    handleToggleEnabled(pl.id, pl.is_enabled)
-                                  }
-                                  title={
-                                    pl.is_enabled
-                                      ? "ปิดการใช้งาน"
-                                      : "เปิดการใช้งาน"
-                                  }
-                                >
-                                  {pl.is_enabled ? (
-                                    <PowerOff className="h-3 w-3" />
-                                  ) : (
-                                    <Power className="h-3 w-3" />
-                                  )}
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
-                                  onClick={() => handleExportPlaylist(pl.id)}
-                                  title="ส่งออก"
-                                >
-                                  <Download className="h-3 w-3" />
-                                </Button>
-                              </div>
-                              {!pl.is_default && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-6 w-6 text-white/90 hover:bg-destructive hover:text-white"
-                                  onClick={() => handleDeletePlaylist(pl.id)}
-                                  title="ลบ"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0 px-0.5">
-                          <p className="truncate text-xs font-bold leading-tight">
-                            {pl.name}
-                          </p>
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            {pl.song_count ?? 0} เพลง
-                            {isCurrent ? " · จัดการ" : ""}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </section>
-
-      <section className="admin-content-panel relative overflow-hidden rounded-2xl border border-border/60 p-5 shadow-xl">
-        {/* Subtle background glow */}
-        <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-primary/5 blur-[80px]" />
-
-        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-              Recommended playlists
-            </p>
-            <h2 className="mt-1.5 text-base font-extrabold tracking-tight text-foreground">
-              เพลย์ลิสต์แนะนำและกำลังนิยม
-            </h2>
+                  ใช้งาน {selectedPlaylists.size} รายการ
+                </button>
+              </>
+            )}
           </div>
-          <p className="max-w-xs text-xs leading-relaxed text-muted-foreground sm:text-right">
-            กดที่การ์ดเพื่อค้นหาเพลย์ลิสต์บน YouTube และนำเข้าคลังเพลงของร้าน
-          </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {recommendedPlaylists.map((item) => {
-            const Icon = IconMap[item.icon];
-            return (
-              <button
-                key={item.query}
-                type="button"
-                onClick={() => handleRecommendedPlaylist(item.query)}
-                className={cn(
-                  "group !rounded-md relative overflow-hidden rounded-2xl border bg-gradient-to-br p-5 text-left transition-all duration-300",
-                  "hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.98]",
-                  item.color,
-                )}
-              >
-                {/* Glowing border and inner glow */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-foreground to-transparent opacity-0 transition-opacity group-hover:opacity-10" />
 
-                <div
-                  className={cn(
-                    "mb-4 flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110",
-                    item.iconColor,
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="text-sm font-bold text-foreground transition-colors duration-300 group-hover:text-primary">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground transition-colors duration-300 group-hover:text-foreground/70">
-                  {item.detail}
-                </p>
+        {/* Add playlist input */}
+        {showAddPlaylistInput && (
+          <div className="mb-4 flex animate-in slide-in-from-top-2 fade-in duration-200">
+            <div className="relative w-full max-w-xs">
+              <Input
+                ref={addInputRef}
+                placeholder="ชื่อเพลย์ลิสต์ใหม่..."
+                value={newPlaylistName}
+                onChange={(e) => setNewPlaylistName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreatePlaylist()}
+                className="h-9 border-primary/20 bg-primary/[0.04] pr-10 text-xs transition-all focus:border-primary/40 focus:shadow-[0_0_20px_oklch(0.76_0.17_158/0.08)]"
+              />
+              <button
+                type="button"
+                onClick={handleCreatePlaylist}
+                disabled={isCreating || !newPlaylistName.trim()}
+                className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-lg bg-primary/80 text-primary-foreground transition-all hover:bg-primary disabled:opacity-40"
+              >
+                {isCreating ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Plus className="h-3.5 w-3.5" />
+                )}
               </button>
-            );
-          })}
+            </div>
+          </div>
+        )}
+
+        {/* Playlist cards */}
+        <div className="w-full overflow-x-auto scrollbar-none">
+          <div className="flex w-max min-w-full gap-3 pb-1">
+            {playlists.length === 0 ? (
+              <div className="flex w-full items-center justify-center py-12 text-sm text-muted-foreground">
+                <div className="text-center">
+                  <Library className="mx-auto mb-2 h-8 w-8 opacity-20" />
+                  <p>ยังไม่มีเพลย์ลิสต์ — กด + เพื่อสร้าง</p>
+                </div>
+              </div>
+            ) : (
+              playlists.map((pl, i) => (
+                <div key={pl.id} style={{ animation: `slide-up 0.3s ease-out ${i * 0.04}s both` }}>
+                  <PlaylistCard
+                    playlist={pl}
+                    isCurrent={currentPlaylist?.id === pl.id}
+                    isSelected={selectedPlaylists.has(pl.id)}
+                    isPlaying={isSongCurrent({ youtube_id: "" }) && isPlaying}
+                    onSelect={() => setActivePlaylistId(pl.id)}
+                    onToggleSelect={(e) => {
+                      e.stopPropagation();
+                      toggleSelectPlaylist(pl.id);
+                    }}
+                    onSetDefault={() => handleSetDefault(pl.id)}
+                    onToggleEnabled={() => handleToggleEnabled(pl.id, pl.is_enabled)}
+                    onExport={() => handleExportPlaylist(pl.id)}
+                    onDelete={() => handleDeletePlaylist(pl.id)}
+                  />
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </section>
 
-      <section
-        id="playlist-studio"
-        className="flex min-h-[64vh] scroll-mt-16 flex-col gap-3 overflow-hidden xl:min-h-[72vh] xl:gap-4"
-      >
-        {/* Header Area inside Workspace */}
-        <div className="admin-surface admin-workspace-header mx-0 flex shrink-0 items-center justify-between gap-2 rounded-xl border border-primary/15 px-3 py-1.5 sm:mx-1 sm:px-4 xl:mt-1 xl:rounded-full xl:py-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <h2 className="truncate whitespace-nowrap text-sm font-extrabold text-foreground tracking-tight">
-              {currentPlaylist ? currentPlaylist.name : "กรุณาเลือกเพลย์ลิสต์"}
+      {/* ════════════════════════════════════════════════════
+         WORKSPACE: TRACKS / SEARCH / REQUESTS
+      ════════════════════════════════════════════════════ */}
+      <section className="flex min-h-[60vh] flex-col gap-4 xl:min-h-[68vh]">
+        {/* Workspace header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/10 bg-gradient-to-r from-primary/[0.03] to-transparent px-4 py-2.5 shadow-sm">
+          <div className="flex min-w-0 items-center gap-3">
+            <h2 className="truncate text-sm font-extrabold tracking-tight text-foreground">
+              {currentPlaylist ? currentPlaylist.name : "เลือกเพลย์ลิสต์"}
             </h2>
             {currentPlaylist?.is_default && (
-              <Badge className="h-4 px-1.5 bg-primary/15 border-primary/20 text-primary text-xs font-bold uppercase tracking-widest rounded-full">
+              <Badge className="border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
                 เริ่มต้น
               </Badge>
             )}
+            <span className="hidden text-xs text-muted-foreground sm:inline-block tabular-nums">
+              {playlistSongs.length} แทร็ก
+            </span>
           </div>
 
-          {/* Console controls & toggle layout view */}
-          <div className="scrollbar-none flex max-w-full shrink-0 flex-nowrap items-center gap-2 overflow-x-auto sm:border-l sm:border-border/40 sm:pl-3">
-            {/* View Mode Grid/List selectors */}
-            <div className="flex shrink-0 rounded-full border border-border/60 bg-secondary/40 p-0.5 shadow-inner">
-              <Button
+          <div className="flex shrink-0 items-center gap-2">
+            {/* View toggle */}
+            <div className="flex rounded-xl border border-white/[0.06] bg-white/[0.03] p-0.5">
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={() => setMusicListView("list")}
                 className={cn(
-                  "h-6 w-7 rounded-full p-0 transition-all",
+                  "flex h-7 w-7 items-center justify-center rounded-lg transition-all",
                   musicListView === "list"
                     ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground",
                 )}
                 title="มุมมองรายการ"
               >
                 <Rows3 className="h-3.5 w-3.5" />
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                variant="ghost"
-                size="sm"
                 onClick={() => setMusicListView("grid")}
                 className={cn(
-                  "h-6 w-7 rounded-full p-0 transition-all",
+                  "flex h-7 w-7 items-center justify-center rounded-lg transition-all",
                   musicListView === "grid"
                     ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground",
                 )}
-                title="มุมมองตารางรูปปก"
+                title="มุมมองตาราง"
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
-              </Button>
+              </button>
             </div>
 
-            {/* Tab switch buttons */}
-            <div className="scrollbar-none flex shrink-0 gap-0.5 overflow-x-auto rounded-full border border-border/60 bg-secondary/40 p-0.5 shadow-inner">
-              <button
-                onClick={() => setActiveWorkspaceTab("tracks")}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all",
-                  activeWorkspaceTab === "tracks"
-                    ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )}
-              >
-                <List className="w-3 h-3" />
-                เพลงในเพลย์ลิสต์
-              </button>
-              <button
-                onClick={() => setActiveWorkspaceTab("search")}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all",
-                  activeWorkspaceTab === "search"
-                    ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )}
-              >
-                <Search className="w-3 h-3" />
-                ค้นหาและเพิ่มเพลง
-              </button>
-              <button
-                onClick={() => setActiveWorkspaceTab("requests")}
-                className={cn(
-                  "relative flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all",
-                  activeWorkspaceTab === "requests"
-                    ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )}
-              >
-                <Radio
+            {/* Tab buttons */}
+            <div className="flex rounded-xl border border-white/[0.06] bg-white/[0.03] p-0.5">
+              {([
+                { key: "tracks", icon: ListMusic, label: "เพลง", badge: 0 },
+                { key: "search", icon: Search, label: "ค้นหา", badge: 0 },
+                { key: "requests", icon: Radio, label: "คำขอ", badge: requests.length },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveWorkspaceTab(tab.key)}
                   className={cn(
-                    "w-3 h-3",
-                    activeWorkspaceTab === "requests"
-                      ? "text-primary"
-                      : "text-primary animate-pulse",
+                    "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
+                    activeWorkspaceTab === tab.key
+                      ? "bg-primary/15 text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
-                />
-                คำขอจากลูกค้า
-                {requests.length > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full text-xs font-bold px-1 border border-background bg-primary text-primary-foreground">
-                    {requests.length}
-                  </span>
-                )}
-              </button>
+                >
+                  <tab.icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  {tab.badge !== undefined && tab.badge > 0 && (
+                    <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* TAB CONTENT: PLAYLIST TRACKS (Full Div Height enabled) */}
+        {/* ═══ TRACKS TAB ═══ */}
         {activeWorkspaceTab === "tracks" && (
-          <div className="admin-content-panel flex min-h-0 flex-1 flex-col rounded-xl p-2.5 sm:p-3">
-            <div className="flex items-center justify-between shrink-0 mb-2 px-1">
-              <p className="text-sm font-medium text-muted-foreground">
-                รายการเพลงทั้งหมดในแผง ({playlistSongs.length} แทร็ก)
-              </p>
-            </div>
-
-            <ScrollArea className="h-0 flex-1 pr-1">
-              {playlistSongs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground text-center">
-                  <Music2 className="w-12 h-12 mb-3 opacity-20" />
-                  <p className="text-xs font-bold text-foreground">
-                    เพลย์ลิสต์นี้ว่างเปล่า
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-[280px]">
-                    ท่านสามารถกดแถบค้นหาที่แถบเมนูด้านบน เพื่อดึงคลังเพลงใหม่ๆ
-                    เข้ามาสะสมไว้ได้ทันที
-                  </p>
-                </div>
-              ) : musicListView === "list" ? (
-                /* List View (Standard rounded style) */
-                <div className="flex flex-col gap-1.5">
+          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/[0.04] bg-white/[0.01] p-3 shadow-lg sm:p-4">
+            {playlistSongs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
+                <Music2 className="mb-3 h-12 w-12 opacity-20" />
+                <p className="text-sm font-bold text-foreground">เพลย์ลิสต์นี้ว่างเปล่า</p>
+                <p className="mt-1 max-w-[280px] text-xs">
+                  กดแถบ "ค้นหา" เพื่อดึงเพลงจาก YouTube เข้าคลัง
+                </p>
+              </div>
+            ) : musicListView === "list" ? (
+              <ScrollArea className="h-0 flex-1 pr-1">
+                <div className="flex flex-col gap-1.5 pb-2">
                   {playlistSongs.map((song, i) => (
-                    <div
+                    <SongRow
                       key={song.id}
-                      className="admin-track-row flex items-center gap-3 rounded-lg border p-2.5 transition-all duration-300 group"
-                    >
-                      <span className="text-xs font-semibold text-muted-foreground w-6 text-center tabular-nums">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-
-                      {song.thumbnail && (
-                        <img
-                          src={song.thumbnail}
-                          alt={song.title}
-                          className="w-12 h-9 rounded object-cover shadow-sm border border-black/5 flex-shrink-0"
-                        />
-                      )}
-
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                          {song.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {song.artist || "ไม่ระบุผู้แต่ง"}
-                        </p>
-                      </div>
-
-                      {/* Play/Pause Button */}
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className={cn(
-                          "h-8 w-8 flex-shrink-0 rounded text-primary transition-all hover:bg-primary/10 hover:text-primary xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100",
-                          currentSong?.youtube_id === song.youtube_id &&
-                            isPlaying &&
-                            "bg-primary/10 text-primary xl:opacity-100",
-                        )}
-                        onClick={() => handlePlayPauseSong(song)}
-                        aria-label={`เล่น ${song.title}`}
-                      >
-                        {currentSong?.youtube_id === song.youtube_id &&
-                        isPlaying ? (
-                          <Pause className="w-3.5 h-3.5" />
-                        ) : (
-                          <Play className="w-3.5 h-3.5" />
-                        )}
-                      </Button>
-
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 flex-shrink-0 rounded text-destructive transition-all hover:bg-destructive/10 hover:text-destructive xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100"
-                        onClick={() => handleRemoveFromPlaylist(song.id)}
-                        aria-label={`ลบ ${song.title}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
+                      song={song}
+                      index={i}
+                      isCurrentSong={isSongCurrent(song)}
+                      isPlaying={isPlaying}
+                      onPlayPause={() => handlePlayPauseSong(song)}
+                      onRemove={() => handleRemoveFromPlaylist(song.id)}
+                    />
                   ))}
                 </div>
-              ) : (
-                /* Grid Thumbnail View (Spotify album grid style) */
-                <div className="grid grid-cols-2 gap-3.5 p-0.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              </ScrollArea>
+            ) : (
+              <ScrollArea className="h-0 flex-1 pr-1">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 pb-2">
                   {playlistSongs.map((song) => (
-                    <div
+                    <SongGridCard
                       key={song.id}
-                      className="admin-track-card group relative rounded-lg border border-border/40 bg-card p-2 flex flex-col gap-2 transition-all duration-300"
-                    >
-                      {/* Song Thumbnail */}
-                      <div className="relative aspect-square w-full rounded overflow-hidden shadow-inner bg-muted shrink-0">
-                        <img
-                          src={song.thumbnail || ""}
-                          alt={song.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className={cn(
-                              "w-8 h-8 rounded bg-primary/90 text-white hover:bg-primary hover:scale-105",
-                              currentSong?.youtube_id === song.youtube_id &&
-                                isPlaying &&
-                                "bg-primary text-white",
-                            )}
-                            onClick={() => handlePlayPauseSong(song)}
-                            aria-label={`เล่น ${song.title}`}
-                          >
-                            {currentSong?.youtube_id === song.youtube_id &&
-                            isPlaying ? (
-                              <Pause className="w-4 h-4" />
-                            ) : (
-                              <Play className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="w-8 h-8 rounded bg-destructive/90 text-white hover:bg-destructive hover:scale-105"
-                            onClick={() => handleRemoveFromPlaylist(song.id)}
-                            aria-label={`ลบ ${song.title}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="min-w-0 flex flex-col gap-0.5">
-                        <p
-                          className="text-xs font-bold text-foreground truncate leading-tight"
-                          title={song.title}
-                        >
-                          {song.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {song.artist || "ไม่ระบุผู้แต่ง"}
-                        </p>
-                      </div>
-                    </div>
+                      song={song}
+                      isCurrentSong={isSongCurrent(song)}
+                      isPlaying={isPlaying}
+                      onPlayPause={() => handlePlayPauseSong(song)}
+                      onRemove={() => handleRemoveFromPlaylist(song.id)}
+                    />
                   ))}
                 </div>
-              )}
-            </ScrollArea>
+              </ScrollArea>
+            )}
           </div>
         )}
 
-        {/* TAB CONTENT: SEARCH YOUTUBE (Full Div Height enabled) */}
+        {/* ═══ SEARCH TAB ═══ */}
         {activeWorkspaceTab === "search" && (
-          <div className="admin-content-panel flex-1 min-h-0 flex flex-col overflow-hidden gap-3 rounded-xl p-3">
-            {/* Search Type controls */}
-            <div className="flex gap-2 shrink-0">
-              <Button
-                size="sm"
-                variant={searchType === "video" ? "default" : "outline"}
-                className="h-8 text-xs gap-1 rounded font-bold"
-                onClick={() => {
-                  setSearchType("video");
-                  setSearchResults([]);
-                  setYtPlaylistResults([]);
-                }}
-              >
-                <Music2 className="w-3 h-3" />
-                ค้นหาเดี่ยว
-              </Button>
-              <Button
-                size="sm"
-                variant={searchType === "playlist" ? "default" : "outline"}
-                className="h-8 text-xs gap-1 rounded font-bold"
-                onClick={() => {
-                  setSearchType("playlist");
-                  setSearchResults([]);
-                  setYtPlaylistResults([]);
-                }}
-              >
-                <Youtube className="w-3 h-3" />
-                เพลย์ลิสต์ YouTube
-              </Button>
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.04] bg-white/[0.01] p-3 shadow-lg sm:p-4">
+            {/* Search controls */}
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <div className="flex rounded-xl border border-white/[0.06] bg-white/[0.03] p-0.5">
+                <button
+                  type="button"
+                  onClick={() => { setSearchType("video"); setSearchResults([]); setYtPlaylistResults([]); }}
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
+                    searchType === "video" ? "bg-primary/15 text-primary shadow-sm" : "text-muted-foreground",
+                  )}
+                >
+                  <Music2 className="mr-1.5 inline h-3 w-3" />
+                  ค้นหาเดี่ยว
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSearchType("playlist"); setSearchResults([]); setYtPlaylistResults([]); }}
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
+                    searchType === "playlist" ? "bg-primary/15 text-primary shadow-sm" : "text-muted-foreground",
+                  )}
+                >
+                  <Youtube className="mr-1.5 inline h-3 w-3" />
+                  เพลย์ลิสต์
+                </button>
+              </div>
 
-            {/* Input query field */}
-            <div className="flex gap-2 shrink-0">
-              <Input
-                placeholder={
-                  searchType === "playlist"
-                    ? "ใส่ลิงก์หรือคีย์เวิร์ดเพลย์ลิสต์..."
-                    : "ป้อนชื่อเพลงหรือคำสืบค้นคลังเพลง..."
-                }
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="h-9 border-border bg-black/5 text-xs rounded shadow-inner text-foreground placeholder:text-muted-foreground"
-              />
-              <Button
-                size="sm"
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder={searchType === "playlist" ? "ลิงก์หรือคีย์เวิร์ดเพลย์ลิสต์..." : "ชื่อเพลงหรือศิลปิน..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="h-9 border-white/[0.08] bg-white/[0.03] pl-9 text-xs transition-all focus:border-primary/30 focus:shadow-[0_0_20px_oklch(0.76_0.17_158/0.06)]"
+                />
+              </div>
+
+              <button
+                type="button"
                 onClick={() => handleSearch()}
                 disabled={isSearching || !searchQuery.trim()}
-                aria-label="ค้นหาเพลงจาก YouTube"
-                className="h-9 px-4 rounded shrink-0"
+                className="flex h-9 items-center gap-1.5 rounded-xl bg-primary/10 px-4 text-xs font-bold text-primary transition-all hover:bg-primary/20 disabled:opacity-40"
               >
                 {isSearching ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Search className="w-3.5 h-3.5" />
+                  <ArrowUpRight className="h-3.5 w-3.5" />
                 )}
-              </Button>
+                ค้นหา
+              </button>
             </div>
 
-            {/* Suggestions for YouTube Playlist Search */}
-            {searchType === "playlist" && playlists.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 px-1 py-0.5 shrink-0 animate-in fade-in duration-200">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mr-1">
-                  แนะนำคีย์เวิร์ด:
-                </span>
-                {playlists.map((pl) => (
-                  <button
-                    key={pl.id}
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery(pl.name);
-                      handleSearch(pl.name);
-                    }}
-                    className="rounded-full bg-primary/5 hover:bg-primary/15 border border-primary/20 px-2.5 py-0.5 text-[10px] font-bold text-primary hover:text-primary transition-all active:scale-95 cursor-pointer"
-                  >
-                    {pl.name}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Destination Dropdown for single search */}
+            {/* Destination selector */}
             {searchType === "video" && playlists.length > 0 && (
-              <div className="flex items-center gap-2 rounded bg-black/5 p-2 border border-border shrink-0">
-                <span className="text-xs text-muted-foreground whitespace-nowrap font-bold">
-                  บันทึกเข้าสู่:
+              <div className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.04] bg-white/[0.02] px-3 py-2">
+                <span className="whitespace-nowrap text-xs font-bold text-muted-foreground">
+                  เพิ่มไปยัง:
                 </span>
                 <select
-                  className="flex-1 h-7 px-2 text-xs rounded border border-border/60 bg-background text-foreground font-bold focus:outline-none"
                   value={targetPlaylistId || currentPlaylist?.id || ""}
                   onChange={(e) => setTargetPlaylistId(Number(e.target.value))}
+                  className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.02] px-2 py-1 text-xs font-bold text-foreground outline-none transition-all focus:border-primary/30"
                 >
                   {playlists.map((p) => (
-                    <option
-                      key={p.id}
-                      value={p.id}
-                      className="text-foreground bg-background"
-                    >
+                    <option key={p.id} value={p.id}>
                       {p.name} {p.is_default ? "(Default)" : ""}
                     </option>
                   ))}
@@ -1126,616 +1163,592 @@ export function AdminView() {
               </div>
             )}
 
-            {/* Scrollable list/grid of search results */}
-            <ScrollArea className="flex-1 min-h-0 h-0 pr-1">
+            {/* Recommended quick tags */}
+            {searchType === "playlist" && playlists.length > 0 && (
+              <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                <span className="mr-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  คีย์เวิร์ด:
+                </span>
+                {playlists.slice(0, 5).map((pl) => (
+                  <button
+                    key={pl.id}
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery(pl.name);
+                      handleSearch(pl.name);
+                    }}
+                    className="rounded-full border border-primary/15 bg-primary/[0.04] px-2.5 py-0.5 text-[10px] font-bold text-primary transition-all hover:bg-primary/10 active:scale-95"
+                  >
+                    {pl.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Results */}
+            <ScrollArea className="h-0 flex-1 pr-1">
               {isSearching ? (
                 <div className="flex flex-col items-center justify-center py-20">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    กำลังกวาดสัญญาณ YouTube API...
-                  </p>
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="mt-2 text-xs text-muted-foreground">กำลังค้นหาจาก YouTube...</p>
                 </div>
               ) : musicListView === "list" ? (
-                /* List View style for search results */
-                <div className="flex flex-col gap-2">
-                  {/* Video Results */}
+                <div className="flex flex-col gap-1.5 pb-2">
+                  {/* Video results */}
                   {searchResults.map((result) => {
-                    const inPlaylist = isInPlaylist(result.id);
+                    const inPl = isInPlaylist(result.id);
                     const isAdding = addingIds.has(result.id);
                     return (
                       <div
                         key={result.id}
                         className={cn(
-                          "admin-track-row flex min-w-0 items-center gap-2 overflow-hidden rounded border border-border/20 bg-black/[0.01] p-1.5 transition-all duration-300",
-                          inPlaylist && "opacity-50",
+                          "group flex items-center gap-3 rounded-xl border px-3 py-2 transition-all duration-300",
+                          inPl
+                            ? "border-white/[0.04] bg-white/[0.01] opacity-50"
+                            : "border-white/[0.04] bg-white/[0.015] hover:border-white/[0.1] hover:bg-white/[0.03] hover:translate-x-1",
                         )}
                       >
                         {result.thumbnail && (
                           <img
                             src={result.thumbnail}
                             alt={result.title}
-                            className="w-10 h-7 rounded-sm object-cover flex-shrink-0 shadow border border-black/5"
+                            className="h-9 w-14 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-white/[0.06]"
                           />
                         )}
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className="truncate text-xs font-bold text-foreground"
-                            title={result.title}
-                          >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-bold text-foreground" title={result.title}>
                             {result.title}
                           </p>
-                          <p
-                            className="mt-0.5 truncate text-xs text-muted-foreground"
-                            title={result.channelTitle}
-                          >
+                          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                             {result.channelTitle}
                           </p>
                         </div>
-                        {/* Play/Pause Button */}
-                        <Button
-                          size="icon"
-                          variant="outline"
+                        <button
+                          type="button"
+                          onClick={() => handlePlayPauseSong({
+                            youtube_id: result.id,
+                            title: result.title,
+                            thumbnail: result.thumbnail,
+                            artist: result.channelTitle,
+                          })}
                           className={cn(
-                            "h-8 w-8 rounded text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:text-primary shrink-0",
-                            currentSong?.youtube_id === result.id &&
-                              isPlaying &&
-                              "bg-primary/20 text-primary border-primary/40",
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+                            isSongCurrent({ youtube_id: result.id }) && isPlaying
+                              ? "bg-primary text-primary-foreground shadow-[0_0_16px_oklch(0.76_0.17_158/0.3)]"
+                              : "text-foreground/60 hover:bg-primary/10 hover:text-primary opacity-0 group-hover:opacity-100",
                           )}
-                          onClick={() =>
-                            handlePlayPauseSong({
-                              youtube_id: result.id,
-                              title: result.title,
-                              thumbnail: result.thumbnail,
-                              artist: result.channelTitle,
-                            })
-                          }
-                          aria-label={`เล่น ${result.title}`}
                         >
-                          {currentSong?.youtube_id === result.id &&
-                          isPlaying ? (
-                            <Pause className="w-3.5 h-3.5" />
+                          {isSongCurrent({ youtube_id: result.id }) && isPlaying ? (
+                            <Pause className="h-3.5 w-3.5" />
                           ) : (
-                            <Play className="w-3.5 h-3.5" />
+                            <Play className="ml-0.5 h-3.5 w-3.5" />
                           )}
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant={inPlaylist ? "secondary" : "default"}
-                          disabled={inPlaylist || isAdding}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={inPl || isAdding}
                           onClick={() => handleAddToPlaylist(result)}
-                          className="h-8 text-xs px-3 font-bold rounded shrink-0"
+                          className={cn(
+                            "flex h-8 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-all",
+                            inPl
+                              ? "bg-white/[0.04] text-muted-foreground"
+                              : "bg-primary/10 text-primary hover:bg-primary/20",
+                          )}
                         >
                           {isAdding ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : inPlaylist ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : inPl ? (
                             "เพิ่มแล้ว"
                           ) : (
                             <>
-                              <Plus className="w-3 h-3 mr-1" />
-                              เพิ่มลงคลัง
+                              <Plus className="h-3 w-3" />
+                              <span className="hidden sm:inline">เพิ่ม</span>
                             </>
                           )}
-                        </Button>
+                        </button>
                       </div>
                     );
                   })}
 
-                  {/* YouTube Playlist Results */}
+                  {/* YouTube playlist results */}
                   {ytPlaylistResults.map((pl) => (
                     <div
                       key={pl.id}
-                      className="admin-track-row flex min-w-0 items-center gap-2 overflow-hidden rounded border border-border/20 bg-black/[0.01] p-1.5 transition-all duration-300"
+                      className="group flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.015] px-3 py-2 transition-all duration-300 hover:border-white/[0.1] hover:bg-white/[0.03]"
                     >
                       {pl.thumbnail && (
                         <img
                           src={pl.thumbnail}
                           alt={pl.title}
-                          className="w-10 h-7 rounded-sm object-cover flex-shrink-0 shadow border border-black/5"
+                          className="h-9 w-14 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-white/[0.06]"
                         />
                       )}
                       <div className="min-w-0 flex-1">
-                        <p
-                          className="truncate text-xs font-bold text-foreground"
-                          title={pl.title}
-                        >
+                        <p className="truncate text-xs font-bold text-foreground" title={pl.title}>
                           {pl.title}
                         </p>
-                        <p
-                          className="mt-0.5 truncate text-xs text-muted-foreground"
-                          title={`${pl.channelTitle} · ${pl.itemCount} เพลง`}
-                        >
+                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                           {pl.channelTitle} · {pl.itemCount} เพลง
                         </p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handlePreviewPlaylist(pl)}
-                          className="h-8 text-xs px-2.5 font-bold rounded border-primary/20 text-primary hover:bg-primary/5 hover:text-primary"
-                          title="ดูรายชื่อเพลงก่อนนำเข้า"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          disabled={importingId === pl.id}
-                          onClick={() => handleImportYoutubePlaylist(pl)}
-                          className="h-8 text-xs px-3 font-bold rounded"
-                        >
-                          {importingId === pl.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <>
-                              <RefreshCw className="w-3 h-3 mr-1" />
-                              Import
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handlePreviewPlaylist(pl)}
+                        className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl border border-primary/15 px-2.5 text-xs font-bold text-primary transition-all hover:bg-primary/5"
+                        title="ดูรายชื่อเพลง"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">ดู</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={importingId === pl.id}
+                        onClick={() => handleImportYoutubePlaylist(pl)}
+                        className="flex h-8 shrink-0 items-center gap-1.5 rounded-xl bg-primary/10 px-3 text-xs font-bold text-primary transition-all hover:bg-primary/20 disabled:opacity-40"
+                      >
+                        {importingId === pl.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3" />
+                        )}
+                        <span className="hidden sm:inline">Import</span>
+                      </button>
                     </div>
                   ))}
 
-                  {searchResults.length === 0 &&
-                    ytPlaylistResults.length === 0 && (
-                      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground text-center">
-                        <Search className="w-10 h-10 mb-2 opacity-20" />
-                        <p className="text-xs">
-                          ใส่หัวข้อหรือศิลปินที่คุณชื่นชอบลงในแถบค้นหา
-                        </p>
-                      </div>
-                    )}
+                  {/* Empty state */}
+                  {searchResults.length === 0 && ytPlaylistResults.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                      <Search className="mb-2 h-10 w-10 opacity-20" />
+                      <p className="text-xs">ใส่ชื่อเพลงหรือคีย์เวิร์ดเพื่อค้นหา</p>
+                    </div>
+                  )}
                 </div>
               ) : (
-                /* Grid View style for search results (Grid Thumbnail View) */
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 p-0.5">
+                /* Grid view */
+                <div className="grid grid-cols-2 gap-3 pb-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {searchResults.map((result) => {
-                    const inPlaylist = isInPlaylist(result.id);
+                    const inPl = isInPlaylist(result.id);
                     const isAdding = addingIds.has(result.id);
                     return (
                       <div
                         key={result.id}
                         className={cn(
-                          "admin-track-card group relative rounded-lg border border-border/40 bg-card p-2 flex flex-col gap-2 transition-all duration-300",
-                          inPlaylist && "opacity-40",
+                          "group relative rounded-xl border bg-card/80 p-2.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
+                          inPl ? "border-white/[0.04] opacity-40" : "border-white/[0.06] hover:border-primary/20",
                         )}
                       >
-                        {/* Video cover */}
-                        <div className="relative aspect-square w-full rounded overflow-hidden shadow bg-muted shrink-0">
+                        <div className="relative mb-2 aspect-square w-full overflow-hidden rounded-lg shadow-inner">
                           <img
                             src={result.thumbnail || ""}
                             alt={result.title}
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
-                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
-                            <Button
-                              size="icon"
-                              variant="ghost"
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={() => handlePlayPauseSong({
+                                youtube_id: result.id, title: result.title,
+                                thumbnail: result.thumbnail, artist: result.channelTitle,
+                              })}
                               className={cn(
-                                "w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105",
-                                currentSong?.youtube_id === result.id &&
-                                  isPlaying &&
-                                  "bg-primary text-white",
+                                "flex h-9 w-9 items-center justify-center rounded-full transition-all hover:scale-110",
+                                isSongCurrent({ youtube_id: result.id }) && isPlaying
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-primary/90 text-white hover:bg-primary",
                               )}
-                              onClick={() =>
-                                handlePlayPauseSong({
-                                  youtube_id: result.id,
-                                  title: result.title,
-                                  thumbnail: result.thumbnail,
-                                  artist: result.channelTitle,
-                                })
-                              }
-                              aria-label={`เล่น ${result.title}`}
                             >
-                              {currentSong?.youtube_id === result.id &&
-                              isPlaying ? (
-                                <Pause className="w-4 h-4" />
+                              {isSongCurrent({ youtube_id: result.id }) && isPlaying ? (
+                                <Pause className="h-4 w-4" />
                               ) : (
-                                <Play className="w-4 h-4" />
+                                <Play className="ml-0.5 h-4 w-4" />
                               )}
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              disabled={inPlaylist || isAdding}
-                              className="w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105"
+                            </button>
+                            <button
+                              type="button"
+                              disabled={inPl || isAdding}
                               onClick={() => handleAddToPlaylist(result)}
-                              aria-label={`เพิ่ม ${result.title} ลงในเพลย์ลิสต์`}
+                              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/90 text-white transition-all hover:bg-primary hover:scale-110 disabled:opacity-40"
                             >
                               {isAdding ? (
-                                <Loader2 className="w-4 h-4 animate-spin text-white" />
-                              ) : inPlaylist ? (
-                                <CheckSquare className="w-4 h-4" />
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : inPl ? (
+                                <CheckSquare className="h-4 w-4" />
                               ) : (
-                                <Plus className="w-4 h-4" />
+                                <Plus className="h-4 w-4" />
                               )}
-                            </Button>
+                            </button>
                           </div>
                         </div>
-                        <div className="min-w-0 flex flex-col gap-0.5">
-                          <p
-                            className="text-xs font-bold text-foreground truncate leading-tight"
-                            title={result.title}
-                          >
-                            {result.title}
-                          </p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {result.channelTitle}
-                          </p>
-                        </div>
+                        <p className="truncate text-xs font-bold text-foreground" title={result.title}>
+                          {result.title}
+                        </p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {result.channelTitle}
+                        </p>
                       </div>
                     );
                   })}
 
-                  {/* YouTube Playlists Grid fallbacks */}
                   {ytPlaylistResults.map((pl) => (
                     <div
                       key={pl.id}
-                      className="admin-track-card group relative rounded-lg border border-border/40 bg-card p-2 flex flex-col gap-2 transition-all duration-300"
+                      className="group relative rounded-xl border border-white/[0.06] bg-card/80 p-2.5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-xl"
                     >
-                      <div className="relative aspect-square w-full rounded overflow-hidden shadow bg-muted shrink-0">
+                      <div className="relative mb-2 aspect-square w-full overflow-hidden rounded-lg shadow-inner">
                         <img
                           src={pl.thumbnail || ""}
                           alt={pl.title}
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105"
+                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                          <button
+                            type="button"
                             onClick={() => handlePreviewPlaylist(pl)}
-                            aria-label={`ดูรายชื่อเพลง ${pl.title}`}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/90 text-white transition-all hover:bg-primary hover:scale-110"
                           >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
                             disabled={importingId === pl.id}
-                            className="w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105"
                             onClick={() => handleImportYoutubePlaylist(pl)}
-                            aria-label={`นำเข้าเพลย์ลิสต์ ${pl.title}`}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/90 text-white transition-all hover:bg-primary hover:scale-110 disabled:opacity-40"
                           >
                             {importingId === pl.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-white" />
+                              <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <RefreshCw className="w-4 h-4" />
+                              <RefreshCw className="h-4 w-4" />
                             )}
-                          </Button>
+                          </button>
                         </div>
                       </div>
-                      <div className="min-w-0 flex flex-col gap-0.5">
-                        <p
-                          className="text-xs font-bold text-foreground truncate leading-tight"
-                          title={pl.title}
-                        >
-                          {pl.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {pl.channelTitle} · {pl.itemCount} เพลง
-                        </p>
-                      </div>
+                      <p className="truncate text-xs font-bold text-foreground" title={pl.title}>
+                        {pl.title}
+                      </p>
+                      <p className="truncate text-[11px] text-muted-foreground">
+                        {pl.channelTitle} · {pl.itemCount} เพลง
+                      </p>
                     </div>
                   ))}
 
-                  {searchResults.length === 0 &&
-                    ytPlaylistResults.length === 0 && (
-                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-muted-foreground text-center">
-                        <Search className="w-10 h-10 mb-2 opacity-20" />
-                        <p className="text-xs">
-                          ใส่หัวข้อหรือศิลปินที่คุณชื่นชอบลงในแถบค้นหา
-                        </p>
-                      </div>
-                    )}
+                  {searchResults.length === 0 && ytPlaylistResults.length === 0 && (
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                      <Search className="mb-2 h-10 w-10 opacity-20" />
+                      <p className="text-xs">ใส่ชื่อเพลงหรือคีย์เวิร์ดเพื่อค้นหา</p>
+                    </div>
+                  )}
                 </div>
               )}
             </ScrollArea>
+
+            {/* Recommended playlists banner */}
+            {!isSearching && searchResults.length === 0 && ytPlaylistResults.length === 0 && (
+              <div className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowRecommended(!showRecommended)}
+                  className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {showRecommended ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  เพลย์ลิสต์แนะนำ
+                </button>
+                {showRecommended && (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5 animate-in slide-in-from-top-2 fade-in duration-300">
+                    {recommendedPlaylists.map((item) => {
+                      const Icon = IconMap[item.icon];
+                      return (
+                        <button
+                          key={item.query}
+                          type="button"
+                          onClick={() => handleRecommendedPlaylist(item.query)}
+                          className={cn(
+                            "group relative overflow-hidden rounded-xl border bg-gradient-to-br p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
+                            item.color,
+                          )}
+                        >
+                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-foreground to-transparent opacity-0 transition-opacity group-hover:opacity-[0.04]" />
+                          <div className={cn("mb-3 flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300 group-hover:scale-110", item.iconColor)}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <h3 className="text-sm font-bold text-foreground transition-colors group-hover:text-primary">
+                            {item.title}
+                          </h3>
+                          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                            {item.detail}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {/* TAB CONTENT: CUSTOMER SONG REQUESTS (Full Div Height enabled) */}
+        {/* ═══ REQUESTS TAB ═══ */}
         {activeWorkspaceTab === "requests" && (
-          <div className="admin-content-panel flex-1 min-h-0 flex flex-col overflow-hidden rounded-xl p-3">
-            <div className="flex items-center justify-between shrink-0 mb-1.5">
+          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/[0.04] bg-white/[0.01] p-3 shadow-lg sm:p-4">
+            <div className="mb-3 flex items-center justify-between shrink-0">
               <p className="text-xs text-muted-foreground">
-                รายการแทร็กเพลงที่มีผู้ยื่นขอระบบคิว ({requests.length} แทร็ก)
+                คำขอเพลงจากลูกค้า · <span className="font-bold text-foreground">{requests.length}</span> รายการ
               </p>
             </div>
 
-            <ScrollArea className="flex-1 min-h-0 h-0 pr-1">
-              {requests.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground text-center">
-                  <Radio className="w-12 h-12 mb-3 opacity-20 text-muted-foreground" />
-                  <p className="text-xs font-bold text-foreground">
-                    ยังไม่มีคำขอเพลงจากระบบ
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-[260px]">
-                    ท่านสามารถนำลิงก์รหัสสแกนด้านบนไปแชร์ให้แก่ลูกค้า
-                    เพื่อทำการส่งขอเพลงเข้าระบบได้ทันที
-                  </p>
-                </div>
-              ) : musicListView === "list" ? (
-                /* List View requests style */
-                <div className="flex flex-col gap-2">
+            {requests.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
+                <Radio className="mb-3 h-12 w-12 opacity-20" />
+                <p className="text-sm font-bold text-foreground">ยังไม่มีคำขอเพลง</p>
+                <p className="mt-1 max-w-[260px] text-xs">
+                  แชร์ QR Code หรือลิงก์ให้ลูกค้าส่งคำขอเพลงได้เลย
+                </p>
+              </div>
+            ) : musicListView === "list" ? (
+              <ScrollArea className="h-0 flex-1 pr-1">
+                <div className="flex flex-col gap-1.5 pb-2">
                   {requests.map((req, i) => {
-                    const isCurrentPlaying = i === 0;
+                    const isCurrentQueued = i === 0;
                     return (
                       <div
                         key={req.id}
                         className={cn(
-                          "flex items-center gap-2 p-1.5 rounded border transition-all duration-200",
-                          isCurrentPlaying
-                            ? "border-primary/45 bg-primary/[0.04] shadow-sm"
-                            : "border-border/20 bg-black/[0.01]",
+                          "group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-300",
+                          isCurrentQueued
+                            ? "border-primary/20 bg-primary/[0.03] shadow-[0_0_20px_oklch(0.76_0.17_158/0.04)]"
+                            : "border-white/[0.04] bg-white/[0.015] hover:border-white/[0.1]",
                         )}
                       >
-                        <span className="text-xs font-semibold text-muted-foreground w-5 text-center tabular-nums">
-                          {i + 1}
+                        <span className="flex w-6 items-center justify-center">
+                          {isCurrentQueued ? (
+                            <EqualizerBars />
+                          ) : (
+                            <span className="queue-number text-xs font-semibold text-muted-foreground">
+                              {i + 1}
+                            </span>
+                          )}
                         </span>
 
                         {req.thumbnail && (
                           <img
                             src={req.thumbnail}
                             alt={req.title}
-                            className="w-10 h-7 rounded-sm object-cover shadow border border-black/5 flex-shrink-0"
+                            className="h-9 w-14 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-white/[0.06]"
                           />
                         )}
 
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-foreground truncate">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-bold text-foreground">
                             {req.title}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">
-                            ส่งขอโดย: {req.requested_by || "ลูกค้าทั่วไป"}
+                          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                            โดย {req.requested_by || "ลูกค้าทั่วไป"}
                           </p>
                         </div>
 
-                        {isCurrentPlaying && (
-                          <Badge className="h-5 px-1.5 text-xs bg-primary/20 text-primary border-primary/30 pointer-events-none font-bold shrink-0">
+                        {isCurrentQueued && (
+                          <Badge className="border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary shrink-0">
                             กำลังเล่น
                           </Badge>
                         )}
 
-                        {/* Play/Pause Button */}
-                        <Button
-                          size="icon"
-                          variant="ghost"
+                        <button
+                          type="button"
+                          onClick={() => handlePlayPauseSong({
+                            youtube_id: req.youtube_id, title: req.title,
+                            thumbnail: req.thumbnail, artist: req.requested_by || "ลูกค้าทั่วไป",
+                          })}
                           className={cn(
-                            "w-8 h-8 rounded text-primary hover:bg-primary/10 hover:text-primary shrink-0",
-                            currentSong?.youtube_id === req.youtube_id &&
-                              isPlaying &&
-                              "bg-primary/10 text-primary",
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+                            isSongCurrent({ youtube_id: req.youtube_id }) && isPlaying
+                              ? "bg-primary text-primary-foreground shadow-[0_0_16px_oklch(0.76_0.17_158/0.3)]"
+                              : "text-foreground/60 hover:bg-primary/10 hover:text-primary",
                           )}
-                          onClick={() =>
-                            handlePlayPauseSong({
-                              youtube_id: req.youtube_id,
-                              title: req.title,
-                              thumbnail: req.thumbnail,
-                              artist: req.requested_by || "ลูกค้าทั่วไป",
-                            })
-                          }
-                          aria-label={`เล่น ${req.title}`}
                         >
-                          {currentSong?.youtube_id === req.youtube_id &&
-                          isPlaying ? (
-                            <Pause className="w-3.5 h-3.5" />
+                          {isSongCurrent({ youtube_id: req.youtube_id }) && isPlaying ? (
+                            <Pause className="h-3.5 w-3.5" />
                           ) : (
-                            <Play className="w-3.5 h-3.5" />
+                            <Play className="ml-0.5 h-3.5 w-3.5" />
                           )}
-                        </Button>
+                        </button>
 
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="w-8 h-8 rounded text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
+                        <button
+                          type="button"
                           onClick={() => handleRemoveRequest(req.id)}
-                          aria-label={`ลบคำขอ ${req.title}`}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-destructive/60 transition-all hover:bg-destructive/10 hover:text-destructive"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     );
                   })}
                 </div>
-              ) : (
-                /* Grid View requests style */
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 p-0.5">
+              </ScrollArea>
+            ) : (
+              <ScrollArea className="h-0 flex-1 pr-1">
+                <div className="grid grid-cols-2 gap-3 pb-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {requests.map((req, i) => {
-                    const isCurrentPlaying = i === 0;
+                    const isCurrentQueued = i === 0;
                     return (
                       <div
                         key={req.id}
                         className={cn(
-                          "admin-track-card group relative rounded-lg border bg-card p-2 flex flex-col gap-2 transition-all duration-300",
-                          isCurrentPlaying
-                            ? "border-primary bg-primary/[0.02]"
-                            : "border-border/40",
+                          "group relative rounded-xl border bg-card/80 p-2.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
+                          isCurrentQueued
+                            ? "border-primary/30 shadow-[0_0_24px_oklch(0.76_0.17_158/0.1)]"
+                            : "border-white/[0.06] hover:border-primary/20",
                         )}
                       >
-                        {/* Request cover */}
-                        <div className="relative aspect-square w-full rounded overflow-hidden shadow bg-muted shrink-0">
+                        <div className="relative mb-2 aspect-square w-full overflow-hidden rounded-lg shadow-inner">
                           <img
                             src={req.thumbnail || ""}
                             alt={req.title}
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
-                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
-                            <Button
-                              size="icon"
-                              variant="ghost"
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={() => handlePlayPauseSong({
+                                youtube_id: req.youtube_id, title: req.title,
+                                thumbnail: req.thumbnail, artist: req.requested_by || "ลูกค้าทั่วไป",
+                              })}
                               className={cn(
-                                "w-8 h-8 rounded bg-primary/95 text-white hover:bg-primary hover:scale-105",
-                                currentSong?.youtube_id === req.youtube_id &&
-                                  isPlaying &&
-                                  "bg-primary text-white",
+                                "flex h-9 w-9 items-center justify-center rounded-full transition-all hover:scale-110",
+                                isSongCurrent({ youtube_id: req.youtube_id }) && isPlaying
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-primary/90 text-white hover:bg-primary",
                               )}
-                              onClick={() =>
-                                handlePlayPauseSong({
-                                  youtube_id: req.youtube_id,
-                                  title: req.title,
-                                  thumbnail: req.thumbnail,
-                                  artist: req.requested_by || "ลูกค้าทั่วไป",
-                                })
-                              }
-                              aria-label={`เล่น ${req.title}`}
                             >
-                              {currentSong?.youtube_id === req.youtube_id &&
-                              isPlaying ? (
-                                <Pause className="w-4 h-4" />
+                              {isSongCurrent({ youtube_id: req.youtube_id }) && isPlaying ? (
+                                <Pause className="h-4 w-4" />
                               ) : (
-                                <Play className="w-4 h-4" />
+                                <Play className="ml-0.5 h-4 w-4" />
                               )}
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="w-8 h-8 rounded bg-destructive/90 text-white hover:bg-destructive hover:scale-105"
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => handleRemoveRequest(req.id)}
-                              aria-label={`ลบคำขอ ${req.title}`}
+                              className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/80 text-white transition-all hover:bg-red-500 hover:scale-110"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
-                          {isCurrentPlaying && (
+                          {isCurrentQueued && (
                             <div className="absolute bottom-1.5 left-1.5">
-                              <Badge className="h-4 px-1 bg-primary text-primary-foreground text-xs font-bold">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                                <EqualizerBars />
                                 กำลังเล่น
-                              </Badge>
+                              </span>
                             </div>
                           )}
                         </div>
-                        <div className="min-w-0 flex flex-col gap-0.5">
-                          <p
-                            className="text-xs font-bold text-foreground truncate leading-tight"
-                            title={req.title}
-                          >
-                            {req.title}
-                          </p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            โดย: {req.requested_by || "ลูกค้าทั่วไป"}
-                          </p>
-                        </div>
+                        <p className="truncate text-xs font-bold text-foreground" title={req.title}>
+                          {req.title}
+                        </p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          โดย {req.requested_by || "ลูกค้าทั่วไป"}
+                        </p>
                       </div>
                     );
                   })}
                 </div>
-              )}
-            </ScrollArea>
+              </ScrollArea>
+            )}
           </div>
         )}
       </section>
 
-      {/* YouTube Playlist Preview Modal */}
+      {/* ════════════════════════════════════════════════════
+         YOUTUBE PLAYLIST PREVIEW MODAL
+      ════════════════════════════════════════════════════ */}
       {isPreviewModalOpen && activePreviewPlaylist && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-primary/15 bg-background shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative flex w-full max-w-2xl max-h-[85vh] flex-col rounded-2xl border border-primary/20 bg-background/95 shadow-2xl backdrop-blur-xl animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-4">
+            <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-5 py-4">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 {activePreviewPlaylist.thumbnail && (
                   <img
                     src={activePreviewPlaylist.thumbnail}
                     alt={activePreviewPlaylist.title}
-                    className="h-9 w-12 shrink-0 rounded object-cover shadow border border-black/5"
+                    className="h-10 w-14 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-white/[0.06]"
                   />
                 )}
                 <div className="min-w-0 flex-1">
-                  <h3
-                    className="truncate text-sm font-extrabold text-foreground"
-                    title={activePreviewPlaylist.title}
-                  >
+                  <h3 className="truncate text-sm font-extrabold text-foreground">
                     {activePreviewPlaylist.title}
                   </h3>
-                  <p
-                    className="mt-0.5 truncate text-xs text-muted-foreground"
-                    title={`${activePreviewPlaylist.channelTitle} · มีทั้งหมด ${activePreviewPlaylist.itemCount} เพลง`}
-                  >
-                    ช่อง: {activePreviewPlaylist.channelTitle} · มีทั้งหมด{" "}
-                    {activePreviewPlaylist.itemCount} เพลง
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {activePreviewPlaylist.channelTitle} · {activePreviewPlaylist.itemCount} เพลง
                   </p>
                 </div>
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
+              <button
+                type="button"
                 onClick={() => setIsPreviewModalOpen(false)}
-                className="h-8 w-8 shrink-0 rounded-full p-0 text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-all hover:bg-white/[0.08] hover:text-foreground"
               >
-                <span className="text-lg">×</span>
-              </Button>
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Content */}
-            <ScrollArea className="flex-1 overflow-y-auto overflow-x-hidden p-5">
+            <ScrollArea className="flex-1 overflow-y-auto px-5 py-4">
               {isLoadingPreview ? (
                 <div className="flex flex-col items-center justify-center py-20">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    กำลังโหลดรายชื่อเพลงจาก YouTube...
-                  </p>
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="mt-2 text-xs text-muted-foreground">กำลังโหลดรายชื่อเพลง...</p>
                 </div>
               ) : previewSongs.length === 0 ? (
-                <div className="text-center py-12 text-xs text-muted-foreground">
-                  ไม่พบรายชื่อเพลงในเพลย์ลิสต์นี้
-                </div>
+                <div className="py-12 text-center text-xs text-muted-foreground">ไม่พบรายชื่อเพลง</div>
               ) : (
-                <div className="flex w-full min-w-0 max-w-full flex-col gap-2 overflow-hidden">
+                <div className="flex flex-col gap-1.5">
                   {previewSongs.map((song, i) => {
-                    const isThisSongPlaying =
-                      currentSong?.youtube_id === song.youtube_id && isPlaying;
+                    const isThisSongPlaying = isSongCurrent({ youtube_id: song.youtube_id }) && isPlaying;
                     return (
                       <div
                         key={song.id}
-                        className="group relative flex w-full min-w-0 max-w-full items-center gap-3 overflow-hidden rounded-lg border border-border/40 bg-secondary/20 p-2 pr-12 transition-all hover:bg-accent"
+                        className={cn(
+                          "group flex items-center gap-3 rounded-xl border px-3 py-2 transition-all duration-200",
+                          isThisSongPlaying
+                            ? "border-primary/20 bg-primary/[0.03]"
+                            : "border-white/[0.04] bg-white/[0.015] hover:bg-white/[0.03]",
+                        )}
                       >
                         <span className="w-6 shrink-0 text-center text-xs font-semibold tabular-nums text-muted-foreground">
                           {String(i + 1).padStart(2, "0")}
                         </span>
-
                         {song.thumbnail && (
                           <img
                             src={song.thumbnail}
                             alt={song.title}
-                            className="h-9 w-12 flex-shrink-0 rounded object-cover shadow border border-black/5"
+                            className="h-9 w-12 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-white/[0.06]"
                           />
                         )}
-
-                        <div className="w-0 min-w-0 flex-1">
-                          <p
-                            className="truncate text-xs font-bold text-foreground transition-colors group-hover:text-primary"
-                            title={song.title}
-                          >
+                        <div className="min-w-0 flex-1">
+                          <p className={cn("truncate text-xs font-bold transition-colors", isThisSongPlaying ? "text-primary" : "text-foreground")}>
                             {song.title}
                           </p>
-                          <p
-                            className="mt-0.5 truncate text-xs text-muted-foreground"
-                            title={song.channelTitle}
-                          >
+                          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                             {song.channelTitle}
                           </p>
                         </div>
-
-                        <div className="absolute right-2 top-1/2 z-10 flex shrink-0 -translate-y-1/2 items-center gap-2">
-                          {/* Play Button */}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className={cn(
-                              "h-8 w-8 shrink-0 rounded bg-background/70 text-primary shadow-sm ring-1 ring-border/40 backdrop-blur hover:bg-primary/10 hover:text-primary",
-                              isThisSongPlaying && "bg-primary/10",
-                            )}
-                            onClick={() => handlePlayPauseSong(song)}
-                            aria-label={`เล่น ${song.title}`}
-                          >
-                            {isThisSongPlaying ? (
-                              <Pause className="w-3.5 h-3.5" />
-                            ) : (
-                              <Play className="w-3.5 h-3.5" />
-                            )}
-                          </Button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handlePlayPauseSong(song)}
+                          className={cn(
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all",
+                            isThisSongPlaying
+                              ? "bg-primary text-primary-foreground shadow-[0_0_16px_oklch(0.76_0.17_158/0.3)]"
+                              : "text-foreground/60 hover:bg-primary/10 hover:text-primary",
+                          )}
+                        >
+                          {isThisSongPlaying ? (
+                            <Pause className="h-3.5 w-3.5" />
+                          ) : (
+                            <Play className="ml-0.5 h-3.5 w-3.5" />
+                          )}
+                        </button>
                       </div>
                     );
                   })}
@@ -1744,40 +1757,34 @@ export function AdminView() {
             </ScrollArea>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2 border-t border-border/60 bg-muted/20 px-5 py-4 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
+            <div className="flex items-center justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
+              <button
+                type="button"
                 onClick={() => setIsPreviewModalOpen(false)}
-                className="text-xs font-bold"
+                className="rounded-xl border border-white/[0.08] px-4 py-2 text-xs font-bold text-muted-foreground transition-all hover:bg-white/[0.04] hover:text-foreground"
               >
-                ปิดหน้าต่าง
-              </Button>
-              <Button
-                size="sm"
+                ปิด
+              </button>
+              <button
+                type="button"
                 disabled={importingId === activePreviewPlaylist.id}
                 onClick={() => {
                   setIsPreviewModalOpen(false);
                   handleImportYoutubePlaylist(activePreviewPlaylist);
                 }}
-                className="text-xs font-bold"
+                className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-4 py-2 text-xs font-bold text-primary transition-all hover:bg-primary/20 disabled:opacity-40"
               >
                 {importingId === activePreviewPlaylist.id ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
-                    กำลังนำเข้า...
-                  </>
+                  <Loader2 className="h-3 w-3 animate-spin" />
                 ) : (
-                  <>
-                    <RefreshCw className="w-3 h-3 mr-1.5" />
-                    นำเข้าเพลย์ลิสต์นี้
-                  </>
+                  <RefreshCw className="h-3 w-3" />
                 )}
-              </Button>
+                นำเข้าเพลย์ลิสต์นี้
+              </button>
             </div>
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
