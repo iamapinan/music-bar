@@ -241,8 +241,10 @@ function PlaylistCard({
         {/* Hover overlay actions - centered, clean, no slide */}
         <div
           className={cn(
-            "absolute inset-0 z-10 flex items-center justify-center gap-2.5 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
-            isCurrent && "opacity-100",
+            "absolute inset-0 flex items-center justify-center gap-2.5 bg-black/40 transition-opacity duration-300",
+            isCurrent
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto",
           )}
           onClick={(e) => e.stopPropagation()}
         >
@@ -442,7 +444,9 @@ function SongGridCard({
         <div
           className={cn(
             "absolute inset-0 flex items-center justify-center gap-2 bg-black/45 transition-opacity duration-200",
-            isCurrentSong && isPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+            isCurrentSong && isPlaying
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto",
           )}
         >
           <button
