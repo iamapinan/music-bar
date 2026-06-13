@@ -328,10 +328,10 @@ function SongRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-300",
+        "group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-200",
         isCurrentSong && isPlaying
           ? "border-primary/30 bg-primary/[0.04] shadow-[0_0_20px_oklch(0.76_0.17_158/0.06)]"
-          : "border-white/[0.04] bg-white/[0.015] hover:border-white/[0.1] hover:bg-white/[0.03] hover:translate-x-1",
+          : "border-white/[0.04] bg-white/[0.015] hover:border-white/[0.1] hover:bg-white/[0.03]",
       )}
     >
       {/* Index / Playing indicator */}
@@ -359,7 +359,7 @@ function SongRow({
         <p
           className={cn(
             "truncate text-xs font-bold transition-colors duration-200",
-            isCurrentSong ? "text-primary" : "text-foreground group-hover:text-primary",
+            isCurrentSong ? "text-primary" : "text-foreground",
           )}
         >
           {song.title}
@@ -384,7 +384,7 @@ function SongRow({
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
           isCurrentSong && isPlaying
             ? "bg-primary text-primary-foreground shadow-[0_0_16px_oklch(0.76_0.17_158/0.3)]"
-            : "text-foreground/60 hover:bg-primary/10 hover:text-primary opacity-0 group-hover:opacity-100",
+            : "text-muted-foreground/60 hover:bg-primary/10 hover:text-primary",
         )}
         aria-label={isPlaying && isCurrentSong ? `หยุด ${song.title}` : `เล่น ${song.title}`}
       >
@@ -399,7 +399,7 @@ function SongRow({
       <button
         type="button"
         onClick={onRemove}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-destructive/60 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground/40 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive"
         aria-label={`ลบ ${song.title}`}
       >
         <Trash2 className="h-3.5 w-3.5" />
@@ -425,10 +425,10 @@ function SongGridCard({
   return (
     <div
       className={cn(
-        "group relative rounded-xl border bg-card/80 p-2.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
+        "group relative rounded-xl border bg-card/80 p-2.5 transition-all duration-200",
         isCurrentSong && isPlaying
           ? "border-primary/30 shadow-[0_0_24px_oklch(0.76_0.17_158/0.1)]"
-          : "border-white/[0.06] hover:border-primary/20",
+          : "border-white/[0.06] hover:border-white/[0.12]",
       )}
     >
       {/* Thumbnail */}
@@ -436,10 +436,15 @@ function SongGridCard({
         <img
           src={song.thumbnail || ""}
           alt={song.title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         {/* Hover overlay */}
-        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center gap-2 bg-black/45 transition-opacity duration-200",
+            isCurrentSong && isPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+          )}
+        >
           <button
             type="button"
             onClick={onPlayPause}

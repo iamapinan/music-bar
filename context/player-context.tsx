@@ -165,6 +165,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
     setIsInitialized(true)
+
+    // Listen for playback changes from other tabs/pages (storage event fires in other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `${tenantStoragePrefix}:playback_state` && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue)
+          if (parsed?.song?.youtube_id) {
+            setCustomSong(parsed.song)
+            customSongRef.current = parsed.song
+            if (typeof parsed.position === 'number' && parsed.position > 1) {
+              setResumePosition(parsed.position)
+            }
+          }
+        } catch {}
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
   }, [tenantStoragePrefix])
 
   // Save state
@@ -733,7 +751,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCustomSong(formattedSong)
     customSongRef.current = formattedSong
     setIsPlaying(true)
-  }, [])
+
+    // Save to playback_state immediately so other tabs/pages pick it up
+    try {
+      localStorage.setItem(`${tenantStoragePrefix}:playback_state`, JSON.stringify({
+        song: {
+          youtube_id: formattedSong.youtube_id,
+          title: formattedSong.title,
+          thumbnail: formattedSong.thumbnail || '',
+          artist: formattedSong.artist || '',
+        },
+        position: 0,
+        savedAt: Date.now(),
+      }))
+    } catch {}
+  }, [tenantStoragePrefix])
 
   if (!isInitialized) return null
 
