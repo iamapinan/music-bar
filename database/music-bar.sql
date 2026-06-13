@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS playlists (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS playlists_single_default_idx
-  ON playlists (is_default)
+CREATE UNIQUE INDEX IF NOT EXISTS playlists_tenant_single_default_idx
+  ON playlists (tenant_id, is_default)
   WHERE is_default = true;
 
 CREATE TABLE IF NOT EXISTS playlist_songs (

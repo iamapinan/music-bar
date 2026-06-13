@@ -159,13 +159,13 @@ export function PlayerBottomBar() {
                     "w-10 h-10 rounded-full",
                     pathname === "/admin"
                       ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <LayoutDashboard className="w-5 h-5" />
-                </Button>
-              </Link>
-            </div>
+                      : "text-white/60 hover:text-white",
+                    )}
+                  >
+                    <LayoutDashboard className="w-5 h-5" />
+                  </Button>
+                </Link>
+              </div>
 
             <div className="relative group shrink-0">
               <div className="h-10 w-10 overflow-hidden rounded border border-white/10 bg-muted sm:h-16 sm:w-16">
@@ -186,7 +186,7 @@ export function PlayerBottomBar() {
               <h3 className="text-xs sm:text-base font-bold truncate text-white leading-tight">
                 {currentSong.title}
               </h3>
-              <p className="text-[9px] sm:text-xs text-white/80 font-medium mt-0.5 truncate uppercase tracking-wider">
+              <p className="text-[9px] sm:text-xs text-white/90 font-medium mt-0.5 truncate uppercase tracking-wider">
                 {"requested_by" in currentSong
                   ? `${currentSong.requested_by || "ลูกค้า"}`
                   : "Playlist"}
@@ -201,7 +201,7 @@ export function PlayerBottomBar() {
                 size="icon"
                 variant="ghost"
                 onClick={handlePrevious}
-                className="hidden sm:flex w-10 h-10 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30"
+                className="hidden sm:flex w-10 h-10 rounded-full text-white/60 hover:text-white disabled:opacity-30"
                 disabled={playMode === "request"}
               >
                 <SkipBack className="w-5 h-5" />
@@ -223,12 +223,12 @@ export function PlayerBottomBar() {
                 size="icon"
                 variant="ghost"
                 onClick={handleSkip}
-                className="w-10 h-10 rounded-full text-muted-foreground hover:text-foreground"
+                className="w-10 h-10 rounded-full text-white/60 hover:text-white"
               >
                 <SkipForward className="w-5 h-5" />
               </Button>
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] text-muted-foreground font-medium">
+            <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/60 font-medium">
               <span>{formatTime(displayTime)}</span>
               <span>/</span>
               <span>{formatTime(duration)}</span>
@@ -246,7 +246,7 @@ export function PlayerBottomBar() {
                   "w-10 h-10 rounded-full",
                   isVideoMode
                     ? "text-primary bg-primary/10"
-                    : "text-muted-foreground",
+                    : "text-white/60 hover:text-white",
                 )}
                 onClick={() => setIsVideoMode(!isVideoMode)}
               >
@@ -260,7 +260,7 @@ export function PlayerBottomBar() {
                   "w-10 h-10 rounded-full",
                   isFullscreen
                     ? "text-primary bg-primary/10"
-                    : "text-muted-foreground",
+                    : "text-white/60 hover:text-white",
                 )}
                 onClick={() => setIsFullscreen(!isFullscreen)}
               >
@@ -278,7 +278,7 @@ export function PlayerBottomBar() {
                   "w-10 h-10 rounded-full",
                   isShuffle
                     ? "text-primary bg-primary/10"
-                    : "text-muted-foreground",
+                    : "text-white/60 hover:text-white",
                 )}
                 onClick={toggleShuffle}
               >
@@ -290,7 +290,7 @@ export function PlayerBottomBar() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="w-8 h-8 rounded-full shrink-0 text-muted-foreground"
+                  className="w-8 h-8 rounded-full shrink-0 text-white/60 hover:text-white"
                   onClick={toggleMute}
                 >
                   {isMuted ? (
@@ -335,7 +335,7 @@ export function PlayerBottomBar() {
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  "hidden h-9 w-9 rounded-full min-[390px]:flex sm:h-10 sm:w-10",
+                  "hidden h-9 w-9 rounded-full text-white/60 hover:text-white min-[390px]:flex sm:h-10 sm:w-10",
                   isVideoMode && "text-primary bg-primary/10",
                 )}
                 onClick={() => setIsVideoMode(!isVideoMode)}
@@ -349,7 +349,7 @@ export function PlayerBottomBar() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 rounded-full sm:h-10 sm:w-10"
+                    className="h-9 w-9 rounded-full text-white/60 hover:text-white sm:h-10 sm:w-10"
                   >
                     <MoreVertical className="w-4 h-4" />
                   </Button>
