@@ -116,9 +116,10 @@ function SeekBar({
       style={{ touchAction: "none" }}
     >
       <div className="relative w-full h-1 rounded-full overflow-hidden bg-white/10 group-hover:h-1.5 transition-[height] duration-150">
+        {/* Progress fill — uses transform: scaleX for GPU compositing, no layout/paint */}
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-primary"
-          style={{ width: `${pct}%` }}
+          className="absolute inset-0 origin-left rounded-full bg-primary will-change-transform"
+          style={{ transform: `scaleX(${pct / 100})` }}
         />
         {/* Thumb */}
         <div
