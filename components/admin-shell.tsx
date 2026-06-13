@@ -48,7 +48,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PersistentYouTubePlayer } from "@/components/persistent-player";
 import { PlayerBottomBar } from "@/components/player-bottom-bar";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -816,7 +815,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </DialogContent>
       </Dialog>
 
-      <PersistentYouTubePlayer />
       <PlayerBottomBar />
     </div>
   );
