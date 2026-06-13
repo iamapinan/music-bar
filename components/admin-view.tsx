@@ -31,12 +31,7 @@ import {
   Coffee,
   Moon,
   Laptop,
-  Disc3,
   Music,
-  Headphones,
-  Clock,
-  Album,
-  Mic2,
   Library,
   ArrowUpRight,
   X,
@@ -164,62 +159,7 @@ function EqualizerBars() {
   );
 }
 
-/* ─── Stat Card ─── */
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  accent = false,
-  delay = 0,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  accent?: boolean;
-  delay?: number;
-}) {
-  return (
-    <div
-      className={cn(
-        "group relative flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-500 hover:-translate-y-0.5",
-        accent
-          ? "border-primary/25 bg-primary/[0.04] shadow-[0_0_30px_oklch(0.76_0.17_158/0.08)]"
-          : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]",
-      )}
-      style={{ animation: `slide-up 0.4s ease-out ${delay}s both` }}
-    >
-      <div
-        className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110",
-          accent
-            ? "bg-primary/15 text-primary shadow-[0_0_20px_oklch(0.76_0.17_158/0.15)]"
-            : "bg-white/[0.06] text-foreground/70",
-        )}
-      >
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          {label}
-        </p>
-        <p
-          className={cn(
-            "mt-0.5 text-lg font-extrabold tracking-tight tabular-nums truncate",
-            accent ? "text-primary" : "text-foreground",
-          )}
-        >
-          {value}
-        </p>
-      </div>
-      {/* Subtle glow dot */}
-      {accent && (
-        <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_12px_oklch(0.76_0.17_158/0.6)]" />
-      )}
-    </div>
-  );
-}
-
-/* ─── Playlist Card (Horizontal Rack) ─── */
+/* ─── Animated Equalizer Bars ─── */
 function PlaylistCard({
   playlist,
   isCurrent,
@@ -599,9 +539,6 @@ export function AdminView() {
 
   /* ── Derived ── */
   const totalSongs = useMemo(() => playlists.reduce((sum, pl) => sum + (pl.song_count ?? 0), 0), [playlists]);
-  const totalPlaylists = playlists.length;
-  const activeRequests = requests.length;
-  const nowPlayingTitle = currentSong?.title || "—";
 
   useEffect(() => {
     setSelectedPlaylists(new Set(activePlaylistIds));
@@ -836,15 +773,6 @@ export function AdminView() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-5 px-4 py-5 sm:px-6 xl:gap-6 xl:px-8 xl:py-6">
-      {/* ════════════════════════════════════════════════════
-         HEADER: STATS BAR
-      ════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard icon={Music2} label="เพลงทั้งหมด" value={totalSongs} accent delay={0} />
-        <StatCard icon={Album} label="เพลย์ลิสต์" value={totalPlaylists} delay={0.05} />
-        <StatCard icon={Radio} label="คำขอที่รอ" value={activeRequests} accent={activeRequests > 0} delay={0.1} />
-        <StatCard icon={Disc3} label="กำลังเล่น" value={nowPlayingTitle} delay={0.15} />
-      </div>
 
       {/* ════════════════════════════════════════════════════
          PLAYLIST RACK SECTION
@@ -981,12 +909,14 @@ export function AdminView() {
           {recommendedPlaylists.map((item, i) => {
             const Icon = IconMap[item.icon];
             return (
-              <button
+              <div
                 key={item.query}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => handleRecommendedPlaylist(item.query)}
+                onKeyDown={(e) => e.key === 'Enter' && handleRecommendedPlaylist(item.query)}
                 className={cn(
-                  "group relative overflow-hidden rounded-xl border bg-gradient-to-br p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.98]",
+                  "group relative cursor-pointer overflow-hidden rounded-2xl border bg-gradient-to-br p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.98]",
                   item.color,
                 )}
                 style={{ animation: `slide-up 0.3s ease-out ${i * 0.06}s both` }}
@@ -1006,7 +936,7 @@ export function AdminView() {
                 <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground transition-colors duration-300 group-hover:text-foreground/70">
                   {item.detail}
                 </p>
-              </button>
+              </div>
             );
           })}
         </div>
