@@ -90,8 +90,25 @@ export function LandingPage() {
         </nav>
       </header>
 
-      <section className="relative z-10 mx-auto grid max-w-7xl gap-12 px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:grid-cols-[1.02fr_0.98fr] lg:px-8 lg:pb-24 lg:pt-20">
-        <div className="flex max-w-3xl flex-col justify-center">
+      <section className="relative z-10 mx-auto grid max-w-7xl gap-12 overflow-hidden px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:grid-cols-[1.02fr_0.98fr] lg:px-8 lg:pb-24 lg:pt-20">
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+          <img
+            src="/hero-party-background.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover object-center opacity-42 saturate-[1.08]"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,11,10,0.95)_0%,rgba(8,11,10,0.78)_34%,rgba(8,11,10,0.48)_68%,rgba(8,11,10,0.74)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_24%_42%,rgba(8,11,10,0.38),transparent_34rem),linear-gradient(180deg,rgba(8,11,10,0.05)_0%,rgba(8,11,10,0.88)_100%)]" />
+          <div className="absolute inset-x-[-18%] top-[-22%] h-[82%] bg-[radial-gradient(circle_at_24%_30%,rgba(255,70,116,0.18),transparent_18rem),radial-gradient(circle_at_58%_20%,rgba(52,211,153,0.24),transparent_22rem),radial-gradient(circle_at_84%_36%,rgba(84,160,255,0.18),transparent_19rem)] blur-[2px]" />
+          <div className="absolute left-[7%] top-[-24%] h-[118%] w-24 rotate-[16deg] bg-[linear-gradient(180deg,transparent,rgba(52,211,153,0.20),transparent)] blur-2xl" />
+          <div className="absolute right-[12%] top-[-18%] h-[108%] w-20 -rotate-[22deg] bg-[linear-gradient(180deg,transparent,rgba(255,70,116,0.15),transparent)] blur-2xl" />
+          <div className="absolute left-[42%] top-[-28%] h-[122%] w-16 rotate-[6deg] bg-[linear-gradient(180deg,transparent,rgba(134,190,255,0.14),transparent)] blur-2xl" />
+          <div className="absolute inset-0 opacity-[0.16] [background-image:radial-gradient(circle_at_center,rgba(255,255,255,0.52)_0_1px,transparent_1.5px)] [background-size:28px_28px] [mask-image:radial-gradient(ellipse_74%_48%_at_50%_18%,black,transparent_76%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,11,10,0)_0%,rgba(8,11,10,0.18)_44%,rgba(8,11,10,0.92)_100%)]" />
+        </div>
+
+        <div className="relative z-10 flex max-w-3xl flex-col justify-center">
           <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-xs font-medium text-white/68 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             Multi-tenant music control
@@ -119,7 +136,7 @@ export function LandingPage() {
           </div>
         </div>
 
-        <div className="relative min-h-[460px] lg:min-h-[560px]">
+        <div className="relative z-10 min-h-[460px] lg:min-h-[560px]">
           <div className="absolute left-0 top-6 w-[78%] overflow-hidden rounded-[2rem] border border-white/10 bg-[#121817] shadow-[0_40px_90px_rgba(0,0,0,0.45)] sm:left-8">
             <div className="aspect-[4/5] bg-[radial-gradient(circle_at_50%_22%,rgba(52,211,153,0.24),transparent_18rem),linear-gradient(160deg,#1a2421,#090d0c_62%)] p-5">
               <div className="flex items-center justify-between text-xs text-white/44">

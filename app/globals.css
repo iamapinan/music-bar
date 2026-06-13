@@ -926,3 +926,48 @@ body.admin-mode.light-theme {
 .admin-shell.light-theme body.admin-mode ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.7 0.02 165) !important;
 }
+
+/* ===== Player Stage Visualizer & Particles ===== */
+
+@keyframes visualizer-bounce {
+  0% {
+    transform: scaleY(0.15);
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 0.55;
+  }
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate3d(
+      calc((var(--dx, 0) * 1px)),
+      calc(-40px - (var(--dy, 0) * 1px)),
+      0
+    ) scale(0);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-stage-surface * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

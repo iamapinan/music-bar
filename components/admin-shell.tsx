@@ -507,6 +507,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </Link>
             </>
           )}
+          <Link href="/admin/security" title="ตั้งค่า PIN">
+            <Button
+              variant="ghost"
+              className={cn(
+                "h-11 w-full gap-3 rounded-xl px-3",
+                isSidebarCollapsed ? "justify-center" : "justify-start",
+                pathname === "/admin/security"
+                  ? "bg-primary/15 text-primary"
+                  : "text-muted-foreground hover:text-primary",
+              )}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span className={cn(isSidebarCollapsed && "hidden")}>
+                ความปลอดภัย
+              </span>
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             className={cn(
@@ -719,6 +736,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 </Button>
               </Link>
             )}
+
+            {/* Security / PIN (all admins) */}
+            <Link href="/admin/security">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                title="ตั้งค่า PIN"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
 
             {activeTenant?.slug && (
               <>

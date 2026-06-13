@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { usePlayer } from "@/context/player-context";
 import type { SongRequest } from "@/lib/types";
 import { forceUpdateApp } from "@/lib/app-update";
+import { PlayerStage } from "@/components/player-stage";
 
 export function PlayerView() {
   const {
@@ -433,6 +434,9 @@ export function PlayerView() {
               </aside>
             </section>
           )}
+
+          {/* --- Premium playlist stage rail --- */}
+          {!isVideoMode && <PlayerStage />}
         </div>
       </div>
     </div>
