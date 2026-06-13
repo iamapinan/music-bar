@@ -710,7 +710,7 @@ export function AdminView() {
         )}
       </section>
 
-      <section className="admin-content-panel rounded-2xl p-5 border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent shadow-xl relative overflow-hidden">
+      <section className="admin-content-panel relative overflow-hidden rounded-2xl border border-border/60 p-5 shadow-xl">
         {/* Subtle background glow */}
         <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-primary/5 blur-[80px]" />
 
@@ -719,11 +719,11 @@ export function AdminView() {
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
               Recommended playlists
             </p>
-            <h2 className="mt-1.5 text-base font-extrabold text-white tracking-tight">
+            <h2 className="mt-1.5 text-base font-extrabold tracking-tight text-foreground">
               เพลย์ลิสต์แนะนำและกำลังนิยม
             </h2>
           </div>
-          <p className="text-xs text-white/50 leading-relaxed max-w-xs sm:text-right">
+          <p className="max-w-xs text-xs leading-relaxed text-muted-foreground sm:text-right">
             กดที่การ์ดเพื่อค้นหาเพลย์ลิสต์บน YouTube และนำเข้าคลังเพลงของร้าน
           </p>
         </div>
@@ -742,7 +742,7 @@ export function AdminView() {
                 )}
               >
                 {/* Glowing border and inner glow */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br from-white to-transparent pointer-events-none" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-foreground to-transparent opacity-0 transition-opacity group-hover:opacity-10" />
 
                 <div
                   className={cn(
@@ -752,10 +752,10 @@ export function AdminView() {
                 >
                   <Icon className="h-5 w-5" />
                 </div>
-                <h3 className="text-sm font-bold text-white transition-colors duration-300 group-hover:text-primary">
+                <h3 className="text-sm font-bold text-foreground transition-colors duration-300 group-hover:text-primary">
                   {item.title}
                 </h3>
-                <p className="mt-2 text-xs leading-relaxed text-white/45 transition-colors duration-300 group-hover:text-white/60">
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground transition-colors duration-300 group-hover:text-foreground/70">
                   {item.detail}
                 </p>
               </button>
@@ -784,7 +784,7 @@ export function AdminView() {
           {/* Console controls & toggle layout view */}
           <div className="scrollbar-none flex max-w-full shrink-0 flex-nowrap items-center gap-2 overflow-x-auto sm:border-l sm:border-border/40 sm:pl-3">
             {/* View Mode Grid/List selectors */}
-            <div className="flex shrink-0 rounded-full border border-border/60 bg-black/5 shadow-inner p-0.5">
+            <div className="flex shrink-0 rounded-full border border-border/60 bg-secondary/40 p-0.5 shadow-inner">
               <Button
                 type="button"
                 variant="ghost"
@@ -794,7 +794,7 @@ export function AdminView() {
                   "h-6 w-7 rounded-full p-0 transition-all",
                   musicListView === "list"
                     ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
                 title="มุมมองรายการ"
               >
@@ -809,7 +809,7 @@ export function AdminView() {
                   "h-6 w-7 rounded-full p-0 transition-all",
                   musicListView === "grid"
                     ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
                 title="มุมมองตารางรูปปก"
               >
@@ -818,14 +818,14 @@ export function AdminView() {
             </div>
 
             {/* Tab switch buttons */}
-            <div className="scrollbar-none flex shrink-0 overflow-x-auto rounded-full border border-border/60 bg-black/5 shadow-inner p-0.5 gap-0.5">
+            <div className="scrollbar-none flex shrink-0 gap-0.5 overflow-x-auto rounded-full border border-border/60 bg-secondary/40 p-0.5 shadow-inner">
               <button
                 onClick={() => setActiveWorkspaceTab("tracks")}
                 className={cn(
                   "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all",
                   activeWorkspaceTab === "tracks"
                     ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
                 <List className="w-3 h-3" />
@@ -837,7 +837,7 @@ export function AdminView() {
                   "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all",
                   activeWorkspaceTab === "search"
                     ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
                 <Search className="w-3 h-3" />
@@ -849,7 +849,7 @@ export function AdminView() {
                   "relative flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all",
                   activeWorkspaceTab === "requests"
                     ? "bg-primary/15 text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
                 <Radio
@@ -1661,7 +1661,7 @@ export function AdminView() {
                 size="sm"
                 variant="ghost"
                 onClick={() => setIsPreviewModalOpen(false)}
-                className="h-8 w-8 shrink-0 p-0 rounded-full hover:bg-white/10 text-muted-foreground hover:text-foreground"
+                className="h-8 w-8 shrink-0 rounded-full p-0 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 <span className="text-lg">×</span>
               </Button>
@@ -1688,7 +1688,7 @@ export function AdminView() {
                     return (
                       <div
                         key={song.id}
-                        className="group relative flex w-full min-w-0 max-w-full items-center gap-3 overflow-hidden rounded-lg border border-border/20 bg-black/[0.01] p-2 pr-12 transition-all hover:bg-black/10"
+                        className="group relative flex w-full min-w-0 max-w-full items-center gap-3 overflow-hidden rounded-lg border border-border/40 bg-secondary/20 p-2 pr-12 transition-all hover:bg-accent"
                       >
                         <span className="w-6 shrink-0 text-center text-xs font-semibold tabular-nums text-muted-foreground">
                           {String(i + 1).padStart(2, "0")}

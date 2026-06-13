@@ -93,7 +93,7 @@ export function AdminUsersView() {
 
   return (
     <main className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-4 px-4 py-4 sm:px-6 xl:gap-6 xl:px-8 xl:py-7">
-      <section className="admin-dashboard-hero rounded-2xl border border-white/[0.08] p-5 sm:p-6">
+      <section className="admin-dashboard-hero rounded-2xl border border-border/60 p-5 sm:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
@@ -102,10 +102,10 @@ export function AdminUsersView() {
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
               Super admin
             </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
               จัดการผู้ดูแลระบบ
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-white/60">
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               เพิ่ม Google account ให้ดูแลร้านได้หลายร้าน และกำหนด role
               ต่อร้านได้จากหน้านี้
             </p>
@@ -115,7 +115,7 @@ export function AdminUsersView() {
 
       <section className="grid gap-4 xl:grid-cols-[420px_1fr]">
         <div className="admin-content-panel rounded-2xl p-4 sm:p-5">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-white">
+          <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-foreground">
             <Plus className="h-4 w-4 text-primary" />
             เพิ่ม admin
           </h2>
@@ -126,13 +126,13 @@ export function AdminUsersView() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="name@example.com"
-                className="border-white/10 bg-black/20"
+                className="border-border bg-secondary/40"
               />
             </div>
             <div className="space-y-2">
               <Label>ร้าน</Label>
               <Select value={tenantId} onValueChange={setTenantId}>
-                <SelectTrigger className="border-white/10 bg-black/20">
+                <SelectTrigger className="border-border bg-secondary/40">
                   <SelectValue placeholder="เลือกร้าน" />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,7 +152,7 @@ export function AdminUsersView() {
                   setRole(value as "owner" | "admin" | "staff")
                 }
               >
-                <SelectTrigger className="border-white/10 bg-black/20">
+                <SelectTrigger className="border-border bg-secondary/40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -174,13 +174,13 @@ export function AdminUsersView() {
         </div>
 
         <div className="admin-content-panel rounded-2xl p-4 sm:p-5">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-white">
+          <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-foreground">
             <UserRound className="h-4 w-4 text-primary" />
             รายชื่อ admin
           </h2>
           <Table>
             <TableHeader>
-              <TableRow className="border-white/10">
+              <TableRow className="border-border">
                 <TableHead>Email</TableHead>
                 <TableHead>ร้าน</TableHead>
                 <TableHead>Role</TableHead>
@@ -189,28 +189,28 @@ export function AdminUsersView() {
             </TableHeader>
             <TableBody>
               {grants.length === 0 ? (
-                <TableRow className="border-white/10">
+                <TableRow className="border-border">
                   <TableCell
                     colSpan={4}
-                    className="py-10 text-center text-white/45"
+                    className="py-10 text-center text-muted-foreground"
                   >
                     ยังไม่มี admin grant
                   </TableCell>
                 </TableRow>
               ) : (
                 grants.map((grant) => (
-                  <TableRow key={grant.id} className="border-white/10">
+                  <TableRow key={grant.id} className="border-border">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/60">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
                           <UserRound className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-semibold text-white">
+                          <p className="font-semibold text-foreground">
                             {grant.email}
                           </p>
                           {grant.user_name && (
-                            <p className="text-xs text-white/45">
+                            <p className="text-xs text-muted-foreground">
                               {grant.user_name}
                             </p>
                           )}
@@ -218,13 +218,13 @@ export function AdminUsersView() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2 text-dark/75">
-                        <Store className="h-4 w-4 text-dark" />
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Store className="h-4 w-4 text-muted-foreground" />
                         {grant.tenant_name || grant.tenant_slug}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-xs font-bold uppercase tracking-[0.12em] text-dark">
+                      <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-xs font-bold uppercase tracking-[0.12em] text-primary">
                         {grant.role}
                       </span>
                     </TableCell>
@@ -232,7 +232,7 @@ export function AdminUsersView() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-white/45 hover:text-destructive"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(grant.id)}
                       >
                         <Trash2 className="h-4 w-4" />

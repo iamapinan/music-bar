@@ -36,7 +36,7 @@ export function DashboardView() {
           ["Current tracks", playlistSongs.length, "ในเพลย์ลิสต์นี้", <Music2 key="mus" className="w-4 h-4 text-primary" />],
           ["Requests", requests.length, "คำขอจากลูกค้า", <Radio key="rad" className="w-4 h-4 text-primary" />],
         ].map(([label, value, detail, icon]) => (
-          <div key={String(label)} className="admin-metric-card relative overflow-hidden rounded-xl border border-white/[0.08] bg-black/20 p-4 sm:p-5 xl:rounded-2xl xl:p-6 transition-all hover:bg-black/40">
+          <div key={String(label)} className="admin-metric-card relative overflow-hidden rounded-xl border border-border/60 p-4 transition-all hover:border-primary/30 sm:p-5 xl:rounded-2xl xl:p-6">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs sm:text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
               <div className="p-2 bg-primary/10 rounded-full border border-primary/20">
@@ -53,7 +53,7 @@ export function DashboardView() {
       </section>
 
       {/* Placeholder for future charts or more stats */}
-      <section className="mt-4 border border-white/[0.08] bg-black/10 rounded-xl p-8 flex flex-col items-center justify-center text-center opacity-60 h-[300px]">
+      <section className="mt-4 flex h-[300px] flex-col items-center justify-center rounded-xl border border-border/60 bg-secondary/30 p-8 text-center opacity-70">
         <LayoutDashboard className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
         <h3 className="text-lg font-bold text-foreground">พื้นที่สถิติเชิงลึก (Coming Soon)</h3>
         <p className="text-sm text-muted-foreground mt-2 max-w-md">

@@ -578,6 +578,7 @@ body.admin-mode {
   background: oklch(0.76 0.17 158 / 0.1);
 }
 
+html.admin-mode [data-sonner-toast],
 body.admin-mode [data-sonner-toast] {
   background: var(--card) !important;
   color: var(--foreground) !important;
@@ -806,6 +807,12 @@ body.admin-mode.light-theme {
     0 26px 70px oklch(0.15 0.012 165 / 0.08);
 }
 
+.admin-shell.light-theme .admin-workspace-header {
+  background:
+    radial-gradient(circle at 96% 0%, oklch(0.55 0.18 158 / 0.1), transparent 22rem),
+    linear-gradient(135deg, oklch(0.985 0.004 165 / 0.98), oklch(0.945 0.008 165 / 0.98));
+}
+
 .admin-shell.light-theme .admin-metric-card {
   background:
     linear-gradient(145deg, oklch(0.99 0.004 165 / 0.94), oklch(0.95 0.006 165 / 0.94));
@@ -813,6 +820,219 @@ body.admin-mode.light-theme {
   box-shadow:
     inset 0 1px 0 oklch(1 0 0 / 0.5),
     0 16px 36px oklch(0.15 0.012 165 / 0.05);
+}
+
+.admin-login-page {
+  background:
+    radial-gradient(circle at 20% 8%, oklch(0.42 0.12 158 / 0.18), transparent 28rem),
+    radial-gradient(circle at 82% 86%, oklch(0.34 0.08 195 / 0.14), transparent 26rem),
+    linear-gradient(145deg, oklch(0.035 0.01 165), oklch(0.075 0.014 165)) !important;
+}
+
+.admin-login-panel {
+  background: oklch(0.105 0.014 165);
+  border: 1px solid oklch(0.86 0.02 165 / 0.18);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.08),
+    0 28px 86px oklch(0.01 0.006 165 / 0.72);
+}
+
+.admin-login-brand {
+  color: oklch(0.78 0.16 158);
+}
+
+.admin-login-copy,
+.admin-login-label,
+.admin-login-tab-inactive,
+.admin-login-input-icon {
+  color: oklch(0.78 0.014 165);
+}
+
+.admin-login-tabs {
+  background: oklch(0.055 0.012 165);
+  border-color: oklch(0.86 0.02 165 / 0.2);
+}
+
+.admin-login-tab-indicator {
+  background: oklch(0.76 0.17 158);
+  box-shadow: 0 10px 24px oklch(0.42 0.12 158 / 0.2);
+}
+
+.admin-login-tab-active {
+  color: oklch(0.065 0.014 165);
+}
+
+.admin-login-input {
+  background: oklch(0.075 0.014 165) !important;
+  border-color: oklch(0.78 0.055 165 / 0.46) !important;
+  color: oklch(0.96 0.006 165) !important;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.075),
+    inset 0 -1px 0 oklch(0 0 0 / 0.34),
+    0 0 0 1px oklch(0.78 0.055 165 / 0.08);
+}
+
+.admin-login-input::placeholder {
+  color: oklch(0.82 0.012 165) !important;
+}
+
+.admin-login-input:focus {
+  background: oklch(0.09 0.016 165) !important;
+  border-color: oklch(0.76 0.17 158 / 0.9) !important;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.09),
+    0 0 0 3px oklch(0.76 0.17 158 / 0.18),
+    0 12px 26px oklch(0.02 0.01 165 / 0.34) !important;
+}
+
+.admin-login-pin-slot {
+  background: oklch(0.08 0.014 165) !important;
+  border: 1.5px solid oklch(0.82 0.055 165 / 0.52) !important;
+  color: oklch(0.96 0.006 165) !important;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.08),
+    0 0 0 1px oklch(0.82 0.055 165 / 0.08),
+    0 8px 18px oklch(0.01 0.006 165 / 0.26);
+}
+
+.admin-login-pin-slot[data-active='true'] {
+  background: oklch(0.105 0.018 165) !important;
+  border-color: oklch(0.76 0.17 158 / 0.95) !important;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.1),
+    0 0 0 3px oklch(0.76 0.17 158 / 0.2),
+    0 12px 24px oklch(0.02 0.01 165 / 0.34) !important;
+}
+
+.admin-login-google {
+  background: oklch(0.96 0.003 165);
+  border: 1px solid oklch(1 0 0 / 0.9);
+  color: oklch(0.13 0.012 165);
+}
+
+.admin-login-google:hover {
+  background: oklch(1 0 0);
+}
+
+.admin-login-google:disabled {
+  background: oklch(0.9 0.004 165);
+  color: oklch(0.16 0.014 165);
+  opacity: 0.72;
+}
+
+.admin-login-submit {
+  background: oklch(0.76 0.17 158);
+  color: oklch(0.065 0.014 165);
+  box-shadow: 0 16px 38px oklch(0.44 0.13 158 / 0.28);
+}
+
+.admin-login-submit:hover {
+  background: oklch(0.8 0.16 158);
+}
+
+.admin-login-page.light-theme {
+  background:
+    radial-gradient(circle at 20% 8%, oklch(0.83 0.08 158 / 0.5), transparent 28rem),
+    radial-gradient(circle at 82% 86%, oklch(0.9 0.05 195 / 0.45), transparent 26rem),
+    linear-gradient(145deg, oklch(0.965 0.006 165), oklch(0.91 0.012 165)) !important;
+}
+
+.admin-login-page.light-theme .admin-login-panel {
+  background: oklch(0.995 0.002 165);
+  border-color: oklch(0.24 0.018 165 / 0.16);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.9),
+    0 28px 72px oklch(0.2 0.018 165 / 0.16);
+}
+
+.admin-login-page.light-theme .admin-login-brand {
+  color: oklch(0.42 0.16 158);
+}
+
+.admin-login-page.light-theme .admin-login-copy,
+.admin-login-page.light-theme .admin-login-label,
+.admin-login-page.light-theme .admin-login-tab-inactive,
+.admin-login-page.light-theme .admin-login-input-icon {
+  color: oklch(0.36 0.018 165);
+}
+
+.admin-login-page.light-theme .admin-login-tabs {
+  background: oklch(0.91 0.008 165);
+  border-color: oklch(0.24 0.018 165 / 0.14);
+}
+
+.admin-login-page.light-theme .admin-login-tab-indicator {
+  background: oklch(0.48 0.16 158);
+  box-shadow: 0 10px 22px oklch(0.38 0.13 158 / 0.18);
+}
+
+.admin-login-page.light-theme .admin-login-tab-active {
+  color: oklch(0.99 0.002 165);
+}
+
+.admin-login-page.light-theme .admin-login-input {
+  background: oklch(1 0 0) !important;
+  border-color: oklch(0.34 0.04 165 / 0.32) !important;
+  color: oklch(0.16 0.014 165) !important;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.9),
+    0 0 0 1px oklch(0.34 0.04 165 / 0.06);
+}
+
+.admin-login-page.light-theme .admin-login-input::placeholder {
+  color: oklch(0.45 0.018 165) !important;
+}
+
+.admin-login-page.light-theme .admin-login-input:focus {
+  background: oklch(1 0 0) !important;
+  border-color: oklch(0.48 0.16 158 / 0.82) !important;
+  box-shadow:
+    0 0 0 3px oklch(0.48 0.16 158 / 0.16),
+    0 12px 26px oklch(0.2 0.018 165 / 0.1) !important;
+}
+
+.admin-login-page.light-theme .admin-login-pin-slot {
+  background: oklch(0.985 0.002 165) !important;
+  border-color: oklch(0.34 0.04 165 / 0.36) !important;
+  color: oklch(0.16 0.014 165) !important;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.9),
+    0 0 0 1px oklch(0.34 0.04 165 / 0.06),
+    0 8px 18px oklch(0.2 0.018 165 / 0.08);
+}
+
+.admin-login-page.light-theme .admin-login-pin-slot[data-active='true'] {
+  background: oklch(1 0 0) !important;
+  border-color: oklch(0.48 0.16 158 / 0.9) !important;
+  box-shadow:
+    0 0 0 3px oklch(0.48 0.16 158 / 0.16),
+    0 12px 24px oklch(0.2 0.018 165 / 0.1) !important;
+}
+
+.admin-login-page.light-theme .admin-login-google {
+  background: oklch(0.13 0.012 165);
+  border-color: oklch(0.13 0.012 165);
+  color: oklch(0.99 0.002 165);
+}
+
+.admin-login-page.light-theme .admin-login-google:hover {
+  background: oklch(0.2 0.014 165);
+}
+
+.admin-login-page.light-theme .admin-login-google:disabled {
+  background: oklch(0.24 0.014 165);
+  color: oklch(0.99 0.002 165);
+  opacity: 0.74;
+}
+
+.admin-login-page.light-theme .admin-login-submit {
+  background: oklch(0.48 0.16 158);
+  color: oklch(0.99 0.002 165);
+  box-shadow: 0 16px 34px oklch(0.38 0.13 158 / 0.2);
+}
+
+.admin-login-page.light-theme .admin-login-submit:hover {
+  background: oklch(0.42 0.16 158);
 }
 
 .admin-shell.light-theme .admin-stat-card {
@@ -951,6 +1171,14 @@ body.admin-mode.light-theme {
   background-color: oklch(0.15 0.012 165 / 0.05) !important;
 }
 
+.admin-shell.light-theme .bg-black\/\[0\.01\] {
+  background-color: oklch(0.15 0.012 165 / 0.025) !important;
+}
+
+.admin-shell.light-theme .bg-black\/5 {
+  background-color: oklch(0.15 0.012 165 / 0.035) !important;
+}
+
 .admin-shell.light-theme .border-white\/20 {
   border-color: oklch(0.15 0.012 165 / 0.2) !important;
 }
@@ -1025,6 +1253,27 @@ body.admin-mode.light-theme {
 
 .admin-shell.light-theme .bg-black\/95 {
   background-color: oklch(0.99 0.002 165 / 0.98) !important;
+}
+
+.admin-shell.light-theme .from-white\/\[0\.03\] {
+  --tw-gradient-from: oklch(0.15 0.012 165 / 0.035) var(--tw-gradient-from-position) !important;
+}
+
+.admin-shell.light-theme .shadow-emerald-950\/20,
+.admin-shell.light-theme .shadow-emerald-500\/20 {
+  --tw-shadow-color: oklch(0.32 0.1 158 / 0.14) !important;
+}
+
+.admin-shell.light-theme [data-slot="dialog-content"],
+.admin-shell.light-theme [data-slot="dropdown-menu-content"],
+.admin-shell.light-theme [data-slot="select-content"] {
+  background-color: oklch(0.99 0.002 165 / 0.96) !important;
+  border-color: oklch(0.15 0.012 165 / 0.12) !important;
+  color: var(--foreground) !important;
+}
+
+.admin-shell.light-theme [data-slot="dialog-description"] {
+  color: var(--muted-foreground) !important;
 }
 
 .admin-shell.light-theme input::placeholder,

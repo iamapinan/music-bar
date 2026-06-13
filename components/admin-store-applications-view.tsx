@@ -54,21 +54,21 @@ export function AdminStoreApplicationsView() {
 
   return (
     <main className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-4 px-4 py-4 sm:px-6 xl:gap-6 xl:px-8 xl:py-7">
-      <section className="admin-dashboard-hero rounded-2xl border border-white/[0.08] p-5 sm:p-6">
+      <section className="admin-dashboard-hero rounded-2xl border border-border/60 p-5 sm:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
               <Store className="h-5 w-5" />
             </div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">Store applications</p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">คำขอเปิดร้าน</h1>
-            <p className="mt-2 max-w-2xl text-sm text-white/60">
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">คำขอเปิดร้าน</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               อนุมัติคำขอเพื่อสร้างร้านใหม่และให้สิทธิ์ owner กับ Google email ของผู้สมัครโดยอัตโนมัติ
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-right">
-            <p className="text-2xl font-semibold text-white">{pendingCount}</p>
-            <p className="text-xs text-white/45">รออนุมัติ</p>
+          <div className="rounded-2xl border border-border/60 bg-secondary/40 px-4 py-3 text-right">
+            <p className="text-2xl font-semibold text-foreground">{pendingCount}</p>
+            <p className="text-xs text-muted-foreground">รออนุมัติ</p>
           </div>
         </div>
       </section>
@@ -76,7 +76,7 @@ export function AdminStoreApplicationsView() {
       <section className="admin-content-panel rounded-2xl p-4 sm:p-5">
         <Table>
           <TableHeader>
-            <TableRow className="border-white/10">
+            <TableRow className="border-border">
               <TableHead>ร้าน / ผู้สมัคร</TableHead>
               <TableHead>Google email</TableHead>
               <TableHead>สถานะ</TableHead>
@@ -86,35 +86,35 @@ export function AdminStoreApplicationsView() {
           </TableHeader>
           <TableBody>
             {applications.length === 0 ? (
-              <TableRow className="border-white/10">
-                <TableCell colSpan={5} className="py-12 text-center text-white/45">
+              <TableRow className="border-border">
+                <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
                   ยังไม่มีคำขอเปิดร้าน
                 </TableCell>
               </TableRow>
             ) : (
               applications.map(application => (
-                <TableRow key={application.id} className="border-white/10 align-top">
+                <TableRow key={application.id} className="border-border align-top">
                   <TableCell>
                     <div className="flex items-start gap-3">
                       <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Store className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-white">{application.store_name}</p>
+                        <p className="font-semibold text-foreground">{application.store_name}</p>
                         {application.status === 'pending' ? (
                           <div className="mt-1 flex items-center gap-1">
-                            <span className="text-xs text-white/40">/</span>
+                            <span className="text-xs text-muted-foreground">/</span>
                             <Input
                               value={editedSlugs[application.id] !== undefined ? editedSlugs[application.id] : (application.requested_slug || '')}
                               onChange={event => setEditedSlugs(prev => ({ ...prev, [application.id]: event.target.value }))}
                               placeholder="slug เช่น mybar"
-                              className="h-6 max-w-[160px] border-white/10 bg-black/20 text-xs px-2 rounded-md"
+                              className="h-6 max-w-[160px] rounded-md border-border bg-secondary/40 px-2 text-xs"
                             />
                           </div>
                         ) : (
-                          <p className="mt-1 text-xs text-white/45">/{application.approved_tenant_slug || application.requested_slug || 'auto'}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">/{application.approved_tenant_slug || application.requested_slug || 'auto'}</p>
                         )}
-                        <p className="mt-2 flex items-center gap-1.5 text-xs text-white/55">
+                        <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
                           <UserRound className="h-3.5 w-3.5 text-primary" />
                           {application.applicant_name}
                           {application.phone ? ` · ${application.phone}` : ''}
@@ -122,7 +122,7 @@ export function AdminStoreApplicationsView() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-white/70">{application.applicant_email}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{application.applicant_email}</TableCell>
                   <TableCell>
                     <span className={cn(
                       'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-[0.12em]',
@@ -143,7 +143,7 @@ export function AdminStoreApplicationsView() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <p className="max-w-sm whitespace-pre-wrap text-sm leading-6 text-white/58">
+                    <p className="max-w-sm whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
                       {application.notes || 'ไม่มีรายละเอียดเพิ่มเติม'}
                     </p>
                     {application.rejection_reason && (
@@ -157,7 +157,7 @@ export function AdminStoreApplicationsView() {
                           value={rejectionReason}
                           onChange={event => setRejectionReason(event.target.value)}
                           placeholder="เหตุผลถ้าปฏิเสธ"
-                          className="min-h-16 border-white/10 bg-black/20 text-xs"
+                          className="min-h-16 border-border bg-secondary/40 text-xs"
                         />
                         <div className="flex gap-2">
                           <Button size="sm" className="h-8 flex-1 gap-1" onClick={() => review(application.id, 'approve')} disabled={reviewingId === application.id}>
@@ -171,7 +171,7 @@ export function AdminStoreApplicationsView() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-xs text-white/45">
+                      <p className="text-xs text-muted-foreground">
                         reviewed {application.reviewed_at ? new Date(application.reviewed_at).toLocaleDateString('th-TH') : ''}
                       </p>
                     )}

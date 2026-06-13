@@ -94,7 +94,7 @@ export function AdminSecurityView() {
 
   return (
     <main className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-4 px-4 py-4 sm:px-6 xl:gap-6 xl:px-8 xl:py-7">
-      <section className="admin-dashboard-hero rounded-2xl border border-white/[0.08] p-5 sm:p-6">
+      <section className="admin-dashboard-hero rounded-2xl border border-border/60 p-5 sm:p-6">
         <div className="flex flex-col gap-2">
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
             <ShieldCheck className="h-5 w-5" />
@@ -102,10 +102,10 @@ export function AdminSecurityView() {
           <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
             Security
           </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             ความปลอดภัย &amp; การเข้าใช้งาน
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-white/60">
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             ตั้งค่า PIN สำหรับเข้าสู่ระบบ Admin แทน Google OAuth
             สามารถใช้ PIN แทนได้เมื่อไม่สะดวกใช้ Google Login
           </p>
@@ -115,7 +115,7 @@ export function AdminSecurityView() {
       <section className="grid gap-4 xl:grid-cols-[420px_1fr]">
         {/* Set / Change PIN */}
         <div className="admin-content-panel rounded-2xl p-4 sm:p-5">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-white">
+          <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-foreground">
             <Key className="h-4 w-4 text-primary" />
             {pinEnabled ? 'เปลี่ยน PIN' : 'ตั้ง PIN'}
           </h2>
@@ -147,7 +147,7 @@ export function AdminSecurityView() {
                       <InputOTPSlot
                         key={i}
                         index={i}
-                        className="h-12 w-10 rounded-lg border-border! bg-black/20! text-base text-foreground! data-[active=true]:border-primary! data-[active=true]:ring-primary/20"
+                        className="h-12 w-10 rounded-lg border-border! bg-secondary/50! text-base text-foreground! data-[active=true]:border-primary! data-[active=true]:ring-primary/20"
                       />
                     ))}
                   </InputOTPGroup>
@@ -167,7 +167,7 @@ export function AdminSecurityView() {
                       <InputOTPSlot
                         key={i}
                         index={i}
-                        className="h-12 w-10 rounded-lg border-border! bg-black/20! text-base text-foreground! data-[active=true]:border-primary! data-[active=true]:ring-primary/20"
+                        className="h-12 w-10 rounded-lg border-border! bg-secondary/50! text-base text-foreground! data-[active=true]:border-primary! data-[active=true]:ring-primary/20"
                       />
                     ))}
                   </InputOTPGroup>
@@ -196,7 +196,7 @@ export function AdminSecurityView() {
 
         {/* Status & Clear */}
         <div className="admin-content-panel rounded-2xl p-4 sm:p-5">
-          <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-white">
+          <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-foreground">
             <Lock className="h-4 w-4 text-primary" />
             สถานะ PIN
           </h2>
@@ -208,46 +208,46 @@ export function AdminSecurityView() {
           ) : (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
+                <div className="rounded-xl border border-border/60 bg-secondary/40 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                     สถานะ PIN
                   </p>
                   <div className="mt-2 flex items-center gap-2">
                     {pinEnabled ? (
                       <>
                         <CheckCircle2 className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-semibold text-white">
+                        <span className="text-sm font-semibold text-foreground">
                           เปิดใช้งาน
                         </span>
                       </>
                     ) : (
                       <>
-                        <XCircle className="h-4 w-4 text-white/40" />
-                        <span className="text-sm font-semibold text-white/50">
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-semibold text-muted-foreground">
                           ยังไม่ได้ตั้ง
                         </span>
                       </>
                     )}
                   </div>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
+                <div className="rounded-xl border border-border/60 bg-secondary/40 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                     การเข้าใช้งานหลัก
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-white">
+                  <p className="mt-2 text-sm font-semibold text-foreground">
                     Google ({user?.email?.split('@')[0]})
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-2">
+              <div className="rounded-xl border border-border/60 bg-secondary/40 p-4">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                   ร้านค้าที่ใช้งาน
                 </p>
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-foreground">
                   {activeTenant?.display_name || activeTenant?.name || '-'}
                 </p>
-                <p className="text-xs text-white/40 font-mono mt-0.5">
+                <p className="mt-0.5 font-mono text-xs text-muted-foreground">
                   /{activeTenant?.slug || '-'}
                 </p>
               </div>

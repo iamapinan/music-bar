@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  devIndicators: false,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -9,17 +10,17 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/t/:tenantSlug',
-        destination: '/play/:tenantSlug',
+        source: "/t/:tenantSlug",
+        destination: "/play/:tenantSlug",
         permanent: true,
       },
       {
-        source: '/t/:tenantSlug/:path*',
-        destination: '/play/:tenantSlug/:path*',
+        source: "/t/:tenantSlug/:path*",
+        destination: "/play/:tenantSlug/:path*",
         permanent: true,
       },
-    ]
+    ];
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;

@@ -287,7 +287,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     >
       <aside
         className={cn(
-          "admin-command-rail sticky top-0 z-30 hidden h-[calc(100dvh-7rem)] shrink-0 flex-col border-r border-white/[0.07] p-4 transition-[width] duration-300 xl:flex",
+          "admin-command-rail sticky top-0 z-30 hidden h-[calc(100dvh-7rem)] shrink-0 flex-col border-r border-border/60 p-4 transition-[width] duration-300 xl:flex",
           isSidebarCollapsed ? "w-[92px]" : "w-[280px]",
         )}
       >
@@ -297,7 +297,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             isSidebarCollapsed && "justify-center px-0",
           )}
         >
-          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-card/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
             <img src="/icon-512.png" alt="" className="h-8 w-8 rounded-xl object-cover" />
             <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_18px_rgba(52,211,153,0.9)]" />
           </span>
@@ -305,7 +305,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary leading-none">
               Music Bar
             </p>
-            <p className="mt-1 truncate text-[11px] font-medium text-white/50 leading-none">
+            <p className="mt-1 truncate text-[11px] font-medium text-muted-foreground leading-none">
               Admin console
             </p>
           </div>
@@ -316,7 +316,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               className={cn(
-                "mt-3.5 h-auto w-full justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-left hover:bg-white/[0.07]",
+                "mt-3.5 h-auto w-full justify-between rounded-xl border border-border/60 bg-secondary/45 px-3 py-2 text-left hover:bg-accent",
                 isSidebarCollapsed && "justify-center px-2 py-2.5",
               )}
             >
@@ -325,10 +325,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <Store className="h-3.5 w-3.5" />
                 </span>
                 <span className={cn("min-w-0", isSidebarCollapsed && "hidden")}>
-                  <span className="block text-[9px] font-bold uppercase tracking-[0.15em] text-white/40">
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
                     ร้านที่ใช้งาน
                   </span>
-                  <span className="mt-0.5 block truncate text-xs font-semibold text-white">
+                  <span className="mt-0.5 block truncate text-xs font-semibold text-foreground">
                     {activeTenant?.display_name ||
                       activeTenant?.name ||
                       user?.email ||
@@ -338,7 +338,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </span>
               <ChevronDown
                 className={cn(
-                  "h-3.5 w-3.5 shrink-0 text-white/45",
+                  "h-3.5 w-3.5 shrink-0 text-muted-foreground",
                   isSidebarCollapsed && "hidden",
                 )}
               />
@@ -348,18 +348,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             align="start"
             side={isSidebarCollapsed ? "right" : "bottom"}
             sideOffset={12}
-            className="w-72 border-white/10 bg-black/95 text-white backdrop-blur-xl max-h-[350px] flex flex-col"
+            className="flex max-h-[350px] w-72 flex-col border-border bg-popover/95 text-popover-foreground backdrop-blur-xl"
           >
-            <DropdownMenuLabel className="text-xs text-white/50">
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
               ร้านค้าทั้งหมด
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-white/10" />
+            <DropdownMenuSeparator />
             <ScrollArea className="flex-1 min-h-0">
               <div className="py-1">
                 {tenants.length === 0 ? (
                   <DropdownMenuItem
                     disabled
-                    className="text-xs text-white/40 justify-center"
+                    className="justify-center text-xs text-muted-foreground"
                   >
                     ยังไม่มีร้าน
                   </DropdownMenuItem>
@@ -373,7 +373,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                         onClick={() =>
                           !isActive && switchTenant(tenant.tenant_id)
                         }
-                        className="min-h-11 rounded-xl gap-3 px-3 py-2 cursor-pointer hover:bg-white/5"
+                        className="min-h-11 cursor-pointer gap-3 rounded-xl px-3 py-2 hover:bg-accent"
                       >
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                           {isActive ? (
@@ -386,7 +386,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                           <span className="block truncate text-sm font-bold">
                             {tenant.display_name || tenant.name}
                           </span>
-                          <span className="block truncate text-xs text-white/40 font-mono">
+                          <span className="block truncate font-mono text-xs text-muted-foreground">
                             /{tenant.slug}
                           </span>
                         </span>
@@ -396,7 +396,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 )}
                 {user?.is_super_admin && (
                   <>
-                    <DropdownMenuSeparator className="bg-white/10 my-1.5" />
+                    <DropdownMenuSeparator className="my-1.5" />
                     <DropdownMenuItem
                       onClick={() => setShowCreateTenant(true)}
                       className="min-h-11 rounded-xl gap-3 px-3 py-2 cursor-pointer text-primary hover:text-primary-foreground hover:bg-primary/20"
@@ -417,9 +417,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <nav className="flex flex-col gap-1">
             {/* Group 1: ภาพรวม */}
             {isSidebarCollapsed ? (
-              <div className="border-t border-white/10 my-1.5 mx-3 first:hidden" />
+              <div className="mx-3 my-1.5 border-t border-border/60 first:hidden" />
             ) : (
-              <div className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mt-2.5 mb-1 first:mt-0">
+              <div className="mb-1 mt-2.5 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground first:mt-0">
                 ภาพรวม
               </div>
             )}
@@ -441,9 +441,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
             {/* Group 2: จัดการเพลง */}
             {isSidebarCollapsed ? (
-              <div className="border-t border-white/10 my-1.5 mx-3" />
+              <div className="mx-3 my-1.5 border-t border-border/60" />
             ) : (
-              <div className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mt-3.5 mb-1">
+              <div className="mb-1 mt-3.5 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 จัดการเพลง
               </div>
             )}
@@ -467,9 +467,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
             {/* Group 3: จัดการร้านค้า */}
             {isSidebarCollapsed ? (
-              <div className="border-t border-white/10 my-1.5 mx-3" />
+              <div className="mx-3 my-1.5 border-t border-border/60" />
             ) : (
-              <div className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mt-3.5 mb-1">
+              <div className="mb-1 mt-3.5 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 จัดการร้านค้า
               </div>
             )}
@@ -531,7 +531,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-primary hover:bg-white/10"
+                    className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:bg-accent hover:text-primary"
                     onClick={handleCopyPlayerUrl}
                     disabled={!playerUrl}
                     title="คัดลอก URL เครื่องเล่น"
@@ -567,9 +567,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
             {/* Group 4: ระบบและความปลอดภัย */}
             {isSidebarCollapsed ? (
-              <div className="border-t border-white/10 my-1.5 mx-3" />
+              <div className="mx-3 my-1.5 border-t border-border/60" />
             ) : (
-              <div className="px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mt-3.5 mb-1">
+              <div className="mb-1 mt-3.5 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 ระบบและความปลอดภัย
               </div>
             )}
@@ -653,7 +653,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </nav>
         </ScrollArea>
 
-        <div className="mt-4 border-t border-white/10 pt-3 space-y-1">
+        <div className="mt-4 space-y-1 border-t border-border/60 pt-3">
           <Button
             variant="ghost"
             className={cn(
@@ -708,16 +708,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="min-w-0 flex-1 flex flex-col">
-        <header className="sticky top-2 z-40 mx-2 mb-2 flex items-center justify-between rounded-full border border-white/10 bg-black/40 px-3 py-1.5 backdrop-blur-xl shadow-lg xl:hidden transition-all">
+        <header className="sticky top-2 z-40 mx-2 mb-2 flex items-center justify-between rounded-full border border-border/60 bg-background/70 px-3 py-1.5 shadow-lg backdrop-blur-xl transition-all xl:hidden">
           <div className="flex items-center gap-2 pl-1">
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-primary">
               <Music2 className="h-3.5 w-3.5" />
             </div>
-            <span className="text-sm font-extrabold uppercase tracking-wider text-white/90">
+            <span className="text-sm font-extrabold uppercase tracking-wider text-foreground">
               Admin
             </span>
             {activeTenant && (
-              <span className="hidden max-w-[120px] truncate text-xs text-white/50 sm:inline">
+              <span className="hidden max-w-[120px] truncate text-xs text-muted-foreground sm:inline">
                 {activeTenant.display_name || activeTenant.name}
               </span>
             )}
@@ -727,7 +727,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                 title="ภาพรวม"
               >
                 <LayoutDashboard className="h-3.5 w-3.5" />
@@ -737,7 +737,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                 title="คลังเพลง"
               >
                 <LibraryBig className="h-3.5 w-3.5" />
@@ -748,7 +748,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                  className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                   title="คำขอเปิดร้าน"
                 >
                   <ClipboardList className="h-3.5 w-3.5" />
@@ -761,7 +761,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                 title="ตั้งค่า PIN"
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
@@ -774,7 +774,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                    className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                     title="เปิดหน้าเครื่องเล่น"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -783,7 +783,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                  className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                   onClick={handleCopyPlayerUrl}
                   disabled={!playerUrl}
                   title="คัดลอก URL เครื่องเล่น"
@@ -795,7 +795,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+              className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => setShowQR(true)}
               title="QR ลูกค้า"
             >
@@ -804,7 +804,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+              className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => setShowPlayersModal(true)}
               title="จัดการเครื่องเล่น"
             >
@@ -814,7 +814,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                 onClick={() => {
                   setEditStoreName(
                     activeTenant?.display_name || activeTenant?.name || "",
@@ -832,7 +832,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+                className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                 onClick={() => setShowCreateTenant(true)}
                 title="สร้างร้านใหม่"
               >
@@ -842,7 +842,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+              className="h-7 w-7 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={toggleTheme}
               title="เปลี่ยนธีม"
             >
@@ -855,7 +855,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full text-white/70 hover:bg-destructive/80 hover:text-white"
+              className="h-7 w-7 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               onClick={logout}
               title="ออกจากระบบ"
             >
@@ -869,17 +869,17 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* QR Code Modal */}
       <Dialog open={showQR} onOpenChange={setShowQR}>
-        <DialogContent className="sm:max-w-md border-white/10 bg-black/90 text-white backdrop-blur-xl">
+        <DialogContent className="border-border bg-popover/95 text-popover-foreground backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               QR Code สั่งเพลง
             </DialogTitle>
-            <DialogDescription className="text-white/70">
+            <DialogDescription>
               ให้ลูกค้าสแกนเพื่อเข้าสู่หน้าระบบขอเพลงของร้าน
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center p-6 gap-6">
-            <div className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-center text-sm text-white/70">
+            <div className="w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-center text-sm text-muted-foreground">
               {activeTenant?.display_name || activeTenant?.name || user?.email}
             </div>
             <div className="p-4 bg-white rounded-xl shadow-xl">
@@ -910,12 +910,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* Players Modal */}
       <Dialog open={showPlayersModal} onOpenChange={setShowPlayersModal}>
-        <DialogContent className="sm:max-w-md border-white/10 bg-black/90 text-white backdrop-blur-xl">
+        <DialogContent className="border-border bg-popover/95 text-popover-foreground backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               เครื่องเล่นที่เชื่อมต่อ
             </DialogTitle>
-            <DialogDescription className="text-white/70">
+            <DialogDescription>
               เครื่องเล่นที่กำลังเปิดหน้าสตรีมเพลงของร้านนี้อยู่ในปัจจุบัน
             </DialogDescription>
           </DialogHeader>
@@ -923,7 +923,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <ScrollArea className="h-[400px] mt-4 -mx-2 px-2">
               <div className="flex flex-col gap-2 pb-2">
                 {players.length === 0 ? (
-                  <div className="text-center py-8 text-white/50 text-sm">
+                  <div className="py-8 text-center text-sm text-muted-foreground">
                     ไม่พบเครื่องเล่นที่เชื่อมต่ออยู่
                   </div>
                 ) : (
@@ -935,7 +935,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     return (
                       <div
                         key={player.id}
-                        className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+                        className="flex items-center justify-between rounded-lg border border-border bg-secondary/40 p-3 transition-colors hover:bg-accent"
                       >
                         <div className="flex items-center gap-3">
                           <div
@@ -943,7 +943,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                               "p-2 rounded-full border shadow-sm",
                               player.is_active
                                 ? "bg-primary/20 border-primary/30 text-primary"
-                                : "bg-white/10 border-white/10 text-white/50",
+                                : "border-border bg-secondary text-muted-foreground",
                             )}
                           >
                             {player.device_type === "Mobile" ? (
@@ -955,7 +955,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                             )}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-xs font-bold text-white truncate max-w-[150px]">
+                            <span className="max-w-[150px] truncate text-xs font-bold text-foreground">
                               {player.device_name}
                             </span>
                             <div className="flex items-center gap-1.5 mt-0.5">
@@ -965,7 +965,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                                   isOnline ? "bg-green-500" : "bg-red-500",
                                 )}
                               ></span>
-                              <span className="text-sm text-white/60">
+                              <span className="text-sm text-muted-foreground">
                                 {isOnline ? "ออนไลน์" : "ออฟไลน์"}
                               </span>
                             </div>
@@ -979,7 +979,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                               "h-7 px-3 text-xs rounded-full",
                               player.is_active
                                 ? "bg-primary text-primary-foreground"
-                                : "border-white/20 text-white",
+                                : "border-border text-foreground",
                             )}
                             onClick={() =>
                               handleTogglePlayer(player.id, player.is_active)
@@ -990,7 +990,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-white/40 hover:text-red-400 hover:bg-red-400/10 rounded-full"
+                            className="h-7 w-7 rounded-full text-muted-foreground hover:bg-red-400/10 hover:text-red-400"
                             onClick={() => handleDeletePlayer(player.id)}
                             title="ลบเครื่องเล่น"
                           >
@@ -1008,18 +1008,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </Dialog>
 
       <Dialog open={showCreateTenant} onOpenChange={setShowCreateTenant}>
-        <DialogContent className="sm:max-w-md border-white/10 bg-black/90 text-white backdrop-blur-xl">
+        <DialogContent className="border-border bg-popover/95 text-popover-foreground backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               สร้างร้านใหม่
             </DialogTitle>
-            <DialogDescription className="text-white/70">
+            <DialogDescription>
               ระบบจะสร้าง tenant ใหม่และสลับไปยังร้านนั้นทันที
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white/60">
+              <label className="text-xs font-bold text-muted-foreground">
                 ชื่อร้าน
               </label>
               <Input
@@ -1035,18 +1035,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   );
                 }}
                 placeholder="ชื่อร้าน"
-                className="border-white/10 bg-white/5 text-white"
+                className="border-border bg-secondary/40 text-foreground"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white/60">
+              <label className="text-xs font-bold text-muted-foreground">
                 Slug ร้าน (ใน URL: /play/[slug])
               </label>
               <Input
                 value={newTenantSlug}
                 onChange={(event) => setNewTenantSlug(event.target.value)}
                 placeholder="เช่น my-awesome-bar (เว้นว่างไว้ได้)"
-                className="border-white/10 bg-white/5 text-white"
+                className="border-border bg-secondary/40 text-foreground"
               />
             </div>
             <Button
@@ -1063,51 +1063,51 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* Store Settings Dialog */}
       <Dialog open={showStoreSettings} onOpenChange={setShowStoreSettings}>
-        <DialogContent className="sm:max-w-md border-white/10 bg-black/90 text-white backdrop-blur-xl">
+        <DialogContent className="border-border bg-popover/95 text-popover-foreground backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Settings className="w-5 h-5 text-primary" />
               ตั้งค่าร้านค้า
             </DialogTitle>
-            <DialogDescription className="text-white/70">
+            <DialogDescription>
               แก้ไขชื่อร้าน สลัก URL และสถานะการให้บริการของร้านค้าที่ใช้งานอยู่
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white/60">
+              <label className="text-xs font-bold text-muted-foreground">
                 ชื่อร้านค้า
               </label>
               <Input
                 value={editStoreName}
                 onChange={(event) => setEditStoreName(event.target.value)}
                 placeholder="ระบุชื่อร้านค้า"
-                className="border-white/10 bg-white/5 text-white"
+                className="border-border bg-secondary/40 text-foreground"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white/60">
+              <label className="text-xs font-bold text-muted-foreground">
                 สลัก URL ร้านค้า (URL Slug: /play/[slug])
               </label>
               <Input
                 value={editStoreSlug}
                 onChange={(event) => setEditStoreSlug(event.target.value)}
                 placeholder="เช่น my-awesome-bar"
-                className="border-white/10 bg-white/5 text-white font-mono"
+                className="border-border bg-secondary/40 font-mono text-foreground"
               />
-              <p className="text-[10px] text-white/40 leading-relaxed">
+              <p className="text-[10px] leading-relaxed text-muted-foreground">
                 * อนุญาตเฉพาะตัวอักษรภาษาอังกฤษตัวเล็ก ตัวเลข
                 และเครื่องหมายขีดกลาง (-) เท่านั้น
               </p>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-xl border border-white/15 bg-white/5">
+            <div className="flex items-center justify-between rounded-xl border border-border bg-secondary/40 p-3">
               <div className="flex flex-col gap-0.5">
-                <span className="text-xs font-bold text-white">
+                <span className="text-xs font-bold text-foreground">
                   สถานะการให้บริการ
                 </span>
-                <span className="text-[10px] text-white/50">
+                <span className="text-[10px] text-muted-foreground">
                   {editStoreActive
                     ? "เปิดให้บริการตามปกติ ลูกค้าสามารถเข้าขอเพลงได้"
                     : "ปิดให้บริการชั่วคราว ลูกค้าจะไม่สามารถทำรายการได้"}
@@ -1124,7 +1124,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Button
                 variant="outline"
                 onClick={() => setShowStoreSettings(false)}
-                className="flex-1 border-white/10 text-gray-800"
+                className="flex-1 border-border text-foreground"
               >
                 ยกเลิก
               </Button>
