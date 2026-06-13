@@ -114,6 +114,7 @@ export function PlayerBottomBar() {
         )}
       >
         {/* Progress Bar (Integrated at top) */}
+        {duration > 0 && (
         <div className="group absolute right-0 bottom-[4.5rem] left-0 z-20 h-5 flex items-center cursor-pointer sm:bottom-24">
           <Slider
             value={[displayTime]}
@@ -127,9 +128,10 @@ export function PlayerBottomBar() {
               setIsDraggingTime(false);
               playerRef.current?.seekTo(vals[0]);
             }}
-            className="w-full [&_[data-slot=slider-track]]:h-1 group-hover:[&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:transition-all [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:opacity-0 group-hover:[&_[data-slot=slider-thumb]]:opacity-100 focus-within:[&_[data-slot=slider-thumb]]:opacity-100 [&_[data-slot=slider-thumb]]:transition-opacity [&_[data-slot=slider-thumb]]:size-3.5 [&_[data-slot=slider-thumb]]:border-primary"
+            className="w-full [&_[data-slot=slider-track]]:h-1 group-hover:[&_[data-slot=slider-track]]:h-1.5 [&_[data-slot=slider-track]]:transition-[height] [&_[data-slot=slider-track]]:bg-white/10 [&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:opacity-0 group-hover:[&_[data-slot=slider-thumb]]:opacity-100 focus-within:[&_[data-slot=slider-thumb]]:opacity-100 [&_[data-slot=slider-thumb]]:transition-opacity [&_[data-slot=slider-thumb]]:size-3.5 [&_[data-slot=slider-thumb]]:border-primary"
           />
         </div>
+        )}
 
         <div className="relative z-10 flex h-[4.5rem] items-center justify-between gap-1 px-2.5 sm:h-24 sm:gap-4 sm:px-4">
           {/* Left: Navigation & Song Info */}
@@ -228,11 +230,13 @@ export function PlayerBottomBar() {
                 <SkipForward className="w-5 h-5" />
               </Button>
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/60 font-medium">
+            {duration > 0 && (
+            <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/60 font-medium tabular-nums">
               <span>{formatTime(displayTime)}</span>
               <span>/</span>
               <span>{formatTime(duration)}</span>
             </div>
+            )}
           </div>
 
           {/* Right: Extra Controls */}
