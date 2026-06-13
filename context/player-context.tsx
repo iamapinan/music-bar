@@ -48,6 +48,7 @@ interface PlayerContextValue {
   isRequestsEnabled: boolean
   showControls: boolean
   showPlaylistRail: boolean
+  resumePosition: number
   // Controls
   togglePlay: () => void
   handleSkip: () => void
@@ -121,13 +122,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [showControls, setShowControls] = useState(true)
   const [activePlaylistIds, setActivePlaylistIdsState] = useState<number[]>([])
   const [showPlaylistRail, setShowPlaylistRail] = useState(true)
+  const [resumePosition, setResumePosition] = useState(0)
   const [isInitialized, setIsInitialized] = useState(false)
   const [nextShuffleIndex, setNextShuffleIndex] = useState(0)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
   const [customSong, setCustomSong] = useState<PlaylistSong | SongRequest | null>(null)
   const customSongRef = useRef<PlaylistSong | SongRequest | null>(null)
 
-  // Load saved state
+  // Load saved state + playback position
   useEffect(() => {
     try {
       const saved = localStorage.getItem('music_bar_player_state')
@@ -140,6 +142,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (parsed.isVideoMode !== undefined) setIsVideoMode(parsed.isVideoMode)
         if (parsed.isAutoPlayEnabled !== undefined) setIsAutoPlayEnabled(parsed.isAutoPlayEnabled)
         if (parsed.showPlaylistRail !== undefined) setShowPlaylistRail(parsed.showPlaylistRail)
+      }
+
+      // Restore last played song and position (valid up to 30 minutes)
+      const savedPlayback = localStorage.getItem(`${tenantStoragePrefix}:playback_state`)
+      if (savedPlayback) {
+        const parsed = JSON.parse(savedPlayback)
+        if (parsed?.song?.youtube_id && typeof parsed.position === 'number' && parsed.position > 1) {
+          const age = Date.now() - (parsed.savedAt || 0)
+          if (age < 30 * 60 * 1000) {
+            setCustomSong(parsed.song)
+            customSongRef.current = parsed.song
+            setResumePosition(parsed.position)
+          }
+        }
       }
     } catch {}
     setIsInitialized(true)
@@ -625,6 +641,62 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [isPlaying])
 
+  // ===================== Save/Resume Playback Position =====================
+  // Save current song + position every 5 seconds while playing
+  useEffect(() => {
+    if (!isInitialized || !currentSong) return
+
+    const savePosition = () => {
+      try {
+        localStorage.setItem(`${tenantStoragePrefix}:playback_state`, JSON.stringify({
+          song: {
+            youtube_id: currentSong.youtube_id,
+            title: currentSong.title,
+            thumbnail: currentSong.thumbnail || '',
+            artist: 'artist' in currentSong && currentSong.artist ? currentSong.artist : '',
+            requested_by: 'requested_by' in currentSong ? (currentSong.requested_by || '') : '',
+          },
+          position: currentTime,
+          savedAt: Date.now(),
+        }))
+      } catch {}
+    }
+
+    const interval = setInterval(savePosition, 5000)
+    return () => {
+      clearInterval(interval)
+      savePosition() // Save on unmount / song change
+    }
+  }, [currentSong?.youtube_id, isInitialized, tenantStoragePrefix, currentTime])
+
+  // Seek to saved resume position once player is ready
+  useEffect(() => {
+    if (resumePosition <= 0 || !currentSong) return
+
+    const seek = (): boolean => {
+      if (playerRef.current?.seekTo) {
+        playerRef.current.seekTo(resumePosition)
+        setResumePosition(0)
+        return true
+      }
+      return false
+    }
+
+    // Try immediately (player might already be ready)
+    if (seek()) return
+
+    // Poll every 200ms until player is ready, up to 10s
+    const interval = setInterval(() => {
+      if (seek()) clearInterval(interval)
+    }, 200)
+    const timeout = setTimeout(() => clearInterval(interval), 10000)
+
+    return () => {
+      clearInterval(interval)
+      clearTimeout(timeout)
+    }
+  }, [resumePosition, currentSong?.youtube_id, playerRef])
+
   const playByIndex = useCallback((index: number) => {
     setPlayMode('playlist')
     setCurrentIndex(index)
@@ -696,7 +768,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setIsFullscreen, setIsRequestsEnabled: handleSetIsRequestsEnabled, setCurrentTime, setDuration,
       mutatePlaylist: mutateSongs, mutateRequests,
       playerRef, isRequestsEnabled, showControls, setShowControls,
-      showPlaylistRail, setShowPlaylistRail
+      showPlaylistRail, setShowPlaylistRail,
+      resumePosition
     }}>
       {children}
     </PlayerContext.Provider>
