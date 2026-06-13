@@ -298,7 +298,7 @@ function PlaylistCard({
           {playlist.name}
         </p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
-          {playlist.song_count ?? 0} เพลง
+          {Number(playlist.song_count ?? 0).toLocaleString()} เพลง
         </p>
       </div>
     </div>
@@ -538,7 +538,7 @@ export function AdminView() {
   });
 
   /* ── Derived ── */
-  const totalSongs = useMemo(() => playlists.reduce((sum, pl) => sum + (pl.song_count ?? 0), 0), [playlists]);
+  const totalSongs = useMemo(() => playlists.reduce((sum, pl) => sum + Number(pl.song_count ?? 0), 0), [playlists]);
 
   useEffect(() => {
     setSelectedPlaylists(new Set(activePlaylistIds));
