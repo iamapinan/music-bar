@@ -130,6 +130,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const customSongRef = useRef<PlaylistSong | SongRequest | null>(null)
 
   // Load saved state + playback position
+  const hasResumedRef = useRef(false)
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('music_bar_player_state')
@@ -144,16 +146,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (parsed.showPlaylistRail !== undefined) setShowPlaylistRail(parsed.showPlaylistRail)
       }
 
-      // Restore last played song and position (valid up to 30 minutes)
-      const savedPlayback = localStorage.getItem(`${tenantStoragePrefix}:playback_state`)
-      if (savedPlayback) {
-        const parsed = JSON.parse(savedPlayback)
-        if (parsed?.song?.youtube_id && typeof parsed.position === 'number' && parsed.position > 1) {
-          const age = Date.now() - (parsed.savedAt || 0)
-          if (age < 30 * 60 * 1000) {
-            setCustomSong(parsed.song)
-            customSongRef.current = parsed.song
-            setResumePosition(parsed.position)
+      // Restore last played song and position only on initial page load (valid up to 30 min).
+      // Never restore during client-side navigation — the YouTube player is already running.
+      if (!hasResumedRef.current) {
+        hasResumedRef.current = true
+        const savedPlayback = localStorage.getItem(`${tenantStoragePrefix}:playback_state`)
+        if (savedPlayback) {
+          const parsed = JSON.parse(savedPlayback)
+          if (parsed?.song?.youtube_id && typeof parsed.position === 'number' && parsed.position > 1) {
+            const age = Date.now() - (parsed.savedAt || 0)
+            if (age < 30 * 60 * 1000) {
+              setCustomSong(parsed.song)
+              customSongRef.current = parsed.song
+              setResumePosition(parsed.position)
+            }
           }
         }
       }
