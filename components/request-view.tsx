@@ -218,7 +218,7 @@ export function RequestView() {
             <p className="text-xs text-muted-foreground mb-4 text-center">{pageUrl}</p>
             {qrDataUrl ? (
               <div className="flex flex-col items-center gap-4">
-                <div className="overflow-hidden rounded-2xl border border-border/40 bg-[#101a17] p-2">
+                <div className="overflow-hidden rounded-2xl border border-border/40 bg-[#171b34] p-2">
                   <img src={qrDataUrl} alt="QR Code" className="w-56 h-56 object-contain" />
                 </div>
                 <Button className="w-full gap-2" onClick={handleDownloadQR}>

@@ -64,8 +64,8 @@ const recommendedPlaylists = [
     title: "Thai pop hits 2026",
     detail: "เพลงไทยใหม่ ฟังง่าย เหมาะกับคาเฟ่และร้านอาหาร",
     query: "Thai pop hits 2026 playlist",
-    color: "from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/15 hover:border-rose-500/40",
-    iconColor: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+    color: "from-pink-500/10 via-pink-500/5 to-transparent border-pink-500/15 hover:border-pink-500/40",
+    iconColor: "text-pink-400 bg-pink-500/10 border-pink-500/20",
     icon: "Flame" as const,
   },
   {
@@ -96,8 +96,8 @@ const recommendedPlaylists = [
     title: "Lo-fi working bar",
     detail: "จังหวะนิ่งสำหรับร้านที่มีโซนนั่งทำงาน",
     query: "lofi cafe playlist",
-    color: "from-cyan-500/10 via-cyan-500/5 to-transparent border-cyan-500/15 hover:border-cyan-500/40",
-    iconColor: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+    color: "from-blue-500/10 via-blue-500/5 to-transparent border-blue-500/15 hover:border-blue-500/40",
+    iconColor: "text-blue-400 bg-blue-500/10 border-blue-500/20",
     icon: "Laptop" as const,
   },
 ];
@@ -127,11 +127,11 @@ function PlaylistCover({
 
   const firstLetters = playlist.name.slice(0, 2).toUpperCase();
   const gradients = [
-    "from-emerald-950 to-teal-800 border-emerald-400/20 text-emerald-100",
-    "from-cyan-950 to-blue-900 border-cyan-400/20 text-cyan-100",
+    "from-violet-950 to-blue-900 border-violet-400/20 text-violet-100",
+    "from-blue-950 to-indigo-900 border-blue-400/20 text-blue-100",
     "from-indigo-950 to-violet-900 border-indigo-400/20 text-indigo-100",
     "from-violet-950 to-fuchsia-900 border-violet-400/20 text-violet-100",
-    "from-rose-950 to-orange-900 border-rose-400/20 text-rose-100",
+    "from-pink-950 to-fuchsia-900 border-pink-400/20 text-pink-100",
   ];
   const gradientClass = gradients[playlist.id % gradients.length];
 
@@ -197,7 +197,7 @@ function PlaylistCard({
         className={cn(
           "relative aspect-square w-full shrink-0 overflow-hidden rounded-2xl bg-muted shadow-lg transition-all duration-500",
           isCurrent
-            ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_30px_oklch(0.76_0.17_158/0.2)]"
+            ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_30px_rgb(106_92_255_/_0.2)]"
             : "ring-1 ring-white/[0.06] group-hover:-translate-y-1.5 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] group-hover:ring-primary/30",
         )}
       >
@@ -269,7 +269,7 @@ function PlaylistCard({
           aria-label={`เลือก ${playlist.name} สำหรับเล่นต่อเนื่อง`}
           className={cn(
             "absolute left-2.5 top-2.5 z-20 flex h-6 w-6 items-center justify-center rounded-md border border-white/25 bg-black/40 text-white/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-black/60 hover:text-white",
-            isSelected && "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_oklch(0.76_0.17_158/0.35)]",
+            isSelected && "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_rgb(106_92_255_/_0.35)]",
           )}
           onClick={onToggleSelect}
         >
@@ -332,7 +332,7 @@ function SongRow({
       className={cn(
         "group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-200",
         isCurrentSong && isPlaying
-          ? "border-primary/30 bg-primary/[0.04] shadow-[0_0_20px_oklch(0.76_0.17_158/0.06)]"
+          ? "border-primary/30 bg-primary/[0.04] shadow-[0_0_20px_rgb(106_92_255_/_0.06)]"
           : "border-white/[0.04] bg-white/[0.015] hover:border-white/[0.1] hover:bg-white/[0.03]",
       )}
     >
@@ -385,7 +385,7 @@ function SongRow({
         className={cn(
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
           isCurrentSong && isPlaying
-            ? "bg-primary text-primary-foreground shadow-[0_0_16px_oklch(0.76_0.17_158/0.3)]"
+            ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
             : "text-muted-foreground/60 hover:bg-primary/10 hover:text-primary",
         )}
         aria-label={isPlaying && isCurrentSong ? `หยุด ${song.title}` : `เล่น ${song.title}`}
@@ -429,7 +429,7 @@ function SongGridCard({
       className={cn(
         "group relative rounded-xl border bg-card/80 p-2.5 transition-all duration-200",
         isCurrentSong && isPlaying
-          ? "border-primary/30 shadow-[0_0_24px_oklch(0.76_0.17_158/0.1)]"
+          ? "border-primary/30 shadow-[0_0_24px_rgb(106_92_255_/_0.1)]"
           : "border-white/[0.06] hover:border-white/[0.12]",
       )}
     >
@@ -455,7 +455,7 @@ function SongGridCard({
             className={cn(
               "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 hover:scale-110",
               isCurrentSong && isPlaying
-                ? "bg-primary text-primary-foreground shadow-[0_0_20px_oklch(0.76_0.17_158/0.4)]"
+                ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgb(106_92_255_/_0.4)]"
                 : "bg-primary/90 text-white hover:bg-primary",
             )}
           >
@@ -800,7 +800,7 @@ export function AdminView() {
             <button
               type="button"
               onClick={() => setShowAddPlaylistInput(!showAddPlaylistInput)}
-              className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_20px_oklch(0.76_0.17_158/0.2)]"
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_20px_rgb(106_92_255_/_0.2)]"
               title="เพิ่มเพลย์ลิสต์"
             >
               <Plus className="h-4 w-4" />
@@ -847,7 +847,7 @@ export function AdminView() {
                 value={newPlaylistName}
                 onChange={(e) => setNewPlaylistName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreatePlaylist()}
-                className="h-9 border-primary/20 bg-primary/[0.04] pr-10 text-xs transition-all focus:border-primary/40 focus:shadow-[0_0_20px_oklch(0.76_0.17_158/0.08)]"
+                className="h-9 border-primary/20 bg-primary/[0.04] pr-10 text-xs transition-all focus:border-primary/40 focus:shadow-[0_0_20px_rgb(106_92_255_/_0.08)]"
               />
               <button
                 type="button"
@@ -1120,7 +1120,7 @@ export function AdminView() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="h-9 border-white/[0.08] bg-white/[0.03] pl-9 text-xs transition-all focus:border-primary/30 focus:shadow-[0_0_20px_oklch(0.76_0.17_158/0.06)]"
+                  className="h-9 border-white/[0.08] bg-white/[0.03] pl-9 text-xs transition-all focus:border-primary/30 focus:shadow-[0_0_20px_rgb(106_92_255_/_0.06)]"
                 />
               </div>
 
@@ -1230,7 +1230,7 @@ export function AdminView() {
                           className={cn(
                             "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
                             isSongCurrent({ youtube_id: result.id }) && isPlaying
-                              ? "bg-primary text-primary-foreground shadow-[0_0_16px_oklch(0.76_0.17_158/0.3)]"
+                              ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
                               : "text-foreground/60 hover:bg-primary/10 hover:text-primary opacity-0 group-hover:opacity-100",
                           )}
                         >
@@ -1469,7 +1469,7 @@ export function AdminView() {
                         className={cn(
                           "group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-300",
                           isCurrentQueued
-                            ? "border-primary/20 bg-primary/[0.03] shadow-[0_0_20px_oklch(0.76_0.17_158/0.04)]"
+                            ? "border-primary/20 bg-primary/[0.03] shadow-[0_0_20px_rgb(106_92_255_/_0.04)]"
                             : "border-white/[0.04] bg-white/[0.015] hover:border-white/[0.1]",
                         )}
                       >
@@ -1515,7 +1515,7 @@ export function AdminView() {
                           className={cn(
                             "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
                             isSongCurrent({ youtube_id: req.youtube_id }) && isPlaying
-                              ? "bg-primary text-primary-foreground shadow-[0_0_16px_oklch(0.76_0.17_158/0.3)]"
+                              ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
                               : "text-foreground/60 hover:bg-primary/10 hover:text-primary",
                           )}
                         >
@@ -1549,7 +1549,7 @@ export function AdminView() {
                         className={cn(
                           "group relative rounded-xl border bg-card/80 p-2.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
                           isCurrentQueued
-                            ? "border-primary/30 shadow-[0_0_24px_oklch(0.76_0.17_158/0.1)]"
+                            ? "border-primary/30 shadow-[0_0_24px_rgb(106_92_255_/_0.1)]"
                             : "border-white/[0.06] hover:border-primary/20",
                         )}
                       >
@@ -1693,7 +1693,7 @@ export function AdminView() {
                           className={cn(
                             "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all",
                             isThisSongPlaying
-                              ? "bg-primary text-primary-foreground shadow-[0_0_16px_oklch(0.76_0.17_158/0.3)]"
+                              ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
                               : "text-foreground/60 hover:bg-primary/10 hover:text-primary",
                           )}
                         >

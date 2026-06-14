@@ -221,7 +221,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         >
           <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-card/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
             <img src="/icon-512.png" alt="" className="h-8 w-8 rounded-xl object-cover" />
-            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_18px_rgba(52,211,153,0.9)]" />
+            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_18px_rgba(106,92,255,0.9)]" />
           </span>
           <div className={cn("min-w-0", isSidebarCollapsed && "hidden")}>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary leading-none">

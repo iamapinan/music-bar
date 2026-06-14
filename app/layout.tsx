@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { ServiceWorkerRegistration } from '@/components/sw-registration'
@@ -7,16 +6,6 @@ import { ThemeInitializer } from '@/components/theme-initializer'
 import { PlayerProvider } from '@/context/player-context'
 import { PersistentYouTubePlayer } from '@/components/persistent-player'
 import './globals.css'
-
-const geist = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist-sans'
-})
-
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-geist-mono'
-})
 
 export const metadata: Metadata = {
   title: 'Music Bar',
@@ -37,7 +26,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#101a17',
+  themeColor: '#111426',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -52,13 +41,19 @@ export default function RootLayout({
   return (
     <html lang="th" className="dark bg-background">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         {/* Allow autoplay in background for iOS */}
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased min-h-screen`}>
+      <body className="font-sans antialiased min-h-screen">
         <PlayerProvider>
           <PersistentYouTubePlayer />
           <ThemeInitializer />
@@ -71,8 +66,8 @@ export default function RootLayout({
           theme="dark"
           toastOptions={{
             style: {
-              background: 'oklch(0.18 0.02 280)',
-              border: '1px solid oklch(0.3 0.02 280)',
+              background: '#111426',
+              border: '1px solid rgb(106 92 255 / 0.28)',
             }
           }}
         />

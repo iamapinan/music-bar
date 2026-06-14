@@ -52,7 +52,7 @@ export function StoreApplicationForm() {
 
   return (
     <main className="min-h-[100dvh] bg-background px-4 py-6 text-foreground sm:px-6 lg:px-8">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_8%,oklch(0.42_0.12_158_/_0.22),transparent_28rem),radial-gradient(circle_at_88%_78%,oklch(0.34_0.08_205_/_0.16),transparent_30rem)]" />
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_8%,rgb(106_92_255_/_0.22),transparent_28rem),radial-gradient(circle_at_88%_78%,rgb(61_123_255_/_0.16),transparent_30rem)]" />
       <header className="mx-auto flex max-w-5xl items-center justify-between">
         <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-white/65 transition hover:text-primary">
           <ArrowLeft className="h-4 w-4" />

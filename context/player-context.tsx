@@ -630,6 +630,56 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
   }, [isPlaying])
 
+  // Sync with Android Native Bridge
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).AndroidBridge && currentSong) {
+      const title = currentSong.title || ''
+      const artist = 'requested_by' in currentSong
+        ? currentSong.requested_by || 'ลูกค้า'
+        : 'Music Bar'
+      const thumbnail = currentSong.thumbnail || ''
+      const pos = Math.floor(currentTime)
+      const dur = Math.floor(duration)
+      
+      try {
+        (window as any).AndroidBridge.updatePlaybackState(
+          isPlaying,
+          title,
+          artist,
+          thumbnail,
+          pos,
+          dur
+        )
+      } catch (err) {
+        console.error('Failed to update Android playback state', err)
+      }
+    }
+  }, [currentSong, isPlaying, currentTime, duration])
+
+  // Handle Android Native media actions
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).handleAndroidMediaAction = (action: string) => {
+        switch (action) {
+          case 'play':
+            playerRef.current?.play()
+            setIsPlaying(true)
+            break
+          case 'pause':
+            playerRef.current?.pause()
+            setIsPlaying(false)
+            break
+          case 'next':
+            handleSkip()
+            break
+          case 'previous':
+            handlePrevious()
+            break
+        }
+      }
+    }
+  }, [handleSkip, handlePrevious, setIsPlaying])
+
   // Page Visibility API — resume playback when page becomes visible again
   useEffect(() => {
     const handleVisibilityChange = () => {

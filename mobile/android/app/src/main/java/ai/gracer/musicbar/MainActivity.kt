@@ -1,6 +1,9 @@
 package ai.gracer.musicbar
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.ServiceConnection
+import android.os.IBinder
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -20,6 +23,22 @@ import androidx.core.content.ContextCompat
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: BackgroundWebView
+    private var audioService: BackgroundAudioService? = null
+    private var isBound = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as BackgroundAudioService.LocalBinder
+            audioService = binder.getService()
+            isBound = true
+            audioService?.setWebView(webView)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            audioService = null
+            isBound = false
+        }
+    }
     
     private val stopReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -51,9 +70,12 @@ class MainActivity : AppCompatActivity() {
 
         // เริ่มต้นการทำงานของ Foreground Service
         startAudioService()
+        bindAudioService()
     }
 
     private fun setupWebView() {
+        webView.addJavascriptInterface(AndroidBridge(), "AndroidBridge")
+        
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -84,6 +106,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             startService(serviceIntent)
         }
+    }
+
+    private fun bindAudioService() {
+        val intent = Intent(this, BackgroundAudioService::class.java)
+        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
     private fun checkAndRequestNotificationsPermission() {
@@ -132,7 +159,22 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+        if (isBound) {
+            unbindService(serviceConnection)
+            isBound = false
+        }
         webView.destroy()
         super.onDestroy()
+    }
+
+    inner class AndroidBridge {
+        @android.webkit.JavascriptInterface
+        fun updatePlaybackState(isPlaying: Boolean, title: String, artist: String, thumbnailUrl: String, position: Long, duration: Long) {
+            runOnUiThread {
+                if (isBound && audioService != null) {
+                    audioService?.updatePlaybackState(isPlaying, title, artist, thumbnailUrl, position, duration)
+                }
+            }
+        }
     }
 }

@@ -66,7 +66,7 @@ export function AdminRequestsView() {
   return (
     <main className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-6 px-4 py-4 sm:px-6 xl:px-8 xl:py-7 flex-1 overflow-y-auto">
       {/* Header */}
-      <section className="admin-dashboard-hero relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0f1815] via-[#0b1110] to-[#0a0f0e] p-2 sm:p-4 xl:p-6">
+      <section className="admin-dashboard-hero relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#171b34] via-[#111426] to-[#0d1021] p-2 sm:p-4 xl:p-6">
         <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 bg-violet-500/12 blur-[80px] rounded-full" />
         <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 bg-violet-500/8 blur-[70px] rounded-full" />
 
@@ -86,7 +86,7 @@ export function AdminRequestsView() {
       </section>
 
       {/* Requests List */}
-      <section className="admin-dashboard-qr-card overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-[#0f1815] to-[#0b1110] xl:rounded-2xl">
+      <section className="admin-dashboard-qr-card overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-[#171b34] to-[#111426] xl:rounded-2xl">
         <div className="admin-dashboard-qr-header flex items-center justify-between border-b border-white/8 px-5 py-4">
           <div className="flex items-center gap-2">
             <Headphones className="h-4 w-4 text-violet-400" />

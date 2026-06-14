@@ -105,10 +105,14 @@ export function PlayerView() {
       <div className="app-shell flex min-h-[100dvh] flex-col items-center justify-center p-6 text-center">
         <div className="relative mb-6">
           <div className="surface-panel flex h-24 w-24 items-center justify-center rounded-3xl">
-            <Music2 className="h-10 w-10 text-primary/75" />
+            <img
+              src="/musicbar-logo-white.png"
+              alt="Music Bar"
+              className="h-14 w-14 object-contain opacity-95"
+            />
           </div>
         </div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.35em] text-primary">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.35em] text-white/80">
           Music bar
         </p>
         <h2 className="mb-2 text-2xl font-semibold tracking-tight text-foreground">
@@ -174,8 +178,12 @@ export function PlayerView() {
           )}
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Music2 className="w-4 h-4 text-primary" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/10">
+              <img
+                src="/musicbar-logo-white.png"
+                alt="Music Bar"
+                className="h-5 w-5 object-contain opacity-95"
+              />
             </div>
             <span className="text-sm font-semibold tracking-tight">
               Music Bar
@@ -206,11 +214,11 @@ export function PlayerView() {
       {!isFullscreen && (
         <header className="absolute top-0 right-0 left-0 z-30 flex items-center justify-between px-4 py-4 sm:px-8 sm:py-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/10 backdrop-blur-md">
               <img
-                src="/icon-512.png"
+                src="/musicbar-logo-white.png"
                 alt="Music Bar"
-                className="h-8 w-8 rounded-xl"
+                className="h-6 w-6 object-contain opacity-95"
               />
             </div>
             <div>

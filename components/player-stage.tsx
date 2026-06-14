@@ -95,7 +95,7 @@ export function PlayerStage() {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(16,185,129,0.08),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(106,92,255,0.08),transparent_60%)]" />
       </div>
 
       {/* Visualizer bars */}

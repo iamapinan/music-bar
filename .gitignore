@@ -14,8 +14,11 @@ node_modules
 .next/
 .DS_Store
 .vercel
-mobile
-public/app-debug.apk
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/local.properties
+mobile/android/**/*.apk
 database/backups/
 .env
 .env.example

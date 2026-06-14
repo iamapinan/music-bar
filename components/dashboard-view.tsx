@@ -76,7 +76,7 @@ export function DashboardView() {
   useEffect(() => {
     if (!pageUrl) return;
     setQrDataUrl(
-      `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(pageUrl)}&bgcolor=ffffff&color=059669&format=png&margin=20`,
+      `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(pageUrl)}&bgcolor=ffffff&color=6A5CFF&format=png&margin=20`,
     );
   }, [pageUrl]);
 
@@ -133,9 +133,9 @@ export function DashboardView() {
   return (
     <main className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-6 px-4 py-4 sm:px-6 xl:px-8 xl:py-7 flex-1 overflow-y-auto">
       {/* ===== Hero / Overview ===== */}
-      <section className="admin-dashboard-hero relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0f1815] via-[#0b1110] to-[#0a0f0e] p-6 sm:p-8 xl:p-10">
+      <section className="admin-dashboard-hero relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#171b34] via-[#111426] to-[#0d1021] p-6 sm:p-8 xl:p-10">
         <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 bg-primary/12 blur-[80px] rounded-full" />
-        <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 bg-emerald-500/8 blur-[70px] rounded-full" />
+        <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 bg-violet-500/8 blur-[70px] rounded-full" />
 
         <div className="relative z-10">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -153,7 +153,7 @@ export function DashboardView() {
               <Button
                 onClick={() => window.open(playerUrl, "_blank")}
                 disabled={!playerUrl}
-                className="h-10 gap-2 rounded-full px-5 text-sm font-semibold shadow-[0_8px_24px_rgba(16,185,129,0.2)]"
+                className="h-10 gap-2 rounded-full px-5 text-sm font-semibold shadow-[0_8px_24px_rgba(106,92,255,0.2)]"
               >
                 <MonitorPlay className="h-4 w-4" />
                 เปิดเครื่องเล่น
@@ -200,14 +200,14 @@ export function DashboardView() {
                 playlists.length,
                 "ชุดบรรยากาศ",
                 <LibraryBig key="lib" className="h-5 w-5" />,
-                "from-emerald-500/10 to-emerald-500/5 border-emerald-500/15",
+                "from-violet-500/10 to-violet-500/5 border-violet-500/15",
               ],
               [
                 "เพลงในคิว",
                 playlistSongs.length,
                 "ในเพลย์ลิสต์ปัจจุบัน",
                 <Music2 key="mus" className="h-5 w-5" />,
-                "from-cyan-500/10 to-cyan-500/5 border-cyan-500/15",
+                "from-blue-500/10 to-blue-500/5 border-blue-500/15",
               ],
               [
                 "คำขอเพลง",
@@ -239,7 +239,7 @@ export function DashboardView() {
           </div>
 
           {/* Settings Card */}
-          <div className="admin-dashboard-qr-card overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-[#0f1815] to-[#0b1110] xl:rounded-2xl">
+          <div className="admin-dashboard-qr-card overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-[#171b34] to-[#111426] xl:rounded-2xl">
             <div className="admin-dashboard-qr-header flex items-center justify-between border-b border-white/8 px-5 py-4">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/12 text-primary border border-primary/15">
@@ -287,7 +287,7 @@ export function DashboardView() {
               {/* Auto-play toggle */}
               <div className="flex items-center justify-between gap-4 py-4">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/12 text-emerald-400">
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/12 text-violet-400">
                     <Disc3 className="h-4 w-4" />
                   </div>
                   <div>
@@ -337,7 +337,7 @@ export function DashboardView() {
         </div>
 
         {/* Right: QR Card */}
-        <div className="admin-dashboard-qr-card flex flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-[#0f1815] to-[#0b1110] xl:rounded-2xl">
+        <div className="admin-dashboard-qr-card flex flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-[#171b34] to-[#111426] xl:rounded-2xl">
           <div className="admin-dashboard-qr-header flex items-center justify-between border-b border-white/8 px-5 py-4">
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/12 text-primary border border-primary/15">

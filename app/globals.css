@@ -4,53 +4,97 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.095 0.008 165);
-  --foreground: oklch(0.94 0.008 165);
-  --card: oklch(0.135 0.012 165);
-  --card-foreground: oklch(0.94 0.008 165);
-  --popover: oklch(0.145 0.012 165);
-  --popover-foreground: oklch(0.94 0.008 165);
-  --primary: oklch(0.73 0.15 158);
-  --primary-foreground: oklch(0.12 0.025 165);
-  --secondary: oklch(0.18 0.012 165);
-  --secondary-foreground: oklch(0.9 0.008 165);
-  --muted: oklch(0.19 0.012 165);
-  --muted-foreground: oklch(0.64 0.014 165);
-  --accent: oklch(0.73 0.15 158);
-  --accent-foreground: oklch(0.12 0.025 165);
+  --background: #111426;
+  --foreground: #f8faff;
+  --card: #171b34;
+  --card-foreground: #f8faff;
+  --popover: #171b34;
+  --popover-foreground: #f8faff;
+  --primary: #6a5cff;
+  --primary-foreground: #ffffff;
+  --secondary: #1e3a8a;
+  --secondary-foreground: #f8faff;
+  --muted: #202542;
+  --muted-foreground: #b9c1df;
+  --accent: #ff5db8;
+  --accent-foreground: #ffffff;
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.24 0.014 165);
-  --input: oklch(0.17 0.012 165);
-  --ring: oklch(0.73 0.15 158);
-  --chart-1: oklch(0.65 0.2 280);
-  --chart-2: oklch(0.7 0.18 330);
-  --chart-3: oklch(0.7 0.15 200);
-  --chart-4: oklch(0.8 0.15 80);
-  --chart-5: oklch(0.6 0.2 30);
+  --border: rgb(248 250 255 / 0.12);
+  --input: #202542;
+  --ring: #6a5cff;
+  --chart-1: #6a5cff;
+  --chart-2: #3d7bff;
+  --chart-3: #ff5db8;
+  --chart-4: #9b5cff;
+  --chart-5: #1e3a8a;
   --radius: 1rem;
-  --sidebar: oklch(0.1 0.015 260);
-  --sidebar-foreground: oklch(0.95 0.01 260);
-  --sidebar-primary: oklch(0.65 0.2 280);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.18 0.015 260);
-  --sidebar-accent-foreground: oklch(0.95 0.01 260);
-  --sidebar-border: oklch(0.22 0.015 260);
-  --sidebar-ring: oklch(0.65 0.2 280);
+  --sidebar: #0d1021;
+  --sidebar-foreground: #f8faff;
+  --sidebar-primary: #6a5cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgb(106 92 255 / 0.14);
+  --sidebar-accent-foreground: #f8faff;
+  --sidebar-border: rgb(248 250 255 / 0.1);
+  --sidebar-ring: #6a5cff;
   
-  /* Custom colors */
-  --gradient-start: oklch(0.82 0.13 155);
-  --gradient-end: oklch(0.63 0.13 165);
-  --surface-elevated: oklch(0.155 0.014 165);
-  --glow-primary: oklch(0.73 0.15 158 / 0.2);
-  --glow-accent: oklch(0.73 0.15 158 / 0.14);
+  --musicbar-violet: #6a5cff;
+  --musicbar-blue: #3d7bff;
+  --musicbar-indigo: #1e3a8a;
+  --musicbar-pink: #ff5db8;
+  --musicbar-soft-purple: #9b5cff;
+  --musicbar-ink: #111426;
+  --musicbar-cloud: #f8faff;
+  --gradient-start: #3d7bff;
+  --gradient-mid: #6a5cff;
+  --gradient-end: #ff5db8;
+  --surface-elevated: #1a1f3b;
+  --glow-primary: rgb(106 92 255 / 0.24);
+  --glow-accent: rgb(255 93 184 / 0.18);
 }
 
 .dark {}
 
+html.light-theme {
+  --background: #f8faff;
+  --foreground: #111426;
+  --card: #ffffff;
+  --card-foreground: #111426;
+  --popover: #ffffff;
+  --popover-foreground: #111426;
+  --primary: #6a5cff;
+  --primary-foreground: #ffffff;
+  --secondary: #e9edff;
+  --secondary-foreground: #1e3a8a;
+  --muted: #eef1ff;
+  --muted-foreground: #566080;
+  --accent: rgb(255 93 184 / 0.12);
+  --accent-foreground: #b91c74;
+  --border: #dfe5ff;
+  --input: #ffffff;
+  --ring: #6a5cff;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111426;
+  --sidebar-primary: #6a5cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgb(106 92 255 / 0.1);
+  --sidebar-accent-foreground: #1e3a8a;
+  --sidebar-border: #dfe5ff;
+  --sidebar-ring: #6a5cff;
+  --glow-primary: rgb(106 92 255 / 0.16);
+  --glow-accent: rgb(255 93 184 / 0.12);
+}
+
+html.light-theme body {
+  background-image:
+    radial-gradient(circle at 10% -10%, rgb(106 92 255 / 0.14), transparent 28rem),
+    radial-gradient(circle at 92% 8%, rgb(255 93 184 / 0.08), transparent 26rem),
+    radial-gradient(circle at 95% 110%, rgb(61 123 255 / 0.1), transparent 32rem);
+}
+
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
+  --font-sans: 'Noto Sans Thai', 'Poppins', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'SFMono-Regular', 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -96,8 +140,9 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(circle at 10% -10%, oklch(0.34 0.08 160 / 0.15), transparent 28rem),
-      radial-gradient(circle at 95% 110%, oklch(0.28 0.045 190 / 0.12), transparent 32rem);
+      radial-gradient(circle at 10% -10%, rgb(106 92 255 / 0.18), transparent 28rem),
+      radial-gradient(circle at 92% 8%, rgb(255 93 184 / 0.12), transparent 26rem),
+      radial-gradient(circle at 95% 110%, rgb(61 123 255 / 0.12), transparent 32rem);
     background-attachment: fixed;
   }
 }
@@ -134,7 +179,7 @@
 .player-ambient {
   isolation: isolate;
   background-image:
-    linear-gradient(110deg, oklch(0.08 0.02 165 / 0.94), oklch(0.15 0.055 158 / 0.78), oklch(0.075 0.025 205 / 0.94));
+    linear-gradient(110deg, oklch(0.08 0.02 165 / 0.94), rgb(106 92 255 / 0.16), oklch(0.075 0.025 205 / 0.94));
   background-size: 160% 100%;
   animation: player-background-shift 18s ease-in-out infinite alternate;
 }
@@ -164,8 +209,8 @@
   inset: -24%;
   content: '';
   background:
-    radial-gradient(circle at 22% 36%, oklch(0.66 0.14 158 / 0.16), transparent 22rem),
-    radial-gradient(circle at 78% 62%, oklch(0.56 0.11 205 / 0.14), transparent 26rem);
+    radial-gradient(circle at 22% 36%, rgb(106 92 255 / 0.16), transparent 22rem),
+    radial-gradient(circle at 78% 62%, rgb(61 123 255 / 0.14), transparent 26rem);
   filter: blur(18px);
   animation: player-stage-glow-drift 18s ease-in-out infinite alternate;
   will-change: transform, opacity;
@@ -243,11 +288,11 @@
 .player-glass-card:hover {
   transform: translateY(-4px);
   background: oklch(0.105 0.018 165 / 0.86);
-  border-color: oklch(0.72 0.14 158 / 0.38);
+  border-color: rgb(106 92 255 / 0.38);
   box-shadow:
     inset 0 1px 0 oklch(1 0 0 / 0.085),
     0 28px 86px oklch(0.01 0.004 165 / 0.62),
-    0 0 32px oklch(0.62 0.14 158 / 0.12);
+    0 0 32px rgb(255 93 184 / 0.12);
 }
 
 .player-glass-card-featured:hover {
@@ -336,7 +381,7 @@
 
 .app-shell {
   background:
-    radial-gradient(circle at 80% 0%, oklch(0.43 0.1 158 / 0.12), transparent 24rem),
+    radial-gradient(circle at 80% 0%, rgb(106 92 255 / 0.12), transparent 24rem),
     linear-gradient(180deg, oklch(0.12 0.012 165 / 0.5), transparent 22rem);
 }
 
@@ -349,23 +394,23 @@
 .admin-shell,
 html.admin-mode,
 body.admin-mode {
-  --background: oklch(0.07 0.012 165);
-  --foreground: oklch(0.96 0.006 165);
-  --card: oklch(0.115 0.014 165);
-  --card-foreground: oklch(0.96 0.006 165);
-  --popover: oklch(0.135 0.014 165);
-  --popover-foreground: oklch(0.96 0.006 165);
-  --primary: oklch(0.76 0.17 158);
-  --primary-foreground: oklch(0.07 0.018 165);
-  --secondary: oklch(0.17 0.014 165);
-  --secondary-foreground: oklch(0.9 0.008 165);
-  --muted: oklch(0.16 0.012 165);
-  --muted-foreground: oklch(0.68 0.014 165);
-  --accent: oklch(0.76 0.17 158 / 0.14);
-  --accent-foreground: oklch(0.8 0.15 158);
-  --border: oklch(0.27 0.018 165 / 0.72);
-  --input: oklch(0.145 0.014 165);
-  --ring: oklch(0.76 0.17 158);
+  --background: #111426;
+  --foreground: #f8faff;
+  --card: #171b34;
+  --card-foreground: #f8faff;
+  --popover: #171b34;
+  --popover-foreground: #f8faff;
+  --primary: #6a5cff;
+  --primary-foreground: #ffffff;
+  --secondary: #1e3a8a;
+  --secondary-foreground: #f8faff;
+  --muted: #202542;
+  --muted-foreground: #b9c1df;
+  --accent: rgb(255 93 184 / 0.16);
+  --accent-foreground: #ff9ed5;
+  --border: rgb(248 250 255 / 0.12);
+  --input: #202542;
+  --ring: #6a5cff;
 }
 
 .admin-shell,
@@ -373,17 +418,18 @@ html.admin-mode,
 body.admin-mode {
   color: var(--foreground);
   background:
-    radial-gradient(circle at 84% -8%, oklch(0.3 0.09 158 / 0.32), transparent 36rem),
-    radial-gradient(circle at -8% 88%, oklch(0.18 0.055 205 / 0.22), transparent 32rem),
-    linear-gradient(145deg, oklch(0.055 0.014 165), oklch(0.085 0.015 165)) !important;
+    radial-gradient(circle at 84% -8%, rgb(106 92 255 / 0.32), transparent 36rem),
+    radial-gradient(circle at 10% 10%, rgb(255 93 184 / 0.12), transparent 28rem),
+    radial-gradient(circle at -8% 88%, rgb(61 123 255 / 0.2), transparent 32rem),
+    linear-gradient(145deg, #0b0e1f, #111426) !important;
   background-attachment: fixed !important;
 }
 
 .admin-glass {
-  background: oklch(0.065 0.014 165 / 0.82);
+  background: rgb(13 16 33 / 0.82);
   backdrop-filter: blur(22px) saturate(1.08);
   -webkit-backdrop-filter: blur(22px) saturate(1.08);
-  border-bottom: 1px solid oklch(0.76 0.17 158 / 0.1);
+  border-bottom: 1px solid rgb(106 92 255 / 0.14);
 }
 
 .admin-surface {
@@ -401,16 +447,17 @@ body.admin-mode {
 
 .admin-command-rail {
   background:
-    linear-gradient(180deg, oklch(0.095 0.018 165 / 0.98), oklch(0.055 0.014 165 / 0.98));
+    linear-gradient(180deg, rgb(23 27 52 / 0.98), rgb(13 16 33 / 0.98));
   box-shadow:
-    inset -1px 0 0 oklch(0.76 0.17 158 / 0.035),
-    18px 0 44px oklch(0.02 0.01 165 / 0.26);
+    inset -1px 0 0 rgb(106 92 255 / 0.08),
+    18px 0 44px rgb(2 4 16 / 0.28);
 }
 
 .admin-dashboard-hero {
   background:
-    radial-gradient(circle at 82% -16%, oklch(0.76 0.17 158 / 0.19), transparent 24rem),
-    linear-gradient(135deg, oklch(0.16 0.026 165 / 0.98), oklch(0.085 0.015 165 / 0.98));
+    radial-gradient(circle at 82% -16%, rgb(106 92 255 / 0.25), transparent 24rem),
+    radial-gradient(circle at 18% 105%, rgb(255 93 184 / 0.12), transparent 22rem),
+    linear-gradient(135deg, rgb(30 58 138 / 0.76), rgb(17 20 38 / 0.98));
   box-shadow:
     inset 0 1px 0 oklch(0.96 0.01 165 / 0.08),
     0 26px 70px oklch(0.02 0.01 165 / 0.32);
@@ -426,7 +473,7 @@ body.admin-mode {
 
 .admin-stat-card {
   background:
-    radial-gradient(circle at 12% 0%, oklch(0.76 0.17 158 / 0.12), transparent 10rem),
+    radial-gradient(circle at 12% 0%, rgb(106 92 255 / 0.12), transparent 10rem),
     oklch(0.1 0.014 165 / 0.84);
 }
 
@@ -446,8 +493,8 @@ body.admin-mode {
 
 .admin-workspace-header {
   background:
-    radial-gradient(circle at 96% 0%, oklch(0.76 0.17 158 / 0.14), transparent 22rem),
-    linear-gradient(135deg, oklch(0.15 0.018 165 / 0.98), oklch(0.1 0.014 165 / 0.98));
+    radial-gradient(circle at 96% 0%, rgb(106 92 255 / 0.18), transparent 22rem),
+    linear-gradient(135deg, rgb(26 31 59 / 0.98), rgb(17 20 38 / 0.98));
 }
 
 .admin-playlist-card,
@@ -481,33 +528,33 @@ body.admin-mode {
 .admin-playlist-card:hover,
 .admin-track-card:hover {
   transform: translateY(-3px);
-  border-color: oklch(0.76 0.17 158 / 0.46);
+  border-color: rgb(106 92 255 / 0.46);
   box-shadow:
     0 16px 36px oklch(0.02 0.01 165 / 0.34),
-    0 0 0 1px oklch(0.76 0.17 158 / 0.08);
+    0 0 0 1px rgb(106 92 255 / 0.08);
 }
 
 .admin-track-row:hover {
   transform: translateX(4px);
-  border-color: oklch(0.76 0.17 158 / 0.3);
+  border-color: rgb(106 92 255 / 0.3);
   background: oklch(0.16 0.018 165 / 0.96);
   box-shadow: 0 12px 28px oklch(0.02 0.01 165 / 0.28);
 }
 
 .admin-player-dock {
-  --background: oklch(0.05 0.018 165);
-  --foreground: oklch(0.98 0.006 165);
-  --muted: oklch(0.12 0.018 165);
-  --muted-foreground: oklch(0.79 0.014 165);
-  --primary: oklch(0.76 0.17 158);
-  --primary-foreground: oklch(0.055 0.018 165);
+  --background: #0b0e1f;
+  --foreground: #f8faff;
+  --muted: #171b34;
+  --muted-foreground: #c7cef0;
+  --primary: #6a5cff;
+  --primary-foreground: #ffffff;
   background:
-    radial-gradient(circle at 12% 0%, oklch(0.26 0.085 158 / 0.52), transparent 28rem),
-    linear-gradient(100deg, oklch(0.055 0.022 165 / 0.99), oklch(0.07 0.022 165 / 0.97)) !important;
-  border-color: oklch(0.78 0.1 158 / 0.2) !important;
+    radial-gradient(circle at 12% 0%, rgb(106 92 255 / 0.38), transparent 28rem),
+    linear-gradient(100deg, rgb(13 16 33 / 0.99), rgb(17 20 38 / 0.97)) !important;
+  border-color: rgb(106 92 255 / 0.24) !important;
   color: var(--foreground);
   box-shadow:
-    inset 0 1px 0 oklch(0.86 0.12 158 / 0.14),
+    inset 0 1px 0 rgb(106 92 255 / 0.14),
     0 -18px 70px oklch(0.025 0.012 165 / 0.58) !important;
 }
 
@@ -520,20 +567,20 @@ body.admin-mode {
 }
 
 .admin-player-dock button:hover {
-  background-color: oklch(0.76 0.17 158 / 0.16);
+  background-color: rgb(106 92 255 / 0.16);
 }
 
 html.light-theme .admin-player-dock {
-  --background: oklch(0.97 0.005 165);
-  --foreground: oklch(0.15 0.012 165);
-  --muted: oklch(0.92 0.006 165);
-  --muted-foreground: oklch(0.45 0.02 165);
-  --primary: oklch(0.55 0.18 158);
-  --primary-foreground: oklch(0.99 0.002 165);
+  --background: #f8faff;
+  --foreground: #111426;
+  --muted: #eef1ff;
+  --muted-foreground: #566080;
+  --primary: #6a5cff;
+  --primary-foreground: #ffffff;
   background:
-    radial-gradient(circle at 12% 0%, oklch(0.55 0.18 158 / 0.14), transparent 28rem),
-    linear-gradient(100deg, oklch(0.96 0.008 165 / 0.99), oklch(0.94 0.006 165 / 0.97)) !important;
-  border-color: oklch(0.55 0.18 158 / 0.2) !important;
+    radial-gradient(circle at 12% 0%, rgb(106 92 255 / 0.14), transparent 28rem),
+    linear-gradient(100deg, rgb(248 250 255 / 0.99), rgb(238 241 255 / 0.97)) !important;
+  border-color: rgb(106 92 255 / 0.2) !important;
   box-shadow:
     inset 0 1px 0 oklch(1 0 0 / 0.5),
     0 -18px 70px oklch(0.15 0.012 165 / 0.08) !important;
@@ -571,9 +618,9 @@ html.light-theme .admin-player-dock {
 
 .admin-shell input:focus,
 .admin-shell select:focus {
-  border-color: oklch(0.76 0.17 158 / 0.72);
+  border-color: rgb(106 92 255 / 0.72);
   box-shadow:
-    0 0 0 3px oklch(0.76 0.17 158 / 0.12),
+    0 0 0 3px rgb(106 92 255 / 0.12),
     inset 0 1px 2px oklch(0.02 0.01 165 / 0.34);
 }
 
@@ -591,7 +638,7 @@ html.light-theme .admin-player-dock {
 }
 
 .admin-shell [data-slot="button"][data-variant="ghost"]:hover {
-  background: oklch(0.76 0.17 158 / 0.1);
+  background: rgb(106 92 255 / 0.1);
 }
 
 html.admin-mode [data-sonner-toast],
@@ -607,13 +654,13 @@ body.admin-mode ::-webkit-scrollbar-thumb {
 }
 
 body.admin-mode ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.44 0.04 158) !important;
+  background: #3d7bff !important;
 }
 
 .admin-shell [data-slot="tabs-trigger"][data-state="active"] {
-  background: oklch(0.76 0.17 158 / 0.14);
-  color: oklch(0.8 0.15 158);
-  border-color: oklch(0.76 0.17 158 / 0.28);
+  background: rgb(106 92 255 / 0.14);
+  color: #9b5cff;
+  border-color: rgb(106 92 255 / 0.28);
 }
 
 .admin-shell [data-slot="button"][data-variant="outline"] {
@@ -643,8 +690,8 @@ body.admin-mode ::-webkit-scrollbar-thumb:hover {
 .animated-gradient {
   background: linear-gradient(
     -45deg,
-    oklch(0.65 0.2 280 / 0.15),
-    oklch(0.7 0.18 330 / 0.15),
+    rgb(106 92 255 / 0.15),
+    rgb(255 93 184 / 0.15),
     oklch(0.08 0.01 260),
     oklch(0.12 0.015 260)
   );
@@ -761,23 +808,23 @@ input[type="range"]::-webkit-slider-runnable-track {
 .admin-shell.light-theme,
 html.admin-mode.light-theme,
 body.admin-mode.light-theme {
-  --background: oklch(0.975 0.005 165);
-  --foreground: oklch(0.15 0.012 165);
-  --card: oklch(0.995 0.002 165);
-  --card-foreground: oklch(0.15 0.012 165);
-  --popover: oklch(0.99 0.004 165);
-  --popover-foreground: oklch(0.15 0.012 165);
-  --primary: oklch(0.55 0.18 158);
-  --primary-foreground: oklch(0.99 0.002 165);
-  --secondary: oklch(0.93 0.006 165);
-  --secondary-foreground: oklch(0.2 0.012 165);
-  --muted: oklch(0.94 0.008 165);
-  --muted-foreground: oklch(0.48 0.02 165);
-  --accent: oklch(0.55 0.18 158 / 0.12);
-  --accent-foreground: oklch(0.45 0.18 158);
-  --border: oklch(0.88 0.01 165);
-  --input: oklch(0.98 0.002 165);
-  --ring: oklch(0.55 0.18 158);
+  --background: #f8faff;
+  --foreground: #111426;
+  --card: #ffffff;
+  --card-foreground: #111426;
+  --popover: #ffffff;
+  --popover-foreground: #111426;
+  --primary: #6a5cff;
+  --primary-foreground: #ffffff;
+  --secondary: #e9edff;
+  --secondary-foreground: #1e3a8a;
+  --muted: #eef1ff;
+  --muted-foreground: #566080;
+  --accent: rgb(255 93 184 / 0.12);
+  --accent-foreground: #b91c74;
+  --border: #dfe5ff;
+  --input: #ffffff;
+  --ring: #6a5cff;
 }
 
 .admin-shell.light-theme,
@@ -785,15 +832,15 @@ html.admin-mode.light-theme,
 body.admin-mode.light-theme {
   color: var(--foreground);
   background:
-    radial-gradient(circle at 84% -8%, oklch(0.88 0.08 158 / 0.28), transparent 36rem),
-    radial-gradient(circle at -8% 88%, oklch(0.92 0.04 205 / 0.18), transparent 32rem),
-    linear-gradient(145deg, oklch(0.97 0.005 165), oklch(0.94 0.008 165)) !important;
+    radial-gradient(circle at 84% -8%, rgb(106 92 255 / 0.18), transparent 36rem),
+    radial-gradient(circle at -8% 88%, rgb(61 123 255 / 0.12), transparent 32rem),
+    linear-gradient(145deg, #f8faff, #eef1ff) !important;
   background-attachment: fixed !important;
 }
 
 .admin-shell.light-theme .admin-glass {
-  background: oklch(0.96 0.005 165 / 0.82);
-  border-bottom-color: oklch(0.55 0.18 158 / 0.15);
+  background: rgb(248 250 255 / 0.82);
+  border-bottom-color: rgb(106 92 255 / 0.16);
 }
 
 .admin-shell.light-theme .admin-surface {
@@ -807,17 +854,17 @@ body.admin-mode.light-theme {
 
 .admin-shell.light-theme .admin-command-rail {
   background:
-    linear-gradient(180deg, oklch(0.985 0.002 165 / 0.98), oklch(0.955 0.005 165 / 0.98));
+    linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(238 241 255 / 0.98));
   box-shadow:
-    inset -1px 0 0 oklch(0.55 0.18 158 / 0.08),
-    18px 0 44px oklch(0.15 0.012 165 / 0.04);
+    inset -1px 0 0 rgb(106 92 255 / 0.1),
+    18px 0 44px rgb(17 20 38 / 0.05);
 }
 
 .admin-shell.light-theme .admin-dashboard-hero {
   background:
-    radial-gradient(circle at 82% -16%, oklch(0.55 0.18 158 / 0.14), transparent 24rem),
-    linear-gradient(135deg, oklch(0.92 0.01 165 / 0.98), oklch(0.96 0.005 165 / 0.98));
-  border-color: oklch(0.15 0.012 165 / 0.08);
+    radial-gradient(circle at 82% -16%, rgb(106 92 255 / 0.16), transparent 24rem),
+    linear-gradient(135deg, rgb(238 241 255 / 0.98), rgb(248 250 255 / 0.98));
+  border-color: rgb(17 20 38 / 0.08);
   box-shadow:
     inset 0 1px 0 oklch(1 0 0 / 0.6),
     0 26px 70px oklch(0.15 0.012 165 / 0.08);
@@ -825,8 +872,8 @@ body.admin-mode.light-theme {
 
 .admin-shell.light-theme .admin-workspace-header {
   background:
-    radial-gradient(circle at 96% 0%, oklch(0.55 0.18 158 / 0.1), transparent 22rem),
-    linear-gradient(135deg, oklch(0.985 0.004 165 / 0.98), oklch(0.945 0.008 165 / 0.98));
+    radial-gradient(circle at 96% 0%, rgb(106 92 255 / 0.1), transparent 22rem),
+    linear-gradient(135deg, rgb(255 255 255 / 0.98), rgb(238 241 255 / 0.98));
 }
 
 .admin-shell.light-theme .admin-metric-card {
@@ -840,8 +887,8 @@ body.admin-mode.light-theme {
 
 .admin-login-page {
   background:
-    radial-gradient(circle at 20% 8%, oklch(0.42 0.12 158 / 0.18), transparent 28rem),
-    radial-gradient(circle at 82% 86%, oklch(0.34 0.08 195 / 0.14), transparent 26rem),
+    radial-gradient(circle at 20% 8%, rgb(106 92 255 / 0.18), transparent 28rem),
+    radial-gradient(circle at 82% 86%, rgb(61 123 255 / 0.14), transparent 26rem),
     linear-gradient(145deg, oklch(0.035 0.01 165), oklch(0.075 0.014 165)) !important;
 }
 
@@ -854,7 +901,7 @@ body.admin-mode.light-theme {
 }
 
 .admin-login-brand {
-  color: oklch(0.78 0.16 158);
+  color: #9b5cff;
 }
 
 .admin-login-copy,
@@ -870,8 +917,8 @@ body.admin-mode.light-theme {
 }
 
 .admin-login-tab-indicator {
-  background: oklch(0.76 0.17 158);
-  box-shadow: 0 10px 24px oklch(0.42 0.12 158 / 0.2);
+  background: #6a5cff;
+  box-shadow: 0 10px 24px rgb(106 92 255 / 0.2);
 }
 
 .admin-login-tab-active {
@@ -894,10 +941,10 @@ body.admin-mode.light-theme {
 
 .admin-login-input:focus {
   background: oklch(0.09 0.016 165) !important;
-  border-color: oklch(0.76 0.17 158 / 0.9) !important;
+  border-color: rgb(106 92 255 / 0.9) !important;
   box-shadow:
     inset 0 1px 0 oklch(1 0 0 / 0.09),
-    0 0 0 3px oklch(0.76 0.17 158 / 0.18),
+    0 0 0 3px rgb(106 92 255 / 0.18),
     0 12px 26px oklch(0.02 0.01 165 / 0.34) !important;
 }
 
@@ -913,10 +960,10 @@ body.admin-mode.light-theme {
 
 .admin-login-pin-slot[data-active='true'] {
   background: oklch(0.105 0.018 165) !important;
-  border-color: oklch(0.76 0.17 158 / 0.95) !important;
+  border-color: rgb(106 92 255 / 0.95) !important;
   box-shadow:
     inset 0 1px 0 oklch(1 0 0 / 0.1),
-    0 0 0 3px oklch(0.76 0.17 158 / 0.2),
+    0 0 0 3px rgb(106 92 255 / 0.2),
     0 12px 24px oklch(0.02 0.01 165 / 0.34) !important;
 }
 
@@ -937,19 +984,19 @@ body.admin-mode.light-theme {
 }
 
 .admin-login-submit {
-  background: oklch(0.76 0.17 158);
+  background: #6a5cff;
   color: oklch(0.065 0.014 165);
-  box-shadow: 0 16px 38px oklch(0.44 0.13 158 / 0.28);
+  box-shadow: 0 16px 38px rgb(106 92 255 / 0.28);
 }
 
 .admin-login-submit:hover {
-  background: oklch(0.8 0.16 158);
+  background: #9b5cff;
 }
 
 .admin-login-page.light-theme {
   background:
-    radial-gradient(circle at 20% 8%, oklch(0.83 0.08 158 / 0.5), transparent 28rem),
-    radial-gradient(circle at 82% 86%, oklch(0.9 0.05 195 / 0.45), transparent 26rem),
+    radial-gradient(circle at 20% 8%, rgb(106 92 255 / 0.5), transparent 28rem),
+    radial-gradient(circle at 82% 86%, rgb(61 123 255 / 0.45), transparent 26rem),
     linear-gradient(145deg, oklch(0.965 0.006 165), oklch(0.91 0.012 165)) !important;
 }
 
@@ -962,7 +1009,7 @@ body.admin-mode.light-theme {
 }
 
 .admin-login-page.light-theme .admin-login-brand {
-  color: oklch(0.42 0.16 158);
+  color: #1e3a8a;
 }
 
 .admin-login-page.light-theme .admin-login-copy,
@@ -978,8 +1025,8 @@ body.admin-mode.light-theme {
 }
 
 .admin-login-page.light-theme .admin-login-tab-indicator {
-  background: oklch(0.48 0.16 158);
-  box-shadow: 0 10px 22px oklch(0.38 0.13 158 / 0.18);
+  background: #6a5cff;
+  box-shadow: 0 10px 22px rgb(106 92 255 / 0.18);
 }
 
 .admin-login-page.light-theme .admin-login-tab-active {
@@ -1001,9 +1048,9 @@ body.admin-mode.light-theme {
 
 .admin-login-page.light-theme .admin-login-input:focus {
   background: oklch(1 0 0) !important;
-  border-color: oklch(0.48 0.16 158 / 0.82) !important;
+  border-color: rgb(106 92 255 / 0.82) !important;
   box-shadow:
-    0 0 0 3px oklch(0.48 0.16 158 / 0.16),
+    0 0 0 3px rgb(106 92 255 / 0.16),
     0 12px 26px oklch(0.2 0.018 165 / 0.1) !important;
 }
 
@@ -1019,9 +1066,9 @@ body.admin-mode.light-theme {
 
 .admin-login-page.light-theme .admin-login-pin-slot[data-active='true'] {
   background: oklch(1 0 0) !important;
-  border-color: oklch(0.48 0.16 158 / 0.9) !important;
+  border-color: rgb(106 92 255 / 0.9) !important;
   box-shadow:
-    0 0 0 3px oklch(0.48 0.16 158 / 0.16),
+    0 0 0 3px rgb(106 92 255 / 0.16),
     0 12px 24px oklch(0.2 0.018 165 / 0.1) !important;
 }
 
@@ -1042,18 +1089,18 @@ body.admin-mode.light-theme {
 }
 
 .admin-login-page.light-theme .admin-login-submit {
-  background: oklch(0.48 0.16 158);
+  background: #6a5cff;
   color: oklch(0.99 0.002 165);
-  box-shadow: 0 16px 34px oklch(0.38 0.13 158 / 0.2);
+  box-shadow: 0 16px 34px rgb(106 92 255 / 0.2);
 }
 
 .admin-login-page.light-theme .admin-login-submit:hover {
-  background: oklch(0.42 0.16 158);
+  background: #1e3a8a;
 }
 
 .admin-shell.light-theme .admin-stat-card {
   background:
-    radial-gradient(circle at 12% 0%, oklch(0.55 0.18 158 / 0.08), transparent 10rem),
+    radial-gradient(circle at 12% 0%, rgb(106 92 255 / 0.08), transparent 10rem),
     oklch(0.98 0.004 165 / 0.84);
   border-color: oklch(0.15 0.012 165 / 0.06);
 }
@@ -1090,7 +1137,7 @@ body.admin-mode.light-theme {
 
 .admin-shell.light-theme .admin-track-row:hover {
   background: oklch(0.95 0.008 165 / 0.96);
-  border-color: oklch(0.55 0.18 158 / 0.3);
+  border-color: rgb(106 92 255 / 0.3);
 }
 
 .admin-shell.light-theme [data-slot="button"][data-variant="outline"] {
@@ -1186,7 +1233,7 @@ body.admin-mode.light-theme {
 /* Dashboard light theme */
 .admin-shell.light-theme .admin-dashboard-hero {
   background:
-    radial-gradient(circle at 82% -16%, oklch(0.55 0.18 158 / 0.14), transparent 24rem),
+    radial-gradient(circle at 82% -16%, rgb(106 92 255 / 0.14), transparent 24rem),
     linear-gradient(135deg, oklch(0.92 0.01 165 / 0.98), oklch(0.96 0.005 165 / 0.98));
   border-color: oklch(0.15 0.012 165 / 0.08);
   box-shadow:
@@ -1224,7 +1271,7 @@ body.admin-mode.light-theme {
 /* ===== Player Light Theme ===== */
 html.light-theme .player-ambient {
   background-image:
-    linear-gradient(110deg, oklch(0.96 0.008 165 / 0.94), oklch(0.92 0.015 158 / 0.82), oklch(0.94 0.01 205 / 0.94));
+    linear-gradient(110deg, oklch(0.96 0.008 165 / 0.94), rgb(106 92 255 / 0.12), oklch(0.94 0.01 205 / 0.94));
 }
 
 html.light-theme .player-stage-ambient {
@@ -1233,8 +1280,8 @@ html.light-theme .player-stage-ambient {
 
 html.light-theme .player-stage-ambient::after {
   background:
-    radial-gradient(circle at 22% 36%, oklch(0.66 0.14 158 / 0.08), transparent 22rem),
-    radial-gradient(circle at 78% 62%, oklch(0.56 0.11 205 / 0.06), transparent 26rem);
+    radial-gradient(circle at 22% 36%, rgb(106 92 255 / 0.08), transparent 22rem),
+    radial-gradient(circle at 78% 62%, rgb(61 123 255 / 0.06), transparent 26rem);
 }
 
 html.light-theme .player-stage-art {
@@ -1249,7 +1296,7 @@ html.light-theme .player-stage-wash {
 
 html.light-theme .app-shell {
   background:
-    radial-gradient(circle at 80% 0%, oklch(0.55 0.15 158 / 0.06), transparent 24rem),
+    radial-gradient(circle at 80% 0%, rgb(106 92 255 / 0.06), transparent 24rem),
     linear-gradient(180deg, oklch(0.96 0.006 165 / 0.5), transparent 22rem);
 }
 
@@ -1269,11 +1316,11 @@ html.light-theme .player-glass-card {
 
 html.light-theme .player-glass-card:hover {
   background: oklch(0.95 0.008 165 / 0.94);
-  border-color: oklch(0.55 0.18 158 / 0.3);
+  border-color: rgb(106 92 255 / 0.3);
   box-shadow:
     inset 0 1px 0 oklch(1 0 0 / 0.4),
     0 28px 86px oklch(0.15 0.012 165 / 0.08),
-    0 0 32px oklch(0.62 0.14 158 / 0.08);
+    0 0 32px rgb(255 93 184 / 0.08);
 }
 
 html.light-theme .glass {
@@ -1511,9 +1558,9 @@ html.light-theme .ring-white\/5 {
   --tw-gradient-from: oklch(0.15 0.012 165 / 0.035) var(--tw-gradient-from-position) !important;
 }
 
-.admin-shell.light-theme .shadow-emerald-950\/20,
-.admin-shell.light-theme .shadow-emerald-500\/20 {
-  --tw-shadow-color: oklch(0.32 0.1 158 / 0.14) !important;
+.admin-shell.light-theme .shadow-violet-950\/20,
+.admin-shell.light-theme .shadow-violet-500\/20 {
+  --tw-shadow-color: rgb(106 92 255 / 0.14) !important;
 }
 
 .admin-shell.light-theme [data-slot="dialog-content"],
@@ -1755,12 +1802,12 @@ html.light-theme .ring-white\/5 {
 /* Glow ring pulsation */
 @keyframes ring-glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 15px oklch(0.73 0.15 158 / 0.2), inset 0 0 15px oklch(0.73 0.15 158 / 0.1);
-    border-color: oklch(0.73 0.15 158 / 0.2);
+    box-shadow: 0 0 15px rgb(106 92 255 / 0.2), inset 0 0 15px rgb(106 92 255 / 0.1);
+    border-color: rgb(106 92 255 / 0.2);
   }
   50% {
-    box-shadow: 0 0 35px oklch(0.73 0.15 158 / 0.45), inset 0 0 25px oklch(0.73 0.15 158 / 0.2);
-    border-color: oklch(0.73 0.15 158 / 0.45);
+    box-shadow: 0 0 35px rgb(106 92 255 / 0.45), inset 0 0 25px rgb(106 92 255 / 0.2);
+    border-color: rgb(106 92 255 / 0.45);
   }
 }
 
@@ -1833,7 +1880,7 @@ html.light-theme .ring-white\/5 {
   inset: -1px;
   border-radius: inherit;
   padding: 1.5px;
-  background: linear-gradient(135deg, oklch(0.73 0.15 158 / 0), oklch(0.73 0.15 158 / 0));
+  background: linear-gradient(135deg, rgb(106 92 255 / 0), rgb(106 92 255 / 0));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -1846,11 +1893,11 @@ html.light-theme .ring-white\/5 {
   background: oklch(0.095 0.015 165 / 0.82);
   box-shadow: 
     0 24px 64px oklch(0 0 0 / 0.5),
-    0 0 30px oklch(0.73 0.15 158 / 0.15);
+    0 0 30px rgb(106 92 255 / 0.15);
 }
 
 .party-border-glow-card:hover::before {
-  background: linear-gradient(135deg, oklch(0.73 0.15 158 / 0.8), oklch(0.65 0.2 280 / 0.8), oklch(0.7 0.18 330 / 0.8));
+  background: linear-gradient(135deg, rgb(106 92 255 / 0.8), rgb(106 92 255 / 0.8), rgb(255 93 184 / 0.8));
 }
 
 /* ===== 3D Effects Layout ===== */
@@ -1873,8 +1920,8 @@ html.light-theme .ring-white\/5 {
   transform: rotateY(-10deg) rotateX(8deg) rotateZ(-1deg) translateZ(20px);
   box-shadow: 
     -20px 30px 80px oklch(0 0 0 / 0.6),
-    0 0 40px oklch(0.73 0.15 158 / 0.2);
-  border-color: oklch(0.73 0.15 158 / 0.3);
+    0 0 40px rgb(106 92 255 / 0.2);
+  border-color: rgb(106 92 255 / 0.3);
 }
 
 /* Live Queue 3D Card */
@@ -1888,8 +1935,8 @@ html.light-theme .ring-white\/5 {
   transform: rotateY(-12deg) rotateX(9deg) rotateZ(-1.5deg) translateZ(100px);
   box-shadow: 
     -25px 35px 90px oklch(0 0 0 / 0.75),
-    0 0 50px oklch(0.73 0.15 158 / 0.25);
-  border-color: oklch(0.73 0.15 158 / 0.4);
+    0 0 50px rgb(106 92 255 / 0.25);
+  border-color: rgb(106 92 255 / 0.4);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1913,5 +1960,3 @@ html.light-theme .ring-white\/5 {
     transition: none !important;
   }
 }
-
-
