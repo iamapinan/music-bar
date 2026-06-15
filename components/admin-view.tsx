@@ -202,8 +202,8 @@ function PlaylistCard({
         className={cn(
           "relative aspect-square w-full shrink-0 overflow-hidden rounded-2xl bg-muted shadow-lg transition-all duration-500",
           isCurrent
-            ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[0_0_30px_rgb(106_92_255_/_0.2)]"
-            : "ring-1 ring-white/[0.06] group-hover:-translate-y-1.5 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] group-hover:ring-primary/30",
+            ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-[10px_10px_30px_rgb(106_92_255_/_0.2)]"
+            : "ring-1 ring-white/[0.06] group-hover:-translate-y-1.5 group-hover:shadow-[10px_10px_40px_rgba(0,0,0,0.5)] group-hover:ring-primary/30",
         )}
       >
         <PlaylistCover playlist={playlist} className="h-full w-full text-lg" />
@@ -925,7 +925,7 @@ export function AdminView() {
 
         {/* Playlist cards */}
         <div className="w-full overflow-x-auto scrollbar-none">
-          <div className="flex w-max min-w-full gap-3 pb-1">
+          <div className="flex w-max min-w-full gap-3 p-2">
             {playlists.length === 0 ? (
               <div className="flex w-full items-center justify-center py-12 text-sm text-muted-foreground">
                 <div className="text-center">
