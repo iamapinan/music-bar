@@ -12,6 +12,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -94,6 +95,15 @@ class MainActivity : AppCompatActivity() {
         }
         
         webView.webChromeClient = WebChromeClient()
+        webView.isFocusable = true
+        webView.isFocusableInTouchMode = true
+        webView.requestFocus()
+        webView.setOnFocusChangeListener { view, hasFocus ->
+            if (hasFocus) {
+                val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                inputMethodManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+            }
+        }
 
         // ดึงข้อมูลและโหลดหน้าเล่นเพลง Music Bar
         webView.loadUrl("https://musicbar.gracer.ai")
