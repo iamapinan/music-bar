@@ -6,6 +6,49 @@ function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
+async function sendDiscordNotification(app: {
+  store_name: string
+  requested_slug: string | null
+  applicant_name: string
+  applicant_email: string
+  phone: string | null
+  notes: string | null
+}) {
+  const webhookUrl = process.env.DISCORD_HOOK
+  if (!webhookUrl || !webhookUrl.startsWith('http')) {
+    return
+  }
+
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: `🆕 มีคำขอเปิดสถานีเพลงใหม่เข้ามา! 📻`,
+        embeds: [
+          {
+            title: `รายละเอียดคำขอเปิดสถานี: ${app.store_name}`,
+            color: 0x3D7BFF,
+            fields: [
+              { name: 'ชื่อร้าน', value: app.store_name, inline: true },
+              { name: 'Slug ที่ต้องการ', value: app.requested_slug || 'ไม่ได้ระบุ', inline: true },
+              { name: 'ชื่อผู้ติดต่อ', value: app.applicant_name, inline: true },
+              { name: 'Google Email', value: app.applicant_email, inline: true },
+              { name: 'เบอร์โทร', value: app.phone || 'ไม่ได้ระบุ', inline: true },
+              { name: 'รายละเอียดเพิ่มเติม', value: app.notes || 'ไม่มีรายละเอียดเพิ่มเติม', inline: false }
+            ],
+            timestamp: new Date().toISOString()
+          }
+        ]
+      })
+    })
+  } catch (error) {
+    console.error('Failed to send Discord notification:', error)
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -54,6 +97,10 @@ export async function POST(request: Request) {
       )
       RETURNING *
     `
+
+    if (application[0]) {
+      await sendDiscordNotification(application[0] as any)
+    }
 
     return NextResponse.json(application[0], { status: 201 })
   } catch (error) {

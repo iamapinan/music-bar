@@ -42,10 +42,13 @@ interface YTPlayer {
 
 export function PersistentYouTubePlayer() {
   const { 
-    currentSong, handleSongEnd, setIsPlaying, playerRef, volume, 
+    isPlaying, currentSong, handleSongEnd, setIsPlaying, playerRef, volume, 
     isVideoMode, setCurrentTime, setDuration, isFullscreen,
     playMode, currentIndex
   } = usePlayer()
+
+  const isPlayingRef = useRef(isPlaying)
+  useEffect(() => { isPlayingRef.current = isPlaying }, [isPlaying])
 
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const isApiReadyRef = useRef(false)
@@ -166,6 +169,23 @@ export function PersistentYouTubePlayer() {
             setIsPlaying(true)
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
           } else if (event.data === state.PAUSED) {
+            if (document.visibilityState === 'hidden' && isPlayingRef.current) {
+              // Automatically paused by browser in background, but the app intends to keep playing.
+              // Attempt to resume playback after a short delay.
+              if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+                setTimeout(() => {
+                  if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function' && isPlayingRef.current) {
+                    ytPlayerRef.current.playVideo()
+                  }
+                }, 200)
+              }
+              if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
+            } else {
+              setIsPlaying(false)
+              if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'
+            }
+          } else if (event.data === state.CUED) {
+            // Autoplay blocked by browser or cued by loader
             setIsPlaying(false)
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'
           }
@@ -232,10 +252,22 @@ export function PersistentYouTubePlayer() {
         const dur = typeof ytPlayerRef.current.getDuration === 'function' ? ytPlayerRef.current.getDuration() : 0
         setCurrentTime(time)
         setDuration(dur)
+
+        // Safety sync: If React thinks it's playing but the actual player is not
+        if (typeof (ytPlayerRef.current as any).getPlayerState === 'function') {
+          const actualState = (ytPlayerRef.current as any).getPlayerState()
+          const state = window.YT?.PlayerState
+          if (state) {
+            const isActualPlaying = actualState === state.PLAYING || actualState === state.BUFFERING
+            if (isPlayingRef.current && !isActualPlaying && actualState !== state.ENDED) {
+              setIsPlaying(false)
+            }
+          }
+        }
       }
     }, 1000)
     return () => clearInterval(interval)
-  }, [setCurrentTime, setDuration])
+  }, [setCurrentTime, setDuration, setIsPlaying])
 
   return (
     <div

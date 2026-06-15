@@ -141,6 +141,42 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [customSong, setCustomSong] = useState<PlaylistSong | SongRequest | null>(null)
   const customSongRef = useRef<PlaylistSong | SongRequest | null>(null)
 
+  // Silent audio player for background playback on mobile browsers
+  const silentAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  const playSilentAudio = useCallback(() => {
+    if (typeof window === 'undefined') return
+    try {
+      if (!silentAudioRef.current) {
+        const audio = new Audio('data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==')
+        audio.loop = true
+        audio.volume = 0.01
+        silentAudioRef.current = audio
+      }
+      silentAudioRef.current.play().catch((err) => {
+        console.warn('Failed to play silent audio:', err)
+      })
+    } catch (err) {
+      console.warn('Silent audio player error:', err)
+    }
+  }, [])
+
+  const pauseSilentAudio = useCallback(() => {
+    try {
+      if (silentAudioRef.current) {
+        silentAudioRef.current.pause()
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    if (isPlaying) {
+      playSilentAudio()
+    } else {
+      pauseSilentAudio()
+    }
+  }, [isPlaying, playSilentAudio, pauseSilentAudio])
+
   // Load saved state + playback position
   const hasResumedRef = useRef(false)
 
@@ -573,10 +609,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playerRef.current?.pause()
       setIsPlaying(false)
     } else {
+      playSilentAudio()
       playerRef.current?.play()
       setIsPlaying(true)
     }
-  }, [isPlaying])
+  }, [isPlaying, playSilentAudio])
 
   const handleVolumeChange = useCallback((values: number[]) => {
     const v = values[0]
@@ -609,6 +646,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     })
 
     navigator.mediaSession.setActionHandler('play', () => {
+      playSilentAudio()
       playerRef.current?.play()
       setIsPlaying(true)
     })
@@ -616,13 +654,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       playerRef.current?.pause()
       setIsPlaying(false)
     })
-    navigator.mediaSession.setActionHandler('nexttrack', handleSongEnd)
+    navigator.mediaSession.setActionHandler('nexttrack', handleSkip)
     navigator.mediaSession.setActionHandler('previoustrack', handlePrevious)
     navigator.mediaSession.setActionHandler('stop', () => {
       playerRef.current?.pause()
       setIsPlaying(false)
     })
-  }, [currentSong, handleSongEnd, handlePrevious])
+  }, [currentSong, handleSkip, handlePrevious, playSilentAudio])
 
   // Sync Media Session playback state
   useEffect(() => {
@@ -662,6 +700,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       (window as any).handleAndroidMediaAction = (action: string) => {
         switch (action) {
           case 'play':
+            playSilentAudio()
             playerRef.current?.play()
             setIsPlaying(true)
             break
@@ -678,7 +717,49 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-  }, [handleSkip, handlePrevious, setIsPlaying])
+  }, [handleSkip, handlePrevious, setIsPlaying, playSilentAudio])
+
+  // Keyboard Shortcuts — support physical media keys and spacebar
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          activeEl.hasAttribute('contenteditable') ||
+          (activeEl as any).isContentEditable)
+      ) {
+        return
+      }
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault()
+          togglePlay()
+          break
+        case 'MediaPlayPause':
+          e.preventDefault()
+          togglePlay()
+          break
+        case 'MediaTrackNext':
+          e.preventDefault()
+          handleSkip()
+          break
+        case 'MediaTrackPrevious':
+          e.preventDefault()
+          handlePrevious()
+          break
+        default:
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [togglePlay, handleSkip, handlePrevious])
 
   // Page Visibility API — resume playback when page becomes visible again
   useEffect(() => {
@@ -788,19 +869,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [resumePosition, currentSong?.youtube_id, playerRef])
 
   const playByIndex = useCallback((index: number) => {
+    playSilentAudio()
     setPlayMode('playlist')
     setCurrentIndex(index)
-  }, [])
+  }, [playSilentAudio])
 
   const playSong = useCallback((song: PlaylistSong) => {
     const index = playlistSongsRef.current.findIndex(item => item.id === song.id && item.playlist_id === song.playlist_id)
     if (index >= 0) {
+      playSilentAudio()
       setPlayMode('playlist')
       setCurrentIndex(index)
     }
-  }, [])
+  }, [playSilentAudio])
 
   const playSongImmediately = useCallback((song: any) => {
+    playSilentAudio()
     const formattedSong = {
       ...song,
       id: song.id || 999999,
