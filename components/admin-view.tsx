@@ -64,7 +64,8 @@ const recommendedPlaylists = [
     title: "Thai pop hits 2026",
     detail: "เพลงไทยใหม่ ฟังง่าย เหมาะกับคาเฟ่และร้านอาหาร",
     query: "Thai pop hits 2026 playlist",
-    color: "from-pink-500/10 via-pink-500/5 to-transparent border-pink-500/15 hover:border-pink-500/40",
+    color:
+      "from-pink-500/10 via-pink-500/5 to-transparent border-pink-500/15 hover:border-pink-500/40",
     iconColor: "text-pink-400 bg-pink-500/10 border-pink-500/20",
     icon: "Flame" as const,
   },
@@ -72,7 +73,8 @@ const recommendedPlaylists = [
     title: "Acoustic cafe",
     detail: "อะคูสติกเบา ๆ สำหรับช่วงกลางวัน",
     query: "acoustic cafe playlist",
-    color: "from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/15 hover:border-amber-500/40",
+    color:
+      "from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/15 hover:border-amber-500/40",
     iconColor: "text-amber-400 bg-amber-500/10 border-amber-500/20",
     icon: "Coffee" as const,
   },
@@ -80,7 +82,8 @@ const recommendedPlaylists = [
     title: "Dinner lounge",
     detail: "โทนอุ่น สุภาพ เหมาะกับช่วงอาหารเย็น",
     query: "dinner lounge playlist",
-    color: "from-indigo-500/10 via-indigo-500/5 to-transparent border-indigo-500/15 hover:border-indigo-500/40",
+    color:
+      "from-indigo-500/10 via-indigo-500/5 to-transparent border-indigo-500/15 hover:border-indigo-500/40",
     iconColor: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
     icon: "Moon" as const,
   },
@@ -88,7 +91,8 @@ const recommendedPlaylists = [
     title: "T-Pop popular",
     detail: "เพลงยอดนิยมที่ลูกค้ามักขอเปิด",
     query: "T-pop popular playlist",
-    color: "from-violet-500/10 via-violet-500/5 to-transparent border-violet-500/15 hover:border-violet-500/40",
+    color:
+      "from-violet-500/10 via-violet-500/5 to-transparent border-violet-500/15 hover:border-violet-500/40",
     iconColor: "text-violet-400 bg-violet-500/10 border-violet-500/20",
     icon: "Sparkles" as const,
   },
@@ -96,7 +100,8 @@ const recommendedPlaylists = [
     title: "Lo-fi working bar",
     detail: "จังหวะนิ่งสำหรับร้านที่มีโซนนั่งทำงาน",
     query: "lofi cafe playlist",
-    color: "from-blue-500/10 via-blue-500/5 to-transparent border-blue-500/15 hover:border-blue-500/40",
+    color:
+      "from-blue-500/10 via-blue-500/5 to-transparent border-blue-500/15 hover:border-blue-500/40",
     iconColor: "text-blue-400 bg-blue-500/10 border-blue-500/20",
     icon: "Laptop" as const,
   },
@@ -269,7 +274,8 @@ function PlaylistCard({
           aria-label={`เลือก ${playlist.name} สำหรับเล่นต่อเนื่อง`}
           className={cn(
             "absolute left-2.5 top-2.5 z-20 flex h-6 w-6 items-center justify-center rounded-md border border-white/25 bg-black/40 text-white/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:bg-black/60 hover:text-white",
-            isSelected && "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_rgb(106_92_255_/_0.35)]",
+            isSelected &&
+              "bg-primary text-primary-foreground border-primary shadow-[0_0_12px_rgb(106_92_255_/_0.35)]",
           )}
           onClick={onToggleSelect}
         >
@@ -291,7 +297,9 @@ function PlaylistCard({
         {isPlaying && isCurrent && (
           <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-sm">
             <EqualizerBars />
-            <span className="text-[10px] font-bold text-white/90">กำลังเล่น</span>
+            <span className="text-[10px] font-bold text-white/90">
+              กำลังเล่น
+            </span>
           </div>
         )}
       </div>
@@ -388,7 +396,11 @@ function SongRow({
             ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
             : "text-muted-foreground/60 hover:bg-primary/10 hover:text-primary",
         )}
-        aria-label={isPlaying && isCurrentSong ? `หยุด ${song.title}` : `เล่น ${song.title}`}
+        aria-label={
+          isPlaying && isCurrentSong
+            ? `หยุด ${song.title}`
+            : `เล่น ${song.title}`
+        }
       >
         {isCurrentSong && isPlaying ? (
           <Pause className="h-3.5 w-3.5" />
@@ -486,7 +498,10 @@ function SongGridCard({
 
       {/* Info */}
       <div className="space-y-0.5">
-        <p className="truncate text-xs font-bold text-foreground" title={song.title}>
+        <p
+          className="truncate text-xs font-bold text-foreground"
+          title={song.title}
+        >
           {song.title}
         </p>
         <p className="truncate text-[11px] text-muted-foreground">
@@ -511,7 +526,9 @@ export function AdminView() {
   const [activePlaylistId, setActivePlaylistId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<YouTubeSearchResult[]>([]);
-  const [ytPlaylistResults, setYtPlaylistResults] = useState<YouTubePlaylistResult[]>([]);
+  const [ytPlaylistResults, setYtPlaylistResults] = useState<
+    YouTubePlaylistResult[]
+  >([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState<"video" | "playlist">("video");
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
@@ -519,39 +536,61 @@ export function AdminView() {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  const [activePreviewPlaylist, setActivePreviewPlaylist] = useState<YouTubePlaylistResult | null>(null);
+  const [activePreviewPlaylist, setActivePreviewPlaylist] =
+    useState<YouTubePlaylistResult | null>(null);
   const [previewSongs, setPreviewSongs] = useState<
-    { id: string; youtube_id: string; title: string; thumbnail: string | null; channelTitle: string }[]
+    {
+      id: string;
+      youtube_id: string;
+      title: string;
+      thumbnail: string | null;
+      channelTitle: string;
+    }[]
   >([]);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
-  const [selectedPlaylists, setSelectedPlaylists] = useState<Set<number>>(new Set());
+  const [selectedPlaylists, setSelectedPlaylists] = useState<Set<number>>(
+    new Set(),
+  );
   const [targetPlaylistId, setTargetPlaylistId] = useState<number | null>(null);
   const [showAddPlaylistInput, setShowAddPlaylistInput] = useState(false);
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<string>("tracks");
+  const [activeWorkspaceTab, setActiveWorkspaceTab] =
+    useState<string>("tracks");
   const [musicListView, setMusicListView] = useState<"list" | "grid">("list");
   const [showRecommended, setShowRecommended] = useState(false);
 
   const addInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Data ── */
-  const { data: playlists = [], mutate: mutatePlaylists } = useSWR<Playlist[]>("/api/playlists", fetcher);
+  const { data: playlists = [], mutate: mutatePlaylists } = useSWR<Playlist[]>(
+    "/api/playlists",
+    fetcher,
+  );
   const currentPlaylist = activePlaylistId
     ? playlists.find((p) => p.id === activePlaylistId)
     : playlists.find((p) => p.is_default) || playlists[0];
 
-  const { data: playlistSongs = [], mutate: mutateSongs } = useSWR<PlaylistSong[]>(
+  const { data: playlistSongs = [], mutate: mutateSongs } = useSWR<
+    PlaylistSong[]
+  >(
     currentPlaylist ? `/api/playlists/${currentPlaylist.id}/songs` : null,
     fetcher,
   );
 
-  const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>("/api/requests", fetcher, {
-    refreshInterval: 3000,
-  });
+  const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>(
+    "/api/requests",
+    fetcher,
+    {
+      refreshInterval: 3000,
+    },
+  );
 
   /* ── Derived ── */
-  const totalSongs = useMemo(() => playlists.reduce((sum, pl) => sum + Number(pl.song_count ?? 0), 0), [playlists]);
+  const totalSongs = useMemo(
+    () => playlists.reduce((sum, pl) => sum + Number(pl.song_count ?? 0), 0),
+    [playlists],
+  );
 
   useEffect(() => {
     setSelectedPlaylists(new Set(activePlaylistIds));
@@ -564,26 +603,31 @@ export function AdminView() {
   }, [showAddPlaylistInput]);
 
   /* ── Handlers ── */
-  const handleSearch = useCallback(async (overrideQuery?: string) => {
-    const query = overrideQuery !== undefined ? overrideQuery : searchQuery;
-    if (!query.trim()) return;
-    setIsSearching(true);
-    try {
-      const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}&type=${searchType}`);
-      const data = await res.json();
-      if (searchType === "playlist") {
-        setYtPlaylistResults(data.items || []);
-        setSearchResults([]);
-      } else {
-        setSearchResults(data.items || []);
-        setYtPlaylistResults([]);
+  const handleSearch = useCallback(
+    async (overrideQuery?: string) => {
+      const query = overrideQuery !== undefined ? overrideQuery : searchQuery;
+      if (!query.trim()) return;
+      setIsSearching(true);
+      try {
+        const res = await fetch(
+          `/api/youtube/search?q=${encodeURIComponent(query)}&type=${searchType}`,
+        );
+        const data = await res.json();
+        if (searchType === "playlist") {
+          setYtPlaylistResults(data.items || []);
+          setSearchResults([]);
+        } else {
+          setSearchResults(data.items || []);
+          setYtPlaylistResults([]);
+        }
+      } catch {
+        toast.error("เกิดข้อผิดพลาดในการค้นหา");
+      } finally {
+        setIsSearching(false);
       }
-    } catch {
-      toast.error("เกิดข้อผิดพลาดในการค้นหา");
-    } finally {
-      setIsSearching(false);
-    }
-  }, [searchQuery, searchType]);
+    },
+    [searchQuery, searchType],
+  );
 
   const handleAddToPlaylist = async (result: YouTubeSearchResult) => {
     const targetId = targetPlaylistId || currentPlaylist?.id;
@@ -611,7 +655,9 @@ export function AdminView() {
       const targetName = playlists.find((p) => p.id === targetId)?.name || "";
       toast.success(`เพิ่มเพลงไปยัง ${targetName} แล้ว`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "ไม่สามารถเพิ่มเพลงได้");
+      toast.error(
+        error instanceof Error ? error.message : "ไม่สามารถเพิ่มเพลงได้",
+      );
     } finally {
       setAddingIds((prev) => {
         const n = new Set(prev);
@@ -621,13 +667,18 @@ export function AdminView() {
     }
   };
 
-  const handleImportYoutubePlaylist = async (ytPlaylist: YouTubePlaylistResult) => {
+  const handleImportYoutubePlaylist = async (
+    ytPlaylist: YouTubePlaylistResult,
+  ) => {
     setImportingId(ytPlaylist.id);
     try {
       const res = await fetch("/api/playlists/import-youtube", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playlistId: ytPlaylist.id, name: ytPlaylist.title }),
+        body: JSON.stringify({
+          playlistId: ytPlaylist.id,
+          name: ytPlaylist.title,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -726,7 +777,12 @@ export function AdminView() {
     toast.success("ลบคำขอแล้ว");
   };
 
-  const handlePlayPauseSong = (song: { youtube_id: string; title: string; thumbnail?: string | null; artist?: string | null }) => {
+  const handlePlayPauseSong = (song: {
+    youtube_id: string;
+    title: string;
+    thumbnail?: string | null;
+    artist?: string | null;
+  }) => {
     if (currentSong?.youtube_id === song.youtube_id) {
       togglePlay();
     } else {
@@ -740,7 +796,9 @@ export function AdminView() {
     setIsLoadingPreview(true);
     setPreviewSongs([]);
     try {
-      const res = await fetch(`/api/youtube/playlist-items?playlistId=${pl.id}`);
+      const res = await fetch(
+        `/api/youtube/playlist-items?playlistId=${pl.id}`,
+      );
       if (res.ok) {
         const data = await res.json();
         setPreviewSongs(data.items || []);
@@ -779,14 +837,14 @@ export function AdminView() {
     );
   };
 
-  const isInPlaylist = (youtubeId: string) => playlistSongs.some((s) => s.youtube_id === youtubeId);
+  const isInPlaylist = (youtubeId: string) =>
+    playlistSongs.some((s) => s.youtube_id === youtubeId);
 
   const isSongCurrent = (song: { youtube_id: string }) =>
     currentSong?.youtube_id === song.youtube_id;
 
   return (
     <div className="mx-auto flex w-full max-w-[1880px] min-w-0 flex-col gap-5 px-4 py-5 sm:px-6 xl:gap-6 xl:px-8 xl:py-6">
-
       {/* ════════════════════════════════════════════════════
          PLAYLIST RACK SECTION
       ════════════════════════════════════════════════════ */}
@@ -877,7 +935,12 @@ export function AdminView() {
               </div>
             ) : (
               playlists.map((pl, i) => (
-                <div key={pl.id} style={{ animation: `slide-up 0.3s ease-out ${i * 0.04}s both` }}>
+                <div
+                  key={pl.id}
+                  style={{
+                    animation: `slide-up 0.3s ease-out ${i * 0.04}s both`,
+                  }}
+                >
                   <PlaylistCard
                     playlist={pl}
                     isCurrent={currentPlaylist?.id === pl.id}
@@ -889,7 +952,9 @@ export function AdminView() {
                       toggleSelectPlaylist(pl.id);
                     }}
                     onSetDefault={() => handleSetDefault(pl.id)}
-                    onToggleEnabled={() => handleToggleEnabled(pl.id, pl.is_enabled)}
+                    onToggleEnabled={() =>
+                      handleToggleEnabled(pl.id, pl.is_enabled)
+                    }
                     onExport={() => handleExportPlaylist(pl.id)}
                     onDelete={() => handleDeletePlaylist(pl.id)}
                   />
@@ -915,7 +980,7 @@ export function AdminView() {
             </h2>
           </div>
           <p className="max-w-xs text-xs leading-relaxed text-muted-foreground sm:text-right">
-            กดที่การ์ดเพื่อค้นหาเพลย์ลิสต์บน YouTube และนำเข้าคลังเพลงของร้าน
+            กดที่การ์ดเพื่อค้นหาเพลย์ลิสต์บน และนำเข้าคลังเพลงของร้าน
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -927,12 +992,16 @@ export function AdminView() {
                 role="button"
                 tabIndex={0}
                 onClick={() => handleRecommendedPlaylist(item.query)}
-                onKeyDown={(e) => e.key === 'Enter' && handleRecommendedPlaylist(item.query)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && handleRecommendedPlaylist(item.query)
+                }
                 className={cn(
                   "group relative cursor-pointer overflow-hidden rounded-2xl border bg-gradient-to-br p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.98]",
                   item.color,
                 )}
-                style={{ animation: `slide-up 0.3s ease-out ${i * 0.06}s both` }}
+                style={{
+                  animation: `slide-up 0.3s ease-out ${i * 0.06}s both`,
+                }}
               >
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-foreground to-transparent opacity-0 transition-opacity group-hover:opacity-[0.04]" />
                 <div
@@ -1008,11 +1077,18 @@ export function AdminView() {
 
             {/* Tab buttons */}
             <div className="flex rounded-xl border border-white/[0.06] bg-white/[0.03] p-0.5">
-              {([
-                { key: "tracks", icon: ListMusic, label: "เพลง", badge: 0 },
-                { key: "search", icon: Search, label: "ค้นหา", badge: 0 },
-                { key: "requests", icon: Radio, label: "คำขอ", badge: requests.length },
-              ] as const).map((tab) => (
+              {(
+                [
+                  { key: "tracks", icon: ListMusic, label: "เพลง", badge: 0 },
+                  { key: "search", icon: Search, label: "ค้นหา", badge: 0 },
+                  {
+                    key: "requests",
+                    icon: Radio,
+                    label: "คำขอ",
+                    badge: requests.length,
+                  },
+                ] as const
+              ).map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
@@ -1043,7 +1119,9 @@ export function AdminView() {
             {playlistSongs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
                 <Music2 className="mb-3 h-12 w-12 opacity-20" />
-                <p className="text-sm font-bold text-foreground">เพลย์ลิสต์นี้ว่างเปล่า</p>
+                <p className="text-sm font-bold text-foreground">
+                  เพลย์ลิสต์นี้ว่างเปล่า
+                </p>
                 <p className="mt-1 max-w-[280px] text-xs">
                   กดแถบ "ค้นหา" เพื่อดึงเพลงจาก YouTube เข้าคลัง
                 </p>
@@ -1091,10 +1169,16 @@ export function AdminView() {
               <div className="flex rounded-xl border border-white/[0.06] bg-white/[0.03] p-0.5">
                 <button
                   type="button"
-                  onClick={() => { setSearchType("video"); setSearchResults([]); setYtPlaylistResults([]); }}
+                  onClick={() => {
+                    setSearchType("video");
+                    setSearchResults([]);
+                    setYtPlaylistResults([]);
+                  }}
                   className={cn(
                     "rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-                    searchType === "video" ? "bg-primary/15 text-primary shadow-sm" : "text-muted-foreground",
+                    searchType === "video"
+                      ? "bg-primary/15 text-primary shadow-sm"
+                      : "text-muted-foreground",
                   )}
                 >
                   <Music2 className="mr-1.5 inline h-3 w-3" />
@@ -1102,10 +1186,16 @@ export function AdminView() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setSearchType("playlist"); setSearchResults([]); setYtPlaylistResults([]); }}
+                  onClick={() => {
+                    setSearchType("playlist");
+                    setSearchResults([]);
+                    setYtPlaylistResults([]);
+                  }}
                   className={cn(
                     "rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-                    searchType === "playlist" ? "bg-primary/15 text-primary shadow-sm" : "text-muted-foreground",
+                    searchType === "playlist"
+                      ? "bg-primary/15 text-primary shadow-sm"
+                      : "text-muted-foreground",
                   )}
                 >
                   <Youtube className="mr-1.5 inline h-3 w-3" />
@@ -1116,7 +1206,11 @@ export function AdminView() {
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder={searchType === "playlist" ? "ลิงก์หรือคีย์เวิร์ดเพลย์ลิสต์..." : "ชื่อเพลงหรือศิลปิน..."}
+                  placeholder={
+                    searchType === "playlist"
+                      ? "ลิงก์หรือคีย์เวิร์ดเพลย์ลิสต์..."
+                      : "ชื่อเพลงหรือศิลปิน..."
+                  }
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -1186,7 +1280,9 @@ export function AdminView() {
               {isSearching ? (
                 <div className="flex flex-col items-center justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="mt-2 text-xs text-muted-foreground">กำลังค้นหาจาก YouTube...</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    กำลังค้นหาจาก YouTube...
+                  </p>
                 </div>
               ) : musicListView === "list" ? (
                 <div className="flex flex-col gap-1.5 pb-2">
@@ -1212,7 +1308,10 @@ export function AdminView() {
                           />
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-bold text-foreground" title={result.title}>
+                          <p
+                            className="truncate text-xs font-bold text-foreground"
+                            title={result.title}
+                          >
                             {result.title}
                           </p>
                           <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
@@ -1221,20 +1320,24 @@ export function AdminView() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => handlePlayPauseSong({
-                            youtube_id: result.id,
-                            title: result.title,
-                            thumbnail: result.thumbnail,
-                            artist: result.channelTitle,
-                          })}
+                          onClick={() =>
+                            handlePlayPauseSong({
+                              youtube_id: result.id,
+                              title: result.title,
+                              thumbnail: result.thumbnail,
+                              artist: result.channelTitle,
+                            })
+                          }
                           className={cn(
                             "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
-                            isSongCurrent({ youtube_id: result.id }) && isPlaying
+                            isSongCurrent({ youtube_id: result.id }) &&
+                              isPlaying
                               ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
                               : "text-foreground/60 hover:bg-primary/10 hover:text-primary opacity-0 group-hover:opacity-100",
                           )}
                         >
-                          {isSongCurrent({ youtube_id: result.id }) && isPlaying ? (
+                          {isSongCurrent({ youtube_id: result.id }) &&
+                          isPlaying ? (
                             <Pause className="h-3.5 w-3.5" />
                           ) : (
                             <Play className="ml-0.5 h-3.5 w-3.5" />
@@ -1280,7 +1383,10 @@ export function AdminView() {
                         />
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-bold text-foreground" title={pl.title}>
+                        <p
+                          className="truncate text-xs font-bold text-foreground"
+                          title={pl.title}
+                        >
                           {pl.title}
                         </p>
                         <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
@@ -1313,12 +1419,15 @@ export function AdminView() {
                   ))}
 
                   {/* Empty state */}
-                  {searchResults.length === 0 && ytPlaylistResults.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                      <Search className="mb-2 h-10 w-10 opacity-20" />
-                      <p className="text-xs">ใส่ชื่อเพลงหรือคีย์เวิร์ดเพื่อค้นหา</p>
-                    </div>
-                  )}
+                  {searchResults.length === 0 &&
+                    ytPlaylistResults.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                        <Search className="mb-2 h-10 w-10 opacity-20" />
+                        <p className="text-xs">
+                          ใส่ชื่อเพลงหรือคีย์เวิร์ดเพื่อค้นหา
+                        </p>
+                      </div>
+                    )}
                 </div>
               ) : (
                 /* Grid view */
@@ -1331,7 +1440,9 @@ export function AdminView() {
                         key={result.id}
                         className={cn(
                           "group relative rounded-xl border bg-card/80 p-2.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
-                          inPl ? "border-white/[0.04] opacity-40" : "border-white/[0.06] hover:border-primary/20",
+                          inPl
+                            ? "border-white/[0.04] opacity-40"
+                            : "border-white/[0.06] hover:border-primary/20",
                         )}
                       >
                         <div className="relative mb-2 aspect-square w-full overflow-hidden rounded-lg shadow-inner">
@@ -1343,18 +1454,24 @@ export function AdminView() {
                           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                             <button
                               type="button"
-                              onClick={() => handlePlayPauseSong({
-                                youtube_id: result.id, title: result.title,
-                                thumbnail: result.thumbnail, artist: result.channelTitle,
-                              })}
+                              onClick={() =>
+                                handlePlayPauseSong({
+                                  youtube_id: result.id,
+                                  title: result.title,
+                                  thumbnail: result.thumbnail,
+                                  artist: result.channelTitle,
+                                })
+                              }
                               className={cn(
                                 "flex h-9 w-9 items-center justify-center rounded-full transition-all hover:scale-110",
-                                isSongCurrent({ youtube_id: result.id }) && isPlaying
+                                isSongCurrent({ youtube_id: result.id }) &&
+                                  isPlaying
                                   ? "bg-primary text-primary-foreground"
                                   : "bg-primary/90 text-white hover:bg-primary",
                               )}
                             >
-                              {isSongCurrent({ youtube_id: result.id }) && isPlaying ? (
+                              {isSongCurrent({ youtube_id: result.id }) &&
+                              isPlaying ? (
                                 <Pause className="h-4 w-4" />
                               ) : (
                                 <Play className="ml-0.5 h-4 w-4" />
@@ -1376,7 +1493,10 @@ export function AdminView() {
                             </button>
                           </div>
                         </div>
-                        <p className="truncate text-xs font-bold text-foreground" title={result.title}>
+                        <p
+                          className="truncate text-xs font-bold text-foreground"
+                          title={result.title}
+                        >
                           {result.title}
                         </p>
                         <p className="truncate text-[11px] text-muted-foreground">
@@ -1419,7 +1539,10 @@ export function AdminView() {
                           </button>
                         </div>
                       </div>
-                      <p className="truncate text-xs font-bold text-foreground" title={pl.title}>
+                      <p
+                        className="truncate text-xs font-bold text-foreground"
+                        title={pl.title}
+                      >
                         {pl.title}
                       </p>
                       <p className="truncate text-[11px] text-muted-foreground">
@@ -1428,16 +1551,18 @@ export function AdminView() {
                     </div>
                   ))}
 
-                  {searchResults.length === 0 && ytPlaylistResults.length === 0 && (
-                    <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                      <Search className="mb-2 h-10 w-10 opacity-20" />
-                      <p className="text-xs">ใส่ชื่อเพลงหรือคีย์เวิร์ดเพื่อค้นหา</p>
-                    </div>
-                  )}
+                  {searchResults.length === 0 &&
+                    ytPlaylistResults.length === 0 && (
+                      <div className="col-span-full flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                        <Search className="mb-2 h-10 w-10 opacity-20" />
+                        <p className="text-xs">
+                          ใส่ชื่อเพลงหรือคีย์เวิร์ดเพื่อค้นหา
+                        </p>
+                      </div>
+                    )}
                 </div>
               )}
             </ScrollArea>
-
           </div>
         )}
 
@@ -1446,14 +1571,20 @@ export function AdminView() {
           <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/[0.04] bg-white/[0.01] p-3 shadow-lg sm:p-4">
             <div className="mb-3 flex items-center justify-between shrink-0">
               <p className="text-xs text-muted-foreground">
-                คำขอเพลงจากลูกค้า · <span className="font-bold text-foreground">{requests.length}</span> รายการ
+                คำขอเพลงจากลูกค้า ·{" "}
+                <span className="font-bold text-foreground">
+                  {requests.length}
+                </span>{" "}
+                รายการ
               </p>
             </div>
 
             {requests.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
                 <Radio className="mb-3 h-12 w-12 opacity-20" />
-                <p className="text-sm font-bold text-foreground">ยังไม่มีคำขอเพลง</p>
+                <p className="text-sm font-bold text-foreground">
+                  ยังไม่มีคำขอเพลง
+                </p>
                 <p className="mt-1 max-w-[260px] text-xs">
                   แชร์ QR Code หรือลิงก์ให้ลูกค้าส่งคำขอเพลงได้เลย
                 </p>
@@ -1508,18 +1639,24 @@ export function AdminView() {
 
                         <button
                           type="button"
-                          onClick={() => handlePlayPauseSong({
-                            youtube_id: req.youtube_id, title: req.title,
-                            thumbnail: req.thumbnail, artist: req.requested_by || "ลูกค้าทั่วไป",
-                          })}
+                          onClick={() =>
+                            handlePlayPauseSong({
+                              youtube_id: req.youtube_id,
+                              title: req.title,
+                              thumbnail: req.thumbnail,
+                              artist: req.requested_by || "ลูกค้าทั่วไป",
+                            })
+                          }
                           className={cn(
                             "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
-                            isSongCurrent({ youtube_id: req.youtube_id }) && isPlaying
+                            isSongCurrent({ youtube_id: req.youtube_id }) &&
+                              isPlaying
                               ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
                               : "text-foreground/60 hover:bg-primary/10 hover:text-primary",
                           )}
                         >
-                          {isSongCurrent({ youtube_id: req.youtube_id }) && isPlaying ? (
+                          {isSongCurrent({ youtube_id: req.youtube_id }) &&
+                          isPlaying ? (
                             <Pause className="h-3.5 w-3.5" />
                           ) : (
                             <Play className="ml-0.5 h-3.5 w-3.5" />
@@ -1562,18 +1699,24 @@ export function AdminView() {
                           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                             <button
                               type="button"
-                              onClick={() => handlePlayPauseSong({
-                                youtube_id: req.youtube_id, title: req.title,
-                                thumbnail: req.thumbnail, artist: req.requested_by || "ลูกค้าทั่วไป",
-                              })}
+                              onClick={() =>
+                                handlePlayPauseSong({
+                                  youtube_id: req.youtube_id,
+                                  title: req.title,
+                                  thumbnail: req.thumbnail,
+                                  artist: req.requested_by || "ลูกค้าทั่วไป",
+                                })
+                              }
                               className={cn(
                                 "flex h-9 w-9 items-center justify-center rounded-full transition-all hover:scale-110",
-                                isSongCurrent({ youtube_id: req.youtube_id }) && isPlaying
+                                isSongCurrent({ youtube_id: req.youtube_id }) &&
+                                  isPlaying
                                   ? "bg-primary text-primary-foreground"
                                   : "bg-primary/90 text-white hover:bg-primary",
                               )}
                             >
-                              {isSongCurrent({ youtube_id: req.youtube_id }) && isPlaying ? (
+                              {isSongCurrent({ youtube_id: req.youtube_id }) &&
+                              isPlaying ? (
                                 <Pause className="h-4 w-4" />
                               ) : (
                                 <Play className="ml-0.5 h-4 w-4" />
@@ -1596,7 +1739,10 @@ export function AdminView() {
                             </div>
                           )}
                         </div>
-                        <p className="truncate text-xs font-bold text-foreground" title={req.title}>
+                        <p
+                          className="truncate text-xs font-bold text-foreground"
+                          title={req.title}
+                        >
                           {req.title}
                         </p>
                         <p className="truncate text-[11px] text-muted-foreground">
@@ -1633,7 +1779,8 @@ export function AdminView() {
                     {activePreviewPlaylist.title}
                   </h3>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {activePreviewPlaylist.channelTitle} · {activePreviewPlaylist.itemCount} เพลง
+                    {activePreviewPlaylist.channelTitle} ·{" "}
+                    {activePreviewPlaylist.itemCount} เพลง
                   </p>
                 </div>
               </div>
@@ -1651,14 +1798,20 @@ export function AdminView() {
               {isLoadingPreview ? (
                 <div className="flex flex-col items-center justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="mt-2 text-xs text-muted-foreground">กำลังโหลดรายชื่อเพลง...</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    กำลังโหลดรายชื่อเพลง...
+                  </p>
                 </div>
               ) : previewSongs.length === 0 ? (
-                <div className="py-12 text-center text-xs text-muted-foreground">ไม่พบรายชื่อเพลง</div>
+                <div className="py-12 text-center text-xs text-muted-foreground">
+                  ไม่พบรายชื่อเพลง
+                </div>
               ) : (
                 <div className="flex flex-col gap-1.5">
                   {previewSongs.map((song, i) => {
-                    const isThisSongPlaying = isSongCurrent({ youtube_id: song.youtube_id }) && isPlaying;
+                    const isThisSongPlaying =
+                      isSongCurrent({ youtube_id: song.youtube_id }) &&
+                      isPlaying;
                     return (
                       <div
                         key={song.id}
@@ -1680,7 +1833,14 @@ export function AdminView() {
                           />
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className={cn("truncate text-xs font-bold transition-colors", isThisSongPlaying ? "text-primary" : "text-foreground")}>
+                          <p
+                            className={cn(
+                              "truncate text-xs font-bold transition-colors",
+                              isThisSongPlaying
+                                ? "text-primary"
+                                : "text-foreground",
+                            )}
+                          >
                             {song.title}
                           </p>
                           <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
