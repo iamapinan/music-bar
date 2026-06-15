@@ -21,6 +21,12 @@ import {
   RefreshCw,
   Youtube,
   LayoutGrid,
+  ListMusic,
+  MoreVertical,
+  Pause,
+  Share2,
+  SkipForward,
+  Tv,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -728,53 +734,118 @@ export function LandingPage() {
             
             <div className="flex justify-center lg:justify-end">
               {/* Device Mockup */}
-              <div className="relative w-64 h-[480px] bg-zinc-900 rounded-[2.5rem] border-[6px] border-zinc-800 shadow-2xl p-3 flex flex-col overflow-hidden">
-                {/* Speaker grill / Camera notch */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-zinc-800 rounded-b-2xl z-20 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-zinc-700" />
-                  <div className="ml-4 w-12 h-1 bg-zinc-900 rounded-full" />
-                </div>
-                
-                {/* Screen content */}
-                <div className="flex-1 rounded-[1.8rem] bg-gradient-to-b from-[#111426] to-[#0a0c18] p-4 flex flex-col relative z-10 select-none overflow-hidden">
-                  <div className="mt-6 flex items-center justify-between">
-                    <span className="text-[10px] text-white/40">Music Bar Player</span>
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  </div>
-                  
-                  {/* Mock Player UI */}
-                  <div className="mt-8 flex-1 flex flex-col items-center justify-center text-center">
-                    <div className="w-36 h-36 rounded-2xl bg-gradient-to-br from-violet-500 to-pink-500 p-1 shadow-lg animate-pulse">
-                      <div className="h-full w-full rounded-2xl bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                        <Waves className="h-12 w-12 text-white/80" />
+              <div className="relative h-[520px] w-[288px] overflow-hidden rounded-[2.6rem] border border-white/12 bg-[#0b0d16] p-2 shadow-[0_30px_90px_rgba(0,0,0,0.58)] ring-4 ring-black/35 sm:h-[580px] sm:w-[322px]">
+                <div className="relative h-full overflow-hidden rounded-[2.05rem] bg-[radial-gradient(circle_at_16%_8%,rgba(255,255,255,0.26),transparent_16rem),linear-gradient(145deg,#6f6f72_0%,#1b1b1f_34%,#0d0f18_68%,#1a1740_100%)] select-none">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(106,92,255,0.24),transparent_10rem),radial-gradient(circle_at_78%_72%,rgba(106,92,255,0.20),transparent_12rem)]" />
+                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#070a12] via-[#080b17]/95 to-transparent" />
+
+                  <div className="relative z-10 flex h-full flex-col px-4 pb-0 pt-5 sm:px-5">
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/14 bg-white/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-md">
+                        <img
+                          src="/icon-512.png"
+                          alt=""
+                          className="h-7 w-7 rounded-lg"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-bold uppercase tracking-[0.36em] text-white">
+                          Music Bar
+                        </p>
+                        <p className="mt-0.5 text-sm text-white/56">Now playing</p>
                       </div>
                     </div>
-                    
-                    <h4 className="mt-6 text-sm font-bold text-white truncate max-w-[200px]">เพลงที่กำลังเล่นอยู่</h4>
-                    <p className="mt-1 text-xs text-white/50 truncate max-w-[180px]">ศิลปินผู้ขอเพลง • สาขา 1</p>
-                    
-                    {/* Fake Progress Bar */}
-                    <div className="w-full mt-6 h-1 bg-white/10 rounded-full overflow-hidden">
-                      <div className="w-2/3 h-full bg-emerald-500" />
+
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      <button className="inline-flex h-10 items-center justify-center gap-1 rounded-full border border-primary/45 bg-black/22 px-2 text-[11px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+                        <Share2 className="h-4 w-4 text-primary" />
+                        แชร์
+                      </button>
+                      <button className="inline-flex h-10 items-center justify-center gap-1 rounded-full border border-primary/45 bg-black/22 px-2 text-[11px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+                        <RefreshCw className="h-4 w-4" />
+                        อัปเดต
+                      </button>
+                      <button className="inline-flex h-10 items-center justify-center gap-1 rounded-full border border-white/14 bg-black/22 px-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+                        <Waves className="h-4 w-4 text-primary" />
+                        Live
+                      </button>
                     </div>
-                    <div className="w-full mt-1.5 flex justify-between text-[8px] text-white/40 font-mono">
-                      <span>01:45</span>
-                      <span>03:20</span>
+
+                    <div className="mt-5 overflow-hidden rounded-[1.7rem] border border-white/10 bg-black/36 p-3 shadow-[0_20px_55px_rgba(0,0,0,0.45)]">
+                      <div className="relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_32%_20%,rgba(255,255,255,0.24),transparent_7rem),linear-gradient(135deg,#4338ca_0%,#111827_45%,#ec4899_100%)]">
+                        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:28px_28px] opacity-30" />
+                        <div className="absolute left-1/2 top-[18%] h-28 w-28 -translate-x-1/2 rounded-full border border-white/18 bg-black/26 shadow-[0_0_45px_rgba(106,92,255,0.44)] sm:h-32 sm:w-32">
+                          <div className="absolute inset-5 rounded-full border border-white/16" />
+                          <div className="absolute inset-10 rounded-full bg-white/82" />
+                        </div>
+                        <div className="absolute inset-x-5 bottom-5">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/72">
+                            Mockup Cover
+                          </p>
+                          <p className="mt-2 text-2xl font-black leading-none text-white sm:text-3xl">
+                            Neon Night
+                          </p>
+                          <p className="mt-1 text-[10px] uppercase tracking-[0.24em] text-primary/90">
+                            Music Bar Session
+                          </p>
+                        </div>
+                        <div className="absolute bottom-3 left-4 inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-black/58 px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white shadow-lg backdrop-blur-md">
+                          <Waves className="h-4 w-4 text-primary" />
+                          Audio mode
+                        </div>
+                        <div className="absolute bottom-3 right-4 grid h-9 w-12 place-items-center rounded-full border border-white/10 bg-black/58 shadow-lg backdrop-blur-md">
+                          <span className="flex h-4 items-end gap-1">
+                            {[10, 16, 22, 14].map((height, index) => (
+                              <span
+                                key={index}
+                                className="w-1 rounded-full bg-primary"
+                                style={{ height }}
+                              />
+                            ))}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-5">
+                        <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                          Now playing
+                        </span>
+                        <h4 className="mt-4 text-2xl font-black leading-tight text-white">
+                          Midnight City Lights - Live at Music Bar
+                        </h4>
+                        <p className="mt-3 text-sm text-white/50">
+                          Curated for Music Bar
+                        </p>
+                      </div>
                     </div>
-                    
-                    {/* Controls */}
-                    <div className="mt-6 flex items-center justify-center gap-6 text-white/80">
-                      <span className="text-lg">⏮</span>
-                      <span className="text-2xl bg-emerald-500/20 p-2 rounded-full border border-emerald-500/40">⏸</span>
-                      <span className="text-lg">⏭</span>
+
+                    <div className="mt-auto -mx-4 border-t border-white/10 bg-[#070a12]/86 px-4 pb-4 pt-3 backdrop-blur-xl sm:-mx-5 sm:px-5">
+                      <div className="mb-3 h-1 overflow-hidden rounded-full bg-white/14">
+                        <div className="h-full w-[34%] rounded-full bg-primary" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/10 bg-[linear-gradient(135deg,#4338ca,#111827_52%,#ec4899)]">
+                          <Music className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-black uppercase text-white">
+                            Midnight City Lights
+                          </p>
+                          <p className="text-xs uppercase tracking-wide text-white/70">
+                            Playlist
+                          </p>
+                        </div>
+                        <button className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-primary text-white shadow-[0_15px_35px_rgba(106,92,255,0.36)]">
+                          <Pause className="h-6 w-6" />
+                        </button>
+                        <SkipForward className="h-6 w-6 shrink-0 text-white/58" />
+                        <Tv className="hidden h-6 w-6 shrink-0 text-white/58 sm:block" />
+                        <MoreVertical className="h-6 w-6 shrink-0 text-white/58" />
+                        <button className="hidden h-14 w-14 shrink-0 place-items-center rounded-full bg-primary/18 text-primary sm:grid">
+                          <ListMusic className="h-6 w-6" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Status indicator */}
-                  <div className="mt-auto text-center border-t border-white/5 pt-3">
-                    <span className="text-[9px] text-emerald-400 font-semibold tracking-wider uppercase bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      ✓ เชื่อมต่อ Media Button แล้ว
-                    </span>
                   </div>
                 </div>
               </div>
@@ -857,12 +928,30 @@ export function LandingPage() {
       <footer className="relative z-10 border-t border-white/10 px-5 py-8 sm:px-8 lg:px-12 xl:px-16">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 text-sm text-white/42 sm:flex-row sm:items-center sm:justify-between">
           <p>Music Bar keeps each branch in its own queue.</p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
             <Link href="/admin" className="hover:text-white transition-colors">
               ระบบจัดการ
             </Link>
             <Link href="/apply" className="hover:text-white transition-colors">
               ขอเปิดสถานี
+            </Link>
+            <Link
+              href="/disclaimer"
+              className="hover:text-white transition-colors"
+            >
+              Disclaimer
+            </Link>
+            <Link
+              href="/privacy-policy"
+              className="hover:text-white transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms-and-conditions"
+              className="hover:text-white transition-colors"
+            >
+              Terms & Conditions
             </Link>
           </div>
         </div>
