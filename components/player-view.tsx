@@ -87,7 +87,10 @@ export function PlayerView() {
   })();
   const nextSongIsFromPlaylist = nextSong && "playlist_id" in nextSong;
   const miniPlaylistStart = nextSongIsFromPlaylist ? 1 : 0;
-  const miniPlaylistItems = queuePreview.slice(miniPlaylistStart, miniPlaylistStart + 10);
+  const miniPlaylistItems = queuePreview.slice(
+    miniPlaylistStart,
+    miniPlaylistStart + 10,
+  );
   const visibleMiniPlaylist = miniPlaylistItems.slice(
     0,
     showFullMiniPlaylist ? 10 : 6,
@@ -134,7 +137,10 @@ export function PlayerView() {
       ? playlists.find((playlist) => playlist.id === activePlaylistIds[0])
       : null;
   const currentPlaylistName =
-    currentPlaylist?.name || activePlaylist?.name || defaultPlaylist?.name || "Playlist";
+    currentPlaylist?.name ||
+    activePlaylist?.name ||
+    defaultPlaylist?.name ||
+    "Playlist";
   const sourceLabel =
     playMode === "request"
       ? requestedBy
@@ -279,7 +285,9 @@ export function PlayerView() {
                     alt=""
                     className={cn(
                       "absolute inset-[-10%] h-[120%] w-[120%] object-cover opacity-75 mix-blend-screen transition-opacity duration-1000",
-                      isPlaying ? "animate-theater-drift animate-theater-pulse" : "opacity-35"
+                      isPlaying
+                        ? "animate-theater-drift animate-theater-pulse"
+                        : "opacity-35",
                     )}
                     style={{
                       filter: "blur(64px) saturate(1.8) brightness(1.1)",
@@ -291,7 +299,9 @@ export function PlayerView() {
                     alt=""
                     className={cn(
                       "absolute inset-[-4%] h-[108%] w-[108%] object-cover opacity-60 mix-blend-screen transition-opacity duration-1000",
-                      isPlaying ? "animate-theater-drift-reverse animate-theater-pulse" : "opacity-25"
+                      isPlaying
+                        ? "animate-theater-drift-reverse animate-theater-pulse"
+                        : "opacity-25",
                     )}
                     style={{
                       filter: "blur(36px) saturate(2) brightness(1)",
@@ -387,7 +397,7 @@ export function PlayerView() {
                       </Badge>
                     )}
                   </div>
-                  <h2 className="mb-2 line-clamp-2 max-w-3xl text-2xl font-semibold leading-[1.1] tracking-tight text-white drop-shadow-lg sm:text-4xl">
+                  <h2 className="mb-2 line-clamp-2 max-w-3xl text-xl font-semibold leading-[1.1] tracking-tight text-white drop-shadow-lg sm:text-2xl">
                     {currentSong.title}
                   </h2>
                   <p className="text-sm font-medium text-white/65 drop-shadow-md sm:text-base">
@@ -415,7 +425,7 @@ export function PlayerView() {
                 </div>
 
                 <div className="relative flex h-full flex-col gap-5">
-                  <div className="grid flex-1 gap-5 sm:grid-cols-[minmax(14rem,0.78fr)_minmax(0,1.22fr)] sm:items-center lg:gap-7">
+                  <div className="grid flex-1 gap-5 sm:grid-cols-[minmax(14rem,0.78fr)_minmax(0,1.22fr)] sm:items-start lg:gap-7">
                     <div className="relative mx-auto w-full max-w-[22rem] sm:max-w-none">
                       <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-primary/10 blur-2xl" />
                       <div className="relative mx-auto aspect-square w-full max-w-[19rem] overflow-hidden rounded-[1.35rem] border border-white/12 bg-black/35 shadow-[0_28px_80px_rgba(0,0,0,0.48)] ring-1 ring-white/5 sm:max-w-none">
@@ -438,7 +448,9 @@ export function PlayerView() {
                           <div className="flex min-w-0 items-center gap-2 rounded-full border border-white/15 bg-black/42 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/82 shadow-[0_10px_26px_rgba(0,0,0,0.38)] backdrop-blur-xl">
                             <AudioLines className="h-3.5 w-3.5 shrink-0 text-primary" />
                             <span className="truncate sm:hidden">Audio</span>
-                            <span className="hidden truncate sm:inline">Audio mode</span>
+                            <span className="hidden truncate sm:inline">
+                              Audio mode
+                            </span>
                           </div>
                           <div className="flex h-10 shrink-0 items-end gap-1 rounded-full border border-white/15 bg-black/42 px-3 py-2.5 shadow-[0_10px_26px_rgba(0,0,0,0.38)] backdrop-blur-xl">
                             {[40, 78, 55, 92, 62].map((height, index) => (
@@ -459,10 +471,15 @@ export function PlayerView() {
                       </div>
                     </div>
 
-                    <div className="flex min-w-0 flex-col justify-center py-1 sm:py-0">
+                    <div className="flex min-w-0 flex-col justify-start py-1 sm:py-0">
                       <div className="mb-5 flex flex-wrap items-center gap-2">
                         <span className="inline-flex items-center gap-2 rounded-full border border-primary/28 bg-primary/12 px-3 py-1.5 text-xs font-semibold text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                          <span className={cn("h-1.5 w-1.5 rounded-full bg-primary", isPlaying && "animate-pulse")} />
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full bg-primary",
+                              isPlaying && "animate-pulse",
+                            )}
+                          />
                           Now playing
                         </span>
                         {playMode === "request" && (
@@ -482,7 +499,7 @@ export function PlayerView() {
                           </Badge>
                         )}
                       </div>
-                      <h1 className="text-[clamp(1.75rem,5.8vw,3.1rem)] font-semibold leading-[1.06] tracking-normal text-white text-balance xl:text-[clamp(2.25rem,2.8vw,3.45rem)]">
+                      <h1 className="text-[clamp(2.25rem, 2.4vw, 1.45rem)] font-semibold leading-[1.06] tracking-normal text-white text-balance xl:text-[clamp(1.75rem,2.8vw,2.85rem)]">
                         {currentSong.title}
                       </h1>
                       <p className="mt-4 max-w-2xl text-base leading-7 text-white/52">
@@ -551,63 +568,65 @@ export function PlayerView() {
                 <section className="player-glass-card relative flex max-h-[32rem] min-h-[28rem] flex-col overflow-hidden rounded-[2rem] p-4 sm:p-5 xl:max-h-[36rem] xl:min-h-[28rem]">
                   <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent" />
                   <div className="relative flex min-h-0 flex-1 flex-col">
-                  <div className="flex shrink-0 items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-white/75">
-                      <span className="grid h-8 w-8 place-items-center rounded-full border border-primary/20 bg-primary/10">
-                        <Clock3 className="h-4 w-4 text-primary" />
+                    <div className="flex shrink-0 items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-white/75">
+                        <span className="grid h-8 w-8 place-items-center rounded-full border border-primary/20 bg-primary/10">
+                          <Clock3 className="h-4 w-4 text-primary" />
+                        </span>
+                        <p className="text-base font-medium">Mini playlist</p>
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/35">
+                        Later
                       </span>
-                      <p className="text-base font-medium">Mini playlist</p>
                     </div>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/35">
-                      Later
-                    </span>
-                  </div>
-                  {visibleMiniPlaylist.length > 0 ? (
-                    <div className="scrollbar-none mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-                      {visibleMiniPlaylist.map((song, index) => (
-                        <button
-                          key={`${song.id}-${index}`}
-                          type="button"
-                          onClick={() => playSong(song)}
-                          className="group flex w-full items-center gap-3 rounded-[1.1rem] border border-transparent px-2 py-2.5 text-left transition-all duration-300 hover:border-white/10 hover:bg-white/[0.055] hover:px-3"
-                        >
-                          <span className="w-5 text-center font-mono text-xs font-medium tabular-nums text-white/30">
-                            {index + 1}
-                          </span>
-                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                            {song.thumbnail ? (
-                              <img
-                                src={song.thumbnail}
-                                alt={song.title}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <Music2 className="m-2.5 h-4 w-4 text-white/30" />
-                            )}
-                          </div>
-                          <p className="line-clamp-2 flex-1 text-sm font-medium leading-snug text-white/68 transition-colors group-hover:text-white">
-                            {song.title}
-                          </p>
-                          <Play className="h-3.5 w-3.5 shrink-0 text-white/0 transition-colors group-hover:text-primary" />
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-xs text-white/45">
-                      ยังไม่มีเพลงเพิ่มเติมในคิว
-                    </p>
-                  )}
-                  {canToggleMiniPlaylist && (
-                    <button
-                      type="button"
-                      onClick={() => setShowFullMiniPlaylist((value) => !value)}
-                      className="mt-4 shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-white/72 transition hover:border-primary/35 hover:bg-primary/10 hover:text-white"
-                    >
-                      {showFullMiniPlaylist
-                        ? "ย่อรายการ"
-                        : `เพิ่มเติม (${miniPlaylistItems.length - visibleMiniPlaylist.length})`}
-                    </button>
-                  )}
+                    {visibleMiniPlaylist.length > 0 ? (
+                      <div className="scrollbar-none mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+                        {visibleMiniPlaylist.map((song, index) => (
+                          <button
+                            key={`${song.id}-${index}`}
+                            type="button"
+                            onClick={() => playSong(song)}
+                            className="group flex w-full items-center gap-3 rounded-[1.1rem] border border-transparent px-2 py-2.5 text-left transition-all duration-300 hover:border-white/10 hover:bg-white/[0.055] hover:px-3"
+                          >
+                            <span className="w-5 text-center font-mono text-xs font-medium tabular-nums text-white/30">
+                              {index + 1}
+                            </span>
+                            <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                              {song.thumbnail ? (
+                                <img
+                                  src={song.thumbnail}
+                                  alt={song.title}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <Music2 className="m-2.5 h-4 w-4 text-white/30" />
+                              )}
+                            </div>
+                            <p className="line-clamp-2 flex-1 text-sm font-medium leading-snug text-white/68 transition-colors group-hover:text-white">
+                              {song.title}
+                            </p>
+                            <Play className="h-3.5 w-3.5 shrink-0 text-white/0 transition-colors group-hover:text-primary" />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs text-white/45">
+                        ยังไม่มีเพลงเพิ่มเติมในคิว
+                      </p>
+                    )}
+                    {canToggleMiniPlaylist && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowFullMiniPlaylist((value) => !value)
+                        }
+                        className="mt-4 shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-white/72 transition hover:border-primary/35 hover:bg-primary/10 hover:text-white"
+                      >
+                        {showFullMiniPlaylist
+                          ? "ย่อรายการ"
+                          : `เพิ่มเติม (${miniPlaylistItems.length - visibleMiniPlaylist.length})`}
+                      </button>
+                    )}
                   </div>
                 </section>
               </aside>

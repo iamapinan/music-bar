@@ -107,26 +107,38 @@ function SeekBar({
 
   return (
     <div
-      ref={barRef}
-      className="group absolute right-0 bottom-[4.5rem] left-0 z-20 h-5 flex items-center cursor-pointer sm:bottom-24"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      style={{ touchAction: "none" }}
+      className="absolute right-0 bottom-16 left-0 z-20 h-5 flex items-center justify-between gap-3 px-3 pointer-events-none sm:bottom-20 sm:px-4"
     >
-      <div className="relative w-full h-1 rounded-full overflow-hidden bg-white/10 group-hover:h-1.5 transition-[height] duration-150">
-        {/* Progress fill — uses transform: scaleX for GPU compositing, no layout/paint */}
-        <div
-          className="absolute inset-0 origin-left rounded-full bg-primary will-change-transform"
-          style={{ transform: `scaleX(${pct / 100})` }}
-        />
-        {/* Thumb */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-3.5 rounded-full border-2 border-primary bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-          style={{ left: `${pct}%` }}
-        />
+      <span className="text-[10px] font-semibold text-white/55 tabular-nums select-none shrink-0 pointer-events-auto">
+        {formatTime(ct)}
+      </span>
+
+      <div
+        ref={barRef}
+        className="group relative flex-1 h-5 flex items-center cursor-pointer pointer-events-auto"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        style={{ touchAction: "none" }}
+      >
+        <div className="relative w-full h-1 rounded-full overflow-hidden bg-white/10 group-hover:h-1.5 transition-[height] duration-150">
+          {/* Progress fill — uses transform: scaleX for GPU compositing, no layout/paint */}
+          <div
+            className="absolute inset-0 origin-left rounded-full bg-primary will-change-transform"
+            style={{ transform: `scaleX(${pct / 100})` }}
+          />
+          {/* Thumb */}
+          <div
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-3.5 rounded-full border-2 border-primary bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+            style={{ left: `${pct}%` }}
+          />
+        </div>
       </div>
+
+      <span className="text-[10px] font-semibold text-white/55 tabular-nums select-none shrink-0 pointer-events-auto">
+        {formatTime(dur)}
+      </span>
     </div>
   );
 }
@@ -215,7 +227,7 @@ export function PlayerBottomBar() {
           }}
         />
 
-        <div className="relative z-10 flex h-[4.5rem] items-center justify-between gap-1 px-2.5 sm:h-24 sm:gap-4 sm:px-4">
+        <div className="relative z-10 flex h-16 items-center justify-between gap-1 px-2.5 sm:h-20 sm:gap-4 sm:px-4">
           {/* Left: Navigation & Song Info */}
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
             <div className="hidden lg:flex items-center gap-1 border-r border-white/10 pr-4 mr-2">
@@ -279,44 +291,37 @@ export function PlayerBottomBar() {
           </div>
 
           {/* Center: Playback Controls */}
-          <div className="flex shrink-0 flex-col items-center gap-1 px-0.5 sm:px-2">
-            <div className="flex items-center gap-1 sm:gap-6">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={handlePrevious}
-                className="hidden sm:flex w-10 h-10 rounded-full text-white/60 hover:text-white disabled:opacity-30"
-                disabled={playMode === "request"}
-              >
-                <SkipBack className="w-5 h-5" />
-              </Button>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-6">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handlePrevious}
+              className="hidden sm:flex w-10 h-10 rounded-full text-white/60 hover:text-white disabled:opacity-30"
+              disabled={playMode === "request"}
+            >
+              <SkipBack className="w-5 h-5" />
+            </Button>
 
-              <Button
-                size="icon"
-                onClick={togglePlay}
-                className="h-11 w-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:scale-105 active:scale-95 sm:h-14 sm:w-14"
-              >
-                {isPlaying ? (
-                  <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
-                ) : (
-                  <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />
-                )}
-              </Button>
+            <Button
+              size="icon"
+              onClick={togglePlay}
+              className="h-11 w-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:scale-105 active:scale-95 sm:h-14 sm:w-14"
+            >
+              {isPlaying ? (
+                <Pause className="w-5 h-5 sm:w-6 sm:h-6" />
+              ) : (
+                <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5" />
+              )}
+            </Button>
 
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={handleSkip}
-                className="w-10 h-10 rounded-full text-white/60 hover:text-white"
-              >
-                <SkipForward className="w-5 h-5" />
-              </Button>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/60 font-medium tabular-nums">
-              <span>{formatTime(displayTime)}</span>
-              <span>/</span>
-              <span>{formatTime(duration)}</span>
-            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleSkip}
+              className="w-10 h-10 rounded-full text-white/60 hover:text-white"
+            >
+              <SkipForward className="w-5 h-5" />
+            </Button>
           </div>
 
           {/* Right: Extra Controls */}
