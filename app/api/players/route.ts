@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { cachedJson, cacheHeaders, cacheKey } from '@/lib/cache'
 import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 
 export async function GET(request: Request) {
+  const startedAt = Date.now()
   try {
     const ctx = await requireTenantContext(request, { roles: ['owner', 'admin', 'staff'] })
     if (isTenantError(ctx)) return ctx
 
-    const players = await sql`
+    const result = await cachedJson(cacheKey('players', ctx.tenant.id), 10, () => sql`
       SELECT * FROM active_players
       WHERE tenant_id = ${ctx.tenant.id}
       ORDER BY is_active DESC, last_ping DESC
-    `
-    return NextResponse.json(players)
+    `)
+    return NextResponse.json(result.data, { headers: cacheHeaders(result.cache, startedAt) })
   } catch (error) {
     console.error('Failed to fetch players:', error)
     return NextResponse.json({ error: 'Failed to fetch players' }, { status: 500 })

@@ -1,21 +1,30 @@
 import { sql } from '@/lib/db'
+import { cachedJson, cacheHeaders, cacheKey, invalidateCache } from '@/lib/cache'
 import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 import { NextResponse } from 'next/server'
+import { getProxiedUrl } from '@/lib/images'
 
 export async function GET(request: Request) {
+  const startedAt = Date.now()
   try {
     const ctx = await requireTenantContext(request, { public: true })
     if (isTenantError(ctx)) return ctx
 
-    const playlists = await sql`
+    const result = await cachedJson(cacheKey('playlists', ctx.tenant.id), 60, () => sql`
       SELECT p.*,
         (SELECT COUNT(*) FROM playlist_songs WHERE playlist_id = p.id AND tenant_id = ${ctx.tenant.id}) as song_count,
         (SELECT thumbnail FROM playlist_songs WHERE playlist_id = p.id AND tenant_id = ${ctx.tenant.id} ORDER BY position ASC, created_at ASC LIMIT 1) as cover_thumbnail
       FROM playlists p
       WHERE p.tenant_id = ${ctx.tenant.id}
       ORDER BY p.is_default DESC, p.created_at DESC
-    `
-    return NextResponse.json(playlists)
+    `)
+    const { origin } = new URL(request.url)
+    const playlists = (result.data as any[]).map(p => ({
+      ...p,
+      cover_thumbnail: p.cover_thumbnail ? getProxiedUrl(p.cover_thumbnail, origin) : p.cover_thumbnail
+    }))
+
+    return NextResponse.json(playlists, { headers: cacheHeaders(result.cache, startedAt) })
   } catch (error) {
     console.error('Error fetching playlists:', error)
     return NextResponse.json({ error: 'Failed to fetch playlists' }, { status: 500 })
@@ -33,6 +42,10 @@ export async function POST(request: Request) {
       VALUES (${ctx.tenant.id}, ${name}, ${description || null}, true)
       RETURNING *
     `
+    await invalidateCache([
+      cacheKey('playlists', ctx.tenant.id),
+      cacheKey('stations'),
+    ])
 
     return NextResponse.json(result[0])
   } catch (error) {
@@ -90,6 +103,13 @@ export async function PATCH(request: Request) {
       `
     }
 
+    await invalidateCache([
+      cacheKey('playlists', ctx.tenant.id),
+      cacheKey('settings', ctx.tenant.id),
+      cacheKey('playlist-songs', ctx.tenant.id, id),
+      cacheKey('stations'),
+    ])
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error updating playlist:', error)
@@ -104,6 +124,11 @@ export async function DELETE(request: Request) {
 
     const { id } = await request.json()
     await sql`DELETE FROM playlists WHERE id = ${id} AND tenant_id = ${ctx.tenant.id}`
+    await invalidateCache([
+      cacheKey('playlists', ctx.tenant.id),
+      cacheKey('playlist-songs', ctx.tenant.id, id),
+      cacheKey('stations'),
+    ])
 
     return NextResponse.json({ success: true })
   } catch (error) {

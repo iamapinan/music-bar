@@ -107,7 +107,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [pathname])
 
-  const shouldLoadPlayerData = pathname !== '/'
+  const isTenantPlayerPage = /^\/play\/[^/]+\/?$/.test(pathname || '')
+  const isAdminPage = pathname?.startsWith('/admin') || false
+  const shouldLoadSettings = Boolean(tenantSlug || isAdminPage)
+  const shouldLoadPlayerData = isTenantPlayerPage
   const tenantStoragePrefix = tenantSlug ? `music_bar:${tenantSlug}` : 'music_bar'
   const apiPath = useCallback((path: string) => {
     if (!tenantSlug) return path
@@ -118,7 +121,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const { data: tenantInfo } = useSWR(
     tenantSlug ? `/api/tenants/by-slug/${tenantSlug}` : null,
-    fetcher
+    fetcher,
+    { dedupingInterval: 60000, revalidateOnFocus: false }
   )
   const [currentIndex, setCurrentIndex] = useState(0)
   const [volume, setVolume] = useState(100)
@@ -304,7 +308,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     pingServer()
     const interval = setInterval(pingServer, 30000)
     return () => clearInterval(interval)
-  }, [isPlaying, apiPath, tenantStoragePrefix, shouldLoadPlayerData])
+  }, [isPlaying, apiPath, tenantStoragePrefix, shouldLoadPlayerData, tenantSlug])
 
   // ===================== Auto-hide Controls =====================
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -345,8 +349,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [resetHideTimer])
 
   // ===================== Settings Sync =====================
-  const { data: dbSettings, mutate: mutateSettings } = useSWR(shouldLoadPlayerData ? apiPath('/api/settings') : null, fetcher, {
-    refreshInterval: 3000
+  const { data: dbSettings, mutate: mutateSettings } = useSWR(shouldLoadSettings ? apiPath('/api/settings') : null, fetcher, {
+    refreshInterval: isTenantPlayerPage ? 10000 : 30000,
+    dedupingInterval: 5000,
+    revalidateOnFocus: false,
   })
 
   useEffect(() => {
@@ -387,7 +393,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [mutateSettings, apiPath])
 
   // ===================== Data =====================
-  const { data: playlists = [] } = useSWR<Playlist[]>(shouldLoadPlayerData ? apiPath('/api/playlists') : null, fetcher, { refreshInterval: 5000 })
+  const { data: playlists = [] } = useSWR<Playlist[]>(shouldLoadPlayerData ? apiPath('/api/playlists') : null, fetcher, {
+    refreshInterval: 30000,
+    dedupingInterval: 10000,
+    revalidateOnFocus: false,
+  })
   const defaultPlaylistId = playlists.find((p: { is_default: boolean }) => p.is_default)?.id || playlists[0]?.id
   const enabledPlaylistIds = activePlaylistIds.filter(id => playlists.some(playlist => playlist.id === id && playlist.is_enabled))
   const playbackPlaylistIds = enabledPlaylistIds.length > 0
@@ -407,13 +417,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       )
       return songGroups.flat()
     },
-    { refreshInterval: 10000, keepPreviousData: true }
+    {
+      refreshInterval: 60000,
+      keepPreviousData: true,
+      dedupingInterval: 15000,
+      revalidateOnFocus: false,
+    }
   )
 
   const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>(
     shouldLoadPlayerData ? apiPath('/api/requests') : null,
     fetcher,
-    { refreshInterval: 3000 }
+    {
+      refreshInterval: 5000,
+      dedupingInterval: 2000,
+      revalidateOnFocus: false,
+    }
   )
 
   // ===================== Current Song =====================

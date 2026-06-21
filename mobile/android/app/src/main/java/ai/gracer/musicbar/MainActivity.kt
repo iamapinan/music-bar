@@ -11,15 +11,20 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -57,14 +62,15 @@ class MainActivity : AppCompatActivity() {
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
         )
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        enableFullscreenMode()
         
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
         setupWebView()
 
-        // ขอสิทธิ์แสดงการแจ้งเตือน (สำหรับ Android 13 ขึ้นไป)
-        checkAndRequestNotificationsPermission()
+        requestRuntimePermissions()
 
         // ลงทะเบียน Broadcast Receiver เพื่อรอรับคำสั่งสั่งการปิดแอปจากการแจ้งเตือน
         registerStopReceiver()
@@ -74,22 +80,50 @@ class MainActivity : AppCompatActivity() {
         bindAudioService()
     }
 
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            enableFullscreenMode()
+        }
+    }
+
     private fun setupWebView() {
         webView.addJavascriptInterface(AndroidBridge(), "AndroidBridge")
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
+            loadsImagesAutomatically = true
+            blockNetworkImage = false
+            cacheMode = WebSettings.LOAD_DEFAULT
+            setSupportZoom(false)
+            builtInZoomControls = false
+            displayZoomControls = false
             mediaPlaybackRequiresUserGesture = false
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                offscreenPreRaster = true
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                safeBrowsingEnabled = true
+            }
             // ใช้ User-Agent แบบเบราว์เซอร์สมัยใหม่เพื่อให้หน้าเว็บทำงานได้ครบทุกฟังก์ชันอย่างลื่นไหล
             userAgentString = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 MusicBarApp"
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            webView.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true)
+        }
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 // บังคับให้โหลดลิงก์ทั้งหมดภายในแอปพลิเคชัน ไม่เปิดเว็บเบราว์เซอร์ภายนอก
+                return false
+            }
+
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 return false
             }
         }
@@ -109,6 +143,14 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("https://musicbar.gracer.ai")
     }
 
+    private fun enableFullscreenMode() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
+
     private fun startAudioService() {
         val serviceIntent = Intent(this, BackgroundAudioService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -123,15 +165,31 @@ class MainActivity : AppCompatActivity() {
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    private fun checkAndRequestNotificationsPermission() {
+    private fun requestRuntimePermissions() {
+        val permissions = mutableListOf<String>()
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    101
-                )
+                permissions.add(Manifest.permission.POST_NOTIFICATIONS)
             }
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.BLUETOOTH_SCAN)
+            }
+        }
+
+        if (permissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissions.toTypedArray(), 101)
         }
     }
 
@@ -149,7 +207,7 @@ class MainActivity : AppCompatActivity() {
         if (webView.canGoBack()) {
             webView.goBack()
         } else {
-            super.onBackPressed()
+            moveTaskToBack(true)
         }
     }
 
@@ -173,7 +231,9 @@ class MainActivity : AppCompatActivity() {
             unbindService(serviceConnection)
             isBound = false
         }
-        webView.destroy()
+        if (isFinishing && !isChangingConfigurations) {
+            webView.destroy()
+        }
         super.onDestroy()
     }
 

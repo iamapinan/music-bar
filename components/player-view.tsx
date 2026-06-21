@@ -531,7 +531,7 @@ export function PlayerView() {
                       {nextSong ? (
                         <button
                           type="button"
-                          onClick={() => playSong(nextSong)}
+                          onClick={() => playSong(nextSong as any)}
                           className="group flex w-full items-center gap-3 text-left"
                         >
                           <div className="hidden h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_14px_34px_rgba(0,0,0,0.22)] sm:block">

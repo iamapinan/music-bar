@@ -724,7 +724,7 @@ export function LandingPage() {
               </ul>
               
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                <a href="/app-debug.apk" download className="w-full sm:w-auto">
+                <a href="/music-bar.apk" download className="w-full sm:w-auto">
                   <Button size="lg" className="h-14 w-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-8 text-sm font-semibold text-white shadow-[0_18px_42px_rgba(16,185,129,0.25)] hover:shadow-[0_0_30px_rgba(16,185,129,0.45)] hover:scale-105 hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.98]">
                     ดาวน์โหลด Android APK (v1.0.0)
                   </Button>

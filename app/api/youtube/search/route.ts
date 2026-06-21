@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { cachedJson, cacheHeaders, cacheKey } from '@/lib/cache'
+import { getProxiedUrl } from '@/lib/images'
 
 function getDemoData(type: string, errorMsg?: string) {
   const suffix = errorMsg ? ` (Demo Mode: ${errorMsg})` : ' - Please add YouTube API Key'
@@ -53,6 +55,7 @@ function getDemoData(type: string, errorMsg?: string) {
 }
 
 export async function GET(request: Request) {
+  const startedAt = Date.now()
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('q')
   const type = searchParams.get('type') || 'video' // 'video' or 'playlist'
@@ -62,13 +65,20 @@ export async function GET(request: Request) {
   }
   
   const apiKey = process.env.YOUTUBE_API_KEY
+  const { origin } = new URL(request.url)
   
   if (!apiKey) {
-    return NextResponse.json(getDemoData(type))
+    const demoData = getDemoData(type)
+    const items = (demoData.items || []).map((item: any) => ({
+      ...item,
+      thumbnail: item.thumbnail ? getProxiedUrl(item.thumbnail, origin) : item.thumbnail
+    }))
+    return NextResponse.json({ ...demoData, items })
   }
   
   try {
-    if (type === 'playlist') {
+    const result = await cachedJson(cacheKey('youtube-search', type, query.trim().toLowerCase()), 600, async () => {
+      if (type === 'playlist') {
       // Search for playlists
       const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=playlist&maxResults=10&key=${apiKey}`
       
@@ -78,7 +88,7 @@ export async function GET(request: Request) {
       if (data.error) {
         console.warn('YouTube API search error, falling back to demo data:', data.error)
         const errorMsg = data.error.message || 'YouTube API error'
-        return NextResponse.json(getDemoData(type, errorMsg))
+        return getDemoData(type, errorMsg)
       }
       
       // Get playlist details for item count
@@ -111,8 +121,8 @@ export async function GET(request: Request) {
         itemCount: playlistDetails[item.id.playlistId] || 0,
       })) || []
       
-      return NextResponse.json({ items })
-    }
+        return { items }
+      }
     
     // Search for videos
     const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&maxResults=10&key=${apiKey}`
@@ -123,7 +133,7 @@ export async function GET(request: Request) {
     if (data.error) {
       console.warn('YouTube API search error, falling back to demo data:', data.error)
       const errorMsg = data.error.message || 'YouTube API error'
-      return NextResponse.json(getDemoData(type, errorMsg))
+      return getDemoData(type, errorMsg)
     }
     
     const items = data.items?.map((item: {
@@ -140,10 +150,23 @@ export async function GET(request: Request) {
       channelTitle: item.snippet.channelTitle,
     })) || []
     
-    return NextResponse.json({ items })
+      return { items }
+    })
+
+    const items = (result.data.items || []).map((item: any) => ({
+      ...item,
+      thumbnail: item.thumbnail ? getProxiedUrl(item.thumbnail, origin) : item.thumbnail
+    }))
+
+    return NextResponse.json({ ...result.data, items }, { headers: cacheHeaders(result.cache, startedAt) })
   } catch (error) {
     console.error('Error searching YouTube, falling back to demo data:', error)
     const errorMsg = error instanceof Error ? error.message : 'Failed to search'
-    return NextResponse.json(getDemoData(type, errorMsg))
+    const demoData = getDemoData(type, errorMsg)
+    const items = (demoData.items || []).map((item: any) => ({
+      ...item,
+      thumbnail: item.thumbnail ? getProxiedUrl(item.thumbnail, origin) : item.thumbnail
+    }))
+    return NextResponse.json({ ...demoData, items })
   }
 }

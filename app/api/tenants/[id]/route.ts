@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { cacheKey, invalidateCache } from '@/lib/cache'
 import { getSessionUser } from '@/lib/auth/session'
 import {
   getUserTenantRole,
@@ -82,6 +83,12 @@ export async function PATCH(
       WHERE id = ${id}
       RETURNING *
     `
+    await invalidateCache([
+      cacheKey('tenant', 'id', id),
+      cacheKey('tenant', 'slug', currentTenant[0].slug),
+      cacheKey('tenant', 'slug', nextSlug),
+      cacheKey('stations'),
+    ])
 
     return NextResponse.json(updated[0])
   } catch (error) {

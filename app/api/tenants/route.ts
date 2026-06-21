@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { cacheKey, invalidateCache } from '@/lib/cache'
 import { getSessionUser, setActiveTenantCookie } from '@/lib/auth/session'
 import {
   getMembershipsForUser,
@@ -63,6 +64,12 @@ export async function POST(request: Request) {
     `
     await seedTenantDefaults(tenant[0].id)
     await setActiveTenantCookie(tenant[0].id)
+    await invalidateCache([
+      cacheKey('tenant', 'id', tenant[0].id),
+      cacheKey('tenant', 'slug', tenant[0].slug),
+      cacheKey('stations'),
+      cacheKey('user-memberships', user.id),
+    ])
 
     return NextResponse.json(tenant[0])
   } catch (error) {

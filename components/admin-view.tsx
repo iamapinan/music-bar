@@ -566,6 +566,10 @@ export function AdminView() {
   const { data: playlists = [], mutate: mutatePlaylists } = useSWR<Playlist[]>(
     "/api/playlists",
     fetcher,
+    {
+      dedupingInterval: 10000,
+      revalidateOnFocus: false,
+    },
   );
   const currentPlaylist = activePlaylistId
     ? playlists.find((p) => p.id === activePlaylistId)
@@ -576,13 +580,19 @@ export function AdminView() {
   >(
     currentPlaylist ? `/api/playlists/${currentPlaylist.id}/songs` : null,
     fetcher,
+    {
+      dedupingInterval: 15000,
+      revalidateOnFocus: false,
+    },
   );
 
   const { data: requests = [], mutate: mutateRequests } = useSWR<SongRequest[]>(
     "/api/requests",
     fetcher,
     {
-      refreshInterval: 3000,
+      refreshInterval: 5000,
+      dedupingInterval: 2000,
+      revalidateOnFocus: false,
     },
   );
 

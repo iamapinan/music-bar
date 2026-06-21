@@ -51,18 +51,30 @@ export function DashboardView() {
   const { data: playlists = [] } = useSWR<Playlist[]>(
     "/api/playlists",
     fetcher,
+    {
+      dedupingInterval: 10000,
+      revalidateOnFocus: false,
+    },
   );
   const currentPlaylist = playlists.find((p) => p.is_default) || playlists[0];
 
   const { data: playlistSongs = [] } = useSWR<PlaylistSong[]>(
     currentPlaylist ? `/api/playlists/${currentPlaylist.id}/songs` : null,
     fetcher,
+    {
+      dedupingInterval: 15000,
+      revalidateOnFocus: false,
+    },
   );
 
   const { data: requests = [] } = useSWR<SongRequest[]>(
     "/api/requests",
     fetcher,
-    { refreshInterval: 3000 },
+    {
+      refreshInterval: 5000,
+      dedupingInterval: 2000,
+      revalidateOnFocus: false,
+    },
   );
 
   useEffect(() => {

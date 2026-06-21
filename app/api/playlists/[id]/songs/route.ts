@@ -1,23 +1,34 @@
 import { sql } from '@/lib/db'
+import { cachedJson, cacheHeaders, cacheKey, invalidateCache } from '@/lib/cache'
 import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 import { NextResponse } from 'next/server'
+import { getProxiedUrl } from '@/lib/images'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const startedAt = Date.now()
   try {
     const ctx = await requireTenantContext(request, { public: true })
     if (isTenantError(ctx)) return ctx
 
     const { id } = await params
-    const songs = await sql`
+    const playlistId = parseInt(id)
+    const result = await cachedJson(cacheKey('playlist-songs', ctx.tenant.id, playlistId), 120, () => sql`
       SELECT * FROM playlist_songs
-      WHERE playlist_id = ${parseInt(id)}
+      WHERE playlist_id = ${playlistId}
         AND tenant_id = ${ctx.tenant.id}
       ORDER BY position ASC, created_at ASC
-    `
-    return NextResponse.json(songs)
+    `)
+
+    const { origin } = new URL(request.url)
+    const songs = (result.data as any[]).map(song => ({
+      ...song,
+      thumbnail: song.thumbnail ? getProxiedUrl(song.thumbnail, origin) : song.thumbnail
+    }))
+
+    return NextResponse.json(songs, { headers: cacheHeaders(result.cache, startedAt) })
   } catch (error) {
     console.error('Error fetching playlist songs:', error)
     return NextResponse.json({ error: 'Failed to fetch songs' }, { status: 500 })
@@ -68,8 +79,19 @@ export async function POST(
       VALUES (${ctx.tenant.id}, ${playlistId}, ${youtubeId}, ${songTitle}, ${thumbnail || null}, ${duration || null}, ${artist || null}, ${(maxPos[0]?.max_pos || 0) + 1})
       RETURNING *
     `
+    await invalidateCache([
+      cacheKey('playlist-songs', ctx.tenant.id, playlistId),
+      cacheKey('playlists', ctx.tenant.id),
+      cacheKey('stations'),
+    ])
 
-    return NextResponse.json(result[0])
+    const { origin } = new URL(request.url)
+    const song = result[0]
+    if (song && song.thumbnail) {
+      song.thumbnail = getProxiedUrl(song.thumbnail, origin)
+    }
+
+    return NextResponse.json(song)
   } catch (error) {
     console.error('Error adding song to playlist:', error)
     return NextResponse.json({ error: 'Failed to add song' }, { status: 500 })
@@ -86,13 +108,19 @@ export async function DELETE(
 
     const { id } = await params
     const { songId } = await request.json()
+    const playlistId = parseInt(id)
 
     await sql`
       DELETE FROM playlist_songs
       WHERE id = ${songId}
-        AND playlist_id = ${parseInt(id)}
+        AND playlist_id = ${playlistId}
         AND tenant_id = ${ctx.tenant.id}
     `
+    await invalidateCache([
+      cacheKey('playlist-songs', ctx.tenant.id, playlistId),
+      cacheKey('playlists', ctx.tenant.id),
+      cacheKey('stations'),
+    ])
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { cachedJson, cacheHeaders, cacheKey } from '@/lib/cache'
+import { getProxiedUrl } from '@/lib/images'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const startedAt = Date.now()
   try {
-    const stations = await sql`
+    const result = await cachedJson(cacheKey('stations'), 120, () => sql`
       SELECT
         t.id,
         t.slug,
@@ -29,9 +32,16 @@ export async function GET() {
       WHERE t.is_active = true
       GROUP BY t.id
       ORDER BY t.created_at ASC
-    `
+    `)
 
-    return NextResponse.json(stations)
+    const { origin } = new URL(request.url)
+    const stations = (result.data as any[]).map(s => ({
+      ...s,
+      cover_thumbnail: s.cover_thumbnail ? getProxiedUrl(s.cover_thumbnail, origin) : s.cover_thumbnail,
+      logo_url: s.logo_url ? getProxiedUrl(s.logo_url, origin) : s.logo_url
+    }))
+
+    return NextResponse.json(stations, { headers: cacheHeaders(result.cache, startedAt) })
   } catch (error) {
     console.error('Error listing stations:', error)
     return NextResponse.json({ error: 'Failed to list stations' }, { status: 500 })

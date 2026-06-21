@@ -63,7 +63,6 @@
   - ปรับตั้งค่าสิทธิ์ภายในตัว WebView (ยกเว้นการเรียก `webView.onPause()` ใน Activity lifecycle) ทำให้จาวาสคริปต์สตรีมเพลงสามารถทำงานต่อในเบื้องหลังได้อย่างไร้รอยต่อ
   - อนุญาตการเล่นมีเดียอัตโนมัติ (`mediaPlaybackRequiresUserGesture = false`) และปรับตั้ง User-Agent ให้เสมือนเบราว์เซอร์สากลเพื่อความเข้ากันได้ 100%
   - จัดทำระบบคอมไพล์สำเร็จด้วย Gradle Kotlin DSL (.kts) บังคับสภาวะรันระดับ Java 21 และ Android SDK 34/35
-  - สร้างไฟล์ติดตั้ง **Debug APK ขนาดเบาพิเศษ (5.5 MB)** สำเร็จและนำไปจัดวางบน Next.js Web App ที่ [public/app-debug.apk](file:///Users/apinan/Developments/music-bar/public/app-debug.apk) สำหรับให้บุคคลทั่วไปดาวน์โหลดได้โดยตรงผ่านระบบหน้าเว็บ
 - เพิ่มไฟล์โครงสร้างพื้นฐานของโปรเจกต์สำหรับ Agent Development:
   - `.geminiignore` เพื่อละเว้นไฟล์ขนาดใหญ่และลดการใช้ Token
   - `SYSTEM_SUMMARY.md` บันทึกภาพรวมโครงสร้างของระบบ Music Bar (Next.js & React Native)

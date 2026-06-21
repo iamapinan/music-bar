@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { sql } from '@/lib/db'
+import { cachedJson, cacheKey, getCachedJson, setCachedJson, invalidateCache } from '@/lib/cache'
 import { ACTIVE_TENANT_COOKIE_NAME, getSessionUser, setActiveTenantCookie, type SessionUser } from '@/lib/auth/session'
 
 export type TenantRole = 'owner' | 'admin' | 'staff'
@@ -65,6 +66,10 @@ export async function upsertUserFromSession(sessionUser: SessionUser) {
     throw new Error('Firebase account does not include an email address')
   }
 
+  const cacheKeyStr = cacheKey('user', sessionUser.email)
+  const cached = await getCachedJson<DbUser>(cacheKeyStr)
+  if (cached) return cached
+
   const result = await sql<DbUser[]>`
     INSERT INTO users (firebase_uid, email, name, photo_url, last_login_at)
     VALUES (${sessionUser.firebaseUid}, ${sessionUser.email}, ${sessionUser.name}, ${sessionUser.picture}, NOW())
@@ -76,6 +81,10 @@ export async function upsertUserFromSession(sessionUser: SessionUser) {
         updated_at = NOW()
     RETURNING *
   `
+
+  if (result[0]) {
+    await setCachedJson(cacheKeyStr, result[0], 300)
+  }
 
   return result[0]
 }
@@ -98,8 +107,13 @@ export async function getMemberships(userId: string) {
 }
 
 export async function getMembershipsForUser(user: DbUser) {
+  const cacheKeyStr = cacheKey('user-memberships', user.id)
+  const cached = await getCachedJson<TenantMembership[]>(cacheKeyStr)
+  if (cached) return cached
+
+  let result: TenantMembership[]
   if (isSuperAdminEmail(user.email)) {
-    return sql<TenantMembership[]>`
+    result = await sql<TenantMembership[]>`
       SELECT
         t.id as tenant_id,
         'owner'::varchar as role,
@@ -111,10 +125,13 @@ export async function getMembershipsForUser(user: DbUser) {
       FROM tenants t
       ORDER BY t.created_at ASC
     `
+  } else {
+    await applyAdminGrants(user)
+    result = await getMemberships(user.id)
   }
 
-  await applyAdminGrants(user)
-  return getMemberships(user.id)
+  await setCachedJson(cacheKeyStr, result, 60)
+  return result
 }
 
 export async function applyAdminGrants(user: DbUser) {
@@ -181,21 +198,27 @@ export async function seedTenantDefaults(tenantId: string) {
 
 export async function getTenantBySlug(slug: string) {
   if (!allowedSlug.test(slug)) return null
-  const tenants = await sql<Tenant[]>`
+  const result = await cachedJson(cacheKey('tenant', 'slug', slug), 300, async () => {
+    const tenants = await sql<Tenant[]>`
     SELECT * FROM tenants
     WHERE slug = ${slug}
     LIMIT 1
-  `
-  return tenants[0] || null
+    `
+    return tenants[0] || null
+  })
+  return result.data
 }
 
 export async function getTenantById(id: string) {
-  const tenants = await sql<Tenant[]>`
+  const result = await cachedJson(cacheKey('tenant', 'id', id), 300, async () => {
+    const tenants = await sql<Tenant[]>`
     SELECT * FROM tenants
     WHERE id = ${id}
     LIMIT 1
-  `
-  return tenants[0] || null
+    `
+    return tenants[0] || null
+  })
+  return result.data
 }
 
 export async function getUserTenantRole(userId: string, tenantId: string) {

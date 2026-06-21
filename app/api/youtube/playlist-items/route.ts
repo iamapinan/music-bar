@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { cachedJson, cacheHeaders, cacheKey } from '@/lib/cache'
+import { getProxiedUrl } from '@/lib/images'
 
 function getDemoPlaylistItems(errorMsg?: string) {
   const suffix = errorMsg ? ` (Demo Mode: ${errorMsg})` : ' (No API Key)'
@@ -32,6 +34,7 @@ function getDemoPlaylistItems(errorMsg?: string) {
 }
 
 export async function GET(request: Request) {
+  const startedAt = Date.now()
   const { searchParams } = new URL(request.url)
   const playlistId = searchParams.get('playlistId')
   
@@ -40,34 +43,54 @@ export async function GET(request: Request) {
   }
   
   const apiKey = process.env.YOUTUBE_API_KEY
+  const { origin } = new URL(request.url)
   
   if (!apiKey) {
-    return NextResponse.json(getDemoPlaylistItems())
+    const demoData = getDemoPlaylistItems()
+    const items = (demoData.items || []).map((item: any) => ({
+      ...item,
+      thumbnail: item.thumbnail ? getProxiedUrl(item.thumbnail, origin) : item.thumbnail
+    }))
+    return NextResponse.json({ ...demoData, items })
   }
   
   try {
-    const fetchUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50&key=${apiKey}`
-    const response = await fetch(fetchUrl)
-    const data = await response.json()
-    
-    if (data.error) {
-      console.warn('YouTube API playlistItems error, falling back to demo data:', data.error)
-      const errorMsg = data.error.message || 'YouTube API error'
-      return NextResponse.json(getDemoPlaylistItems(errorMsg))
-    }
-    
-    const formattedItems = data.items?.map((item: any) => ({
-      id: item.snippet.resourceId.videoId,
-      youtube_id: item.snippet.resourceId.videoId,
-      title: item.snippet.title,
-      thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || '',
-      channelTitle: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle || 'Unknown Artist'
-    })).filter((item: any) => item.youtube_id !== 'deleted') || []
-    
-    return NextResponse.json({ items: formattedItems })
+    const result = await cachedJson(cacheKey('youtube-playlist-items', playlistId), 900, async () => {
+      const fetchUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50&key=${apiKey}`
+      const response = await fetch(fetchUrl)
+      const data = await response.json()
+      
+      if (data.error) {
+        console.warn('YouTube API playlistItems error, falling back to demo data:', data.error)
+        const errorMsg = data.error.message || 'YouTube API error'
+        return getDemoPlaylistItems(errorMsg)
+      }
+      
+      const formattedItems = data.items?.map((item: any) => ({
+        id: item.snippet.resourceId.videoId,
+        youtube_id: item.snippet.resourceId.videoId,
+        title: item.snippet.title,
+        thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || '',
+        channelTitle: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle || 'Unknown Artist'
+      })).filter((item: any) => item.youtube_id !== 'deleted') || []
+      
+      return { items: formattedItems }
+    })
+
+    const items = (result.data.items || []).map((item: any) => ({
+      ...item,
+      thumbnail: item.thumbnail ? getProxiedUrl(item.thumbnail, origin) : item.thumbnail
+    }))
+
+    return NextResponse.json({ ...result.data, items }, { headers: cacheHeaders(result.cache, startedAt) })
   } catch (error) {
     console.error('Error fetching playlist items, falling back to demo data:', error)
     const errorMsg = error instanceof Error ? error.message : 'Failed to fetch playlist items'
-    return NextResponse.json(getDemoPlaylistItems(errorMsg))
+    const demoData = getDemoPlaylistItems(errorMsg)
+    const items = (demoData.items || []).map((item: any) => ({
+      ...item,
+      thumbnail: item.thumbnail ? getProxiedUrl(item.thumbnail, origin) : item.thumbnail
+    }))
+    return NextResponse.json({ ...demoData, items })
   }
 }

@@ -28,7 +28,11 @@ export function AdminRequestsView() {
   const { data: requests = [], mutate } = useSWR<SongRequest[]>(
     "/api/requests",
     fetcher,
-    { refreshInterval: 3000 },
+    {
+      refreshInterval: 5000,
+      dedupingInterval: 2000,
+      revalidateOnFocus: false,
+    },
   );
 
   const handlePlayPause = (req: SongRequest) => {

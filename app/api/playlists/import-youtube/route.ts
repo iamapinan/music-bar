@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { cacheKey, invalidateCache } from '@/lib/cache'
 import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 import { NextResponse } from 'next/server'
 
@@ -71,6 +72,11 @@ export async function POST(request: Request) {
         ON CONFLICT DO NOTHING
       `
     }
+    await invalidateCache([
+      cacheKey('playlists', ctx.tenant.id),
+      cacheKey('playlist-songs', ctx.tenant.id, playlistDbId),
+      cacheKey('stations'),
+    ])
 
     return NextResponse.json({
       success: true,

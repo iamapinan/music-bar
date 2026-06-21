@@ -71,14 +71,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [isSavingStoreSettings, setIsSavingStoreSettings] = useState(false);
 
   const { data: requests = [] } = useSWR("/api/requests", fetcher, {
-    refreshInterval: 3000,
+    refreshInterval: 5000,
+    dedupingInterval: 2000,
+    revalidateOnFocus: false,
   });
   const { data: storeApplications = [] } = useSWR(
     user?.is_super_admin
       ? "/api/admin/store-applications?status=pending"
       : null,
     fetcher,
-    { refreshInterval: 8000 },
+    {
+      refreshInterval: 15000,
+      dedupingInterval: 5000,
+      revalidateOnFocus: false,
+    },
   );
 
   useEffect(() => {

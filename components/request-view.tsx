@@ -56,12 +56,20 @@ export function RequestView() {
   }
 
   // All requests for queue position
-  const { data: allRequests = [] } = useSWR<SongRequest[]>(apiPath('/api/requests'), fetcher, { refreshInterval: 3000 })
+  const { data: allRequests = [] } = useSWR<SongRequest[]>(apiPath('/api/requests'), fetcher, {
+    refreshInterval: 5000,
+    dedupingInterval: 2000,
+    revalidateOnFocus: false,
+  })
   // My requests with queue_position
   const { data: myRequests = [], mutate } = useSWR<(SongRequest & { queue_position: number })[]>(
     deviceId ? apiPath(`/api/requests?device_id=${deviceId}`) : null,
     fetcher,
-    { refreshInterval: 3000 }
+    {
+      refreshInterval: 5000,
+      dedupingInterval: 2000,
+      revalidateOnFocus: false,
+    }
   )
 
   useEffect(() => {

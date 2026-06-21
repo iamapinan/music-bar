@@ -1,8 +1,11 @@
 import { sql } from '@/lib/db'
+import { cachedJson, cacheHeaders, cacheKey, invalidateCache } from '@/lib/cache'
 import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 import { NextResponse } from 'next/server'
+import { getProxiedUrl } from '@/lib/images'
 
 export async function GET(request: Request) {
+  const startedAt = Date.now()
   try {
     const ctx = await requireTenantContext(request, { public: true })
     if (isTenantError(ctx)) return ctx
@@ -10,8 +13,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const deviceId = searchParams.get('device_id')
 
+    const { origin } = new URL(request.url)
+
     if (deviceId) {
-      const requests = await sql`
+      const result = await cachedJson(cacheKey('requests', ctx.tenant.id, 'device', deviceId), 5, () => sql`
         SELECT *,
           ROW_NUMBER() OVER (ORDER BY created_at ASC) as queue_position
         FROM song_requests
@@ -19,17 +24,25 @@ export async function GET(request: Request) {
           AND status = 'pending'
           AND device_id = ${deviceId}
         ORDER BY created_at ASC
-      `
-      return NextResponse.json(requests)
+      `)
+      const formatted = (result.data as any[]).map(req => ({
+        ...req,
+        thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail
+      }))
+      return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
     }
 
-    const requests = await sql`
+    const result = await cachedJson(cacheKey('requests', ctx.tenant.id, 'pending'), 5, () => sql`
       SELECT * FROM song_requests
       WHERE tenant_id = ${ctx.tenant.id}
         AND status = 'pending'
       ORDER BY created_at ASC
-    `
-    return NextResponse.json(requests)
+    `)
+    const formatted = (result.data as any[]).map(req => ({
+      ...req,
+      thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail
+    }))
+    return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
   } catch (error) {
     console.error('Error fetching requests:', error)
     return NextResponse.json({ error: 'Failed to fetch requests' }, { status: 500 })
@@ -75,8 +88,18 @@ export async function POST(request: Request) {
       VALUES (${ctx.tenant.id}, ${youtubeId}, ${songTitle}, ${thumbnail || null}, ${duration || null}, ${requested_by || 'ลูกค้า'}, ${device_id || null}, 'pending')
       RETURNING *
     `
+    await invalidateCache([
+      cacheKey('requests', ctx.tenant.id, 'pending'),
+      cacheKey('requests', ctx.tenant.id, 'device', device_id),
+    ])
 
-    return NextResponse.json(result[0])
+    const { origin } = new URL(request.url)
+    const reqObj = result[0]
+    if (reqObj && reqObj.thumbnail) {
+      reqObj.thumbnail = getProxiedUrl(reqObj.thumbnail, origin)
+    }
+
+    return NextResponse.json(reqObj)
   } catch (error) {
     console.error('Error creating request:', error)
     return NextResponse.json({ error: 'Failed to create request' }, { status: 500 })
@@ -109,6 +132,10 @@ export async function PATCH(request: Request) {
     if (!result[0]) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 })
     }
+    await invalidateCache([
+      cacheKey('requests', ctx.tenant.id, 'pending'),
+      cacheKey('requests', ctx.tenant.id, 'device', result[0].device_id),
+    ])
 
     return NextResponse.json(result[0])
   } catch (error) {
@@ -128,6 +155,9 @@ export async function DELETE(request: Request) {
       WHERE id = ${id}
         AND tenant_id = ${ctx.tenant.id}
     `
+    await invalidateCache([
+      cacheKey('requests', ctx.tenant.id, 'pending'),
+    ])
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting request:', error)

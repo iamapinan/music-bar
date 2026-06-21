@@ -18,6 +18,8 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.Handler
+import android.os.Looper
 import android.webkit.WebView
 import java.lang.ref.WeakReference
 import java.net.URL
@@ -31,6 +33,7 @@ class BackgroundAudioService : Service() {
     private var mediaSession: MediaSession? = null
     private var lastBitmap: Bitmap? = null
     private var currentThumbnailUrl = ""
+    private var userRequestedExit = false
 
     companion object {
         const val CHANNEL_ID = "MusicBarBackgroundChannel"
@@ -56,6 +59,7 @@ class BackgroundAudioService : Service() {
         createNotificationChannel()
         acquireLocks()
         setupMediaSession()
+        startForegroundService()
     }
 
     private fun setupMediaSession() {
@@ -97,6 +101,7 @@ class BackgroundAudioService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_EXIT -> {
+                userRequestedExit = true
                 stopServiceAndApp()
                 return START_NOT_STICKY
             }
@@ -139,7 +144,7 @@ class BackgroundAudioService : Service() {
             Thread {
                 val bitmap = downloadBitmap(thumbnailUrl)
                 lastBitmap = bitmap
-                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                Handler(Looper.getMainLooper()).post {
                     val meta = MediaMetadata.Builder()
                         .putString(MediaMetadata.METADATA_KEY_TITLE, title)
                         .putString(MediaMetadata.METADATA_KEY_ARTIST, artist)
@@ -403,6 +408,18 @@ class BackgroundAudioService : Service() {
 
         val stopBroadcast = Intent(ACTION_STOP_ACTIVITY)
         sendBroadcast(stopBroadcast)
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        if (!userRequestedExit) {
+            val restartIntent = Intent(applicationContext, BackgroundAudioService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(restartIntent)
+            } else {
+                startService(restartIntent)
+            }
+        }
     }
 
     override fun onDestroy() {
