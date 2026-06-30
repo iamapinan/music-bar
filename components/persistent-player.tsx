@@ -44,16 +44,13 @@ export function PersistentYouTubePlayer() {
   const { 
     isPlaying, currentSong, nextSong, handleSongEnd, setIsPlaying, playerRef, volume, 
     isVideoMode, setCurrentTime, setDuration, isFullscreen,
-    playMode, currentIndex
+    playMode, currentIndex, audioRef
   } = usePlayer()
   const CROSSFADE_SECONDS = 5
 
   const isPlayingRef = useRef(isPlaying)
   useEffect(() => { isPlayingRef.current = isPlaying }, [isPlaying])
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const isAudioModeRef = useRef(false)
-  const audioEndedRef = useRef<(() => void) | null>(null)
   const audioPlaybackRef = useRef<{ currentTime: number; duration: number }>({ currentTime: 0, duration: 0 })
 
   const ytPlayerRefs = useRef<[YTPlayer | null, YTPlayer | null]>([null, null])
@@ -78,18 +75,18 @@ export function PersistentYouTubePlayer() {
   useEffect(() => { handleSongEndRef.current = handleSongEnd }, [handleSongEnd])
   useEffect(() => { volumeRef.current = volume }, [volume])
 
-  // --- Audio URL playback ---
-  const playAudioUrl = useCallback((url: string) => {
+  // --- Audio URL playback helpers ---
+  const isAudioModeRef = useRef(false)
+
+  // Sync isAudioModeRef based on whether audioRef has an active src
+  useEffect(() => {
+    isAudioModeRef.current = !!(audioRef.current && audioRef.current.src && audioRef.current.src !== '')
+  }, [currentSong?.audio_url, currentSong?.youtube_id, audioRef])
+
+  const setupAudioEvents = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio) return
     isAudioModeRef.current = true
-    // Clean up any existing audio
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.src = ''
-      audioRef.current.load()
-    }
-    const audio = new Audio(url)
-    audio.volume = volumeRef.current / 100
-    audioRef.current = audio
 
     audio.onended = () => {
       audioPlaybackRef.current = { currentTime: 0, duration: 0 }
@@ -104,34 +101,20 @@ export function PersistentYouTubePlayer() {
       }
     }
     audio.onerror = () => {
-      console.warn('Audio playback error, falling back to YouTube')
+      console.warn('Audio playback error')
       isAudioModeRef.current = false
-      audioRef.current = null
-      // Retry with YouTube if youtube_id exists
-      if (currentSong?.youtube_id && isApiReadyRef.current) {
-        initPlayer(currentSong.youtube_id)
-      }
     }
-
-    audio.play().then(() => {
-      setIsPlaying(true)
-    }).catch((err) => {
-      console.warn('Audio play failed:', err)
-      isAudioModeRef.current = false
-      audioRef.current = null
-    })
-  }, [setIsPlaying, currentSong?.youtube_id])
+  }, [audioRef])
 
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause()
       audioRef.current.src = ''
       audioRef.current.load()
-      audioRef.current = null
     }
     isAudioModeRef.current = false
     audioPlaybackRef.current = { currentTime: 0, duration: 0 }
-  }, [])
+  }, [audioRef])
 
   // Track video container rect for Video Mode
   useEffect(() => {
@@ -401,7 +384,9 @@ export function PersistentYouTubePlayer() {
       lastPlayedKeyRef.current = songKey
 
       stopAudio()
-      playAudioUrl(currentSong.audio_url)
+      // Audio is already created and playing by playSongImmediately in the click handler.
+      // We just need to wire up events for progress tracking and song-end detection.
+      setupAudioEvents()
       exposeMethods()
       return
     }
@@ -433,7 +418,7 @@ export function PersistentYouTubePlayer() {
         lastPlayedKeyRef.current = songKey
       }
     }
-  }, [currentSong?.youtube_id, currentSong?.audio_url, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying, playAudioUrl, stopAudio])
+  }, [currentSong?.youtube_id, currentSong?.audio_url, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying, setupAudioEvents, stopAudio])
 
   useEffect(() => {
     preloadNext(nextSong?.youtube_id)

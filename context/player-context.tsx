@@ -74,6 +74,8 @@ interface PlayerContextValue {
   mutateRequests: () => Promise<any>
   // Player ref for YouTube component
   playerRef: React.MutableRefObject<YouTubePlayerMethods | null>
+  // Audio element ref for native audio_url playback
+  audioRef: React.MutableRefObject<HTMLAudioElement | null>
 }
 
 export interface YouTubePlayerMethods {
@@ -142,6 +144,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false)
   const [nextShuffleIndex, setNextShuffleIndex] = useState(0)
   const playerRef = useRef<YouTubePlayerMethods | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const [customSong, setCustomSong] = useState<PlaylistSong | SongRequest | null>(null)
   const customSongRef = useRef<PlaylistSong | SongRequest | null>(null)
 
@@ -936,6 +939,28 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     customSongRef.current = formattedSong
     setIsPlaying(true)
 
+    // If the song has audio_url, play it immediately (within user gesture context)
+    if (song.audio_url && typeof song.audio_url === 'string' && song.audio_url.trim() !== '') {
+      try {
+        // Stop any existing audio
+        if (audioRef.current) {
+          audioRef.current.pause()
+          audioRef.current.src = ''
+          audioRef.current.load()
+        }
+        const audio = new Audio(song.audio_url)
+        audio.volume = volume / 100
+        audio.play().then(() => {
+          setIsPlaying(true)
+        }).catch((err) => {
+          console.warn('Audio play failed (autoplay policy?):', err)
+        })
+        audioRef.current = audio
+      } catch (err) {
+        console.warn('Failed to create Audio element:', err)
+      }
+    }
+
     // Save to playback_state immediately so other tabs/pages pick it up
     try {
       localStorage.setItem(`${tenantStoragePrefix}:playback_state`, JSON.stringify({
@@ -949,7 +974,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         savedAt: Date.now(),
       }))
     } catch {}
-  }, [tenantStoragePrefix])
+  }, [tenantStoragePrefix, volume])
 
   if (!isInitialized) return null
 
@@ -993,7 +1018,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       toggleMute, toggleShuffle, handleSongEnd, playByIndex, playSong, playSongImmediately, setActivePlaylistIds, setIsPlaying, setIsVideoMode, setIsAutoPlayEnabled,
       setIsFullscreen, setIsRequestsEnabled: handleSetIsRequestsEnabled, setCurrentTime, setDuration,
       mutatePlaylist: mutateSongs, mutateRequests,
-      playerRef, isRequestsEnabled, showControls, setShowControls,
+	      playerRef, audioRef, isRequestsEnabled, showControls, setShowControls,
       showPlaylistRail, setShowPlaylistRail,
       resumePosition
     }}>
