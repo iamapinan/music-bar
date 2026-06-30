@@ -51,6 +51,11 @@ export function PersistentYouTubePlayer() {
   const isPlayingRef = useRef(isPlaying)
   useEffect(() => { isPlayingRef.current = isPlaying }, [isPlaying])
 
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const isAudioModeRef = useRef(false)
+  const audioEndedRef = useRef<(() => void) | null>(null)
+  const audioPlaybackRef = useRef<{ currentTime: number; duration: number }>({ currentTime: 0, duration: 0 })
+
   const ytPlayerRefs = useRef<[YTPlayer | null, YTPlayer | null]>([null, null])
   const activeSlotRef = useRef<0 | 1>(0)
   const preloadedSlotRef = useRef<0 | 1 | null>(null)
@@ -72,6 +77,61 @@ export function PersistentYouTubePlayer() {
 
   useEffect(() => { handleSongEndRef.current = handleSongEnd }, [handleSongEnd])
   useEffect(() => { volumeRef.current = volume }, [volume])
+
+  // --- Audio URL playback ---
+  const playAudioUrl = useCallback((url: string) => {
+    isAudioModeRef.current = true
+    // Clean up any existing audio
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current.load()
+    }
+    const audio = new Audio(url)
+    audio.volume = volumeRef.current / 100
+    audioRef.current = audio
+
+    audio.onended = () => {
+      audioPlaybackRef.current = { currentTime: 0, duration: 0 }
+      handleSongEndRef.current()
+    }
+    audio.ontimeupdate = () => {
+      if (audioRef.current) {
+        audioPlaybackRef.current = {
+          currentTime: audioRef.current.currentTime || 0,
+          duration: audioRef.current.duration || 0,
+        }
+      }
+    }
+    audio.onerror = () => {
+      console.warn('Audio playback error, falling back to YouTube')
+      isAudioModeRef.current = false
+      audioRef.current = null
+      // Retry with YouTube if youtube_id exists
+      if (currentSong?.youtube_id && isApiReadyRef.current) {
+        initPlayer(currentSong.youtube_id)
+      }
+    }
+
+    audio.play().then(() => {
+      setIsPlaying(true)
+    }).catch((err) => {
+      console.warn('Audio play failed:', err)
+      isAudioModeRef.current = false
+      audioRef.current = null
+    })
+  }, [setIsPlaying, currentSong?.youtube_id])
+
+  const stopAudio = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current.load()
+      audioRef.current = null
+    }
+    isAudioModeRef.current = false
+    audioPlaybackRef.current = { currentTime: 0, duration: 0 }
+  }, [])
 
   // Track video container rect for Video Mode
   useEffect(() => {
@@ -100,37 +160,55 @@ export function PersistentYouTubePlayer() {
     const getActivePlayer = () => ytPlayerRefs.current[activeSlotRef.current]
     const methods: YouTubePlayerMethods = {
       play: () => {
-        const player = getActivePlayer()
-        if (player && isPlayerReadyRef.current && typeof player.playVideo === 'function') {
-          player.playVideo()
+        if (isAudioModeRef.current && audioRef.current) {
+          audioRef.current.play().catch(() => {})
+        } else {
+          const player = getActivePlayer()
+          if (player && isPlayerReadyRef.current && typeof player.playVideo === 'function') {
+            player.playVideo()
+          }
         }
       },
       pause: () => {
-        ytPlayerRefs.current.forEach((player) => {
-          if (player && typeof player.pauseVideo === 'function') player.pauseVideo()
-        })
-        if (crossfadeTimerRef.current) {
-          window.clearInterval(crossfadeTimerRef.current)
-          crossfadeTimerRef.current = null
-          isCrossfadingRef.current = false
+        if (isAudioModeRef.current && audioRef.current) {
+          audioRef.current.pause()
+        } else {
+          ytPlayerRefs.current.forEach((player) => {
+            if (player && typeof player.pauseVideo === 'function') player.pauseVideo()
+          })
+          if (crossfadeTimerRef.current) {
+            window.clearInterval(crossfadeTimerRef.current)
+            crossfadeTimerRef.current = null
+            isCrossfadingRef.current = false
+          }
         }
       },
       setVolume: (v: number) => {
-        const player = getActivePlayer()
-        if (player && isPlayerReadyRef.current && typeof player.setVolume === 'function') {
-          player.setVolume(v)
+        if (isAudioModeRef.current && audioRef.current) {
+          audioRef.current.volume = v / 100
+        } else {
+          const player = getActivePlayer()
+          if (player && isPlayerReadyRef.current && typeof player.setVolume === 'function') {
+            player.setVolume(v)
+          }
         }
       },
       loadVideo: (id: string) => {
-        const player = getActivePlayer()
-        if (player && isPlayerReadyRef.current && typeof player.loadVideoById === 'function') {
-          player.loadVideoById(id)
+        if (!isAudioModeRef.current) {
+          const player = getActivePlayer()
+          if (player && isPlayerReadyRef.current && typeof player.loadVideoById === 'function') {
+            player.loadVideoById(id)
+          }
         }
       },
       seekTo: (seconds: number) => {
-        const player = getActivePlayer()
-        if (player && isPlayerReadyRef.current && typeof player.seekTo === 'function') {
-          player.seekTo(seconds, true)
+        if (isAudioModeRef.current && audioRef.current) {
+          audioRef.current.currentTime = seconds
+        } else {
+          const player = getActivePlayer()
+          if (player && isPlayerReadyRef.current && typeof player.seekTo === 'function') {
+            player.seekTo(seconds, true)
+          }
         }
       },
     }
@@ -243,6 +321,7 @@ export function PersistentYouTubePlayer() {
   }, [destroySlot, exposeMethods, setIsPlaying, setSlotVisibility, slotRefs])
 
   const preloadNext = useCallback((videoId?: string) => {
+    if (isAudioModeRef.current) return
     if (!videoId || !isApiReadyRef.current || videoId === currentVideoRef.current) return
     const standbySlot = activeSlotRef.current === 0 ? 1 : 0
     if (preloadedSlotRef.current === standbySlot && expectedVideoRef.current === videoId) return
@@ -252,6 +331,7 @@ export function PersistentYouTubePlayer() {
   }, [initPlayer])
 
   const startCrossfade = useCallback((videoId?: string) => {
+    if (isAudioModeRef.current) return
     if (!videoId || isCrossfadingRef.current || !isPlayingRef.current) return
     const nextSlot = preloadedSlotRef.current ?? (activeSlotRef.current === 0 ? 1 : 0)
     const currentSlot = activeSlotRef.current
@@ -312,7 +392,24 @@ export function PersistentYouTubePlayer() {
 
   // Switch video when currentSong changes
   useEffect(() => {
+    if (!currentSong) return
+
+    // Prefer audio_url over YouTube if available
+    if (currentSong.audio_url && currentSong.audio_url.trim() !== '') {
+      const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
+      if (songKey === lastPlayedKeyRef.current) return
+      lastPlayedKeyRef.current = songKey
+
+      stopAudio()
+      playAudioUrl(currentSong.audio_url)
+      exposeMethods()
+      return
+    }
+
+    // Fall back to YouTube player
     if (!currentSong?.youtube_id || !isApiReadyRef.current) return
+
+    stopAudio()
 
     const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
     
@@ -336,7 +433,7 @@ export function PersistentYouTubePlayer() {
         lastPlayedKeyRef.current = songKey
       }
     }
-  }, [currentSong?.youtube_id, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying])
+  }, [currentSong?.youtube_id, currentSong?.audio_url, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying, playAudioUrl, stopAudio])
 
   useEffect(() => {
     preloadNext(nextSong?.youtube_id)
@@ -357,6 +454,13 @@ export function PersistentYouTubePlayer() {
   // Track playback progress
   useEffect(() => {
     const interval = setInterval(() => {
+      if (isAudioModeRef.current) {
+        const { currentTime, duration } = audioPlaybackRef.current
+        setCurrentTime(currentTime)
+        setDuration(duration)
+        return
+      }
+
       const activePlayer = ytPlayerRefs.current[activeSlotRef.current]
       if (currentVideoRef.current && activePlayer && isPlayerReadyRef.current) {
         const time = typeof activePlayer.getCurrentTime === 'function' ? activePlayer.getCurrentTime() : 0
@@ -390,10 +494,11 @@ export function PersistentYouTubePlayer() {
   useEffect(() => {
     return () => {
       if (crossfadeTimerRef.current) window.clearInterval(crossfadeTimerRef.current)
+      stopAudio()
       destroySlot(0)
       destroySlot(1)
     }
-  }, [destroySlot])
+  }, [destroySlot, stopAudio])
 
   return (
     <div

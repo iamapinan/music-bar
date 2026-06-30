@@ -36,6 +36,7 @@ import {
   ArrowUpRight,
   X,
   ListMusic,
+  CheckCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -379,6 +380,17 @@ function SongRow({
         </p>
       </div>
 
+      {/* Audio URL indicator */}
+      {song.audio_url && (
+        <span
+          className="flex shrink-0 items-center gap-1 text-[10px] font-bold text-emerald-400"
+          title="มี audio_url สำหรับ native playback"
+        >
+          <CheckCircle className="h-3 w-3" />
+          <span className="hidden sm:inline">Audio</span>
+        </span>
+      )}
+
       {/* Duration */}
       {song.duration && (
         <span className="hidden text-[11px] font-medium text-muted-foreground tabular-nums sm:block">
@@ -491,6 +503,15 @@ function SongGridCard({
             <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
               <EqualizerBars />
               กำลังเล่น
+            </span>
+          </div>
+        )}
+        {/* Audio URL badge */}
+        {song.audio_url && !(isCurrentSong && isPlaying) && (
+          <div className="absolute bottom-1.5 right-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/70 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm">
+              <CheckCircle className="h-2.5 w-2.5" />
+              Audio
             </span>
           </div>
         )}
