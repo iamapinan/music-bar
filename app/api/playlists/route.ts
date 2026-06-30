@@ -12,8 +12,8 @@ export async function GET(request: Request) {
 
     const result = await cachedJson(cacheKey('playlists', ctx.tenant.id), 60, () => sql`
       SELECT p.*,
-        (SELECT COUNT(*) FROM playlist_songs WHERE playlist_id = p.id AND tenant_id = ${ctx.tenant.id}) as song_count,
-        (SELECT thumbnail FROM playlist_songs WHERE playlist_id = p.id AND tenant_id = ${ctx.tenant.id} ORDER BY position ASC, created_at ASC LIMIT 1) as cover_thumbnail
+        (SELECT COUNT(*) FROM playlist_songs ps JOIN songs s ON ps.song_id = s.id WHERE ps.playlist_id = p.id AND ps.tenant_id = ${ctx.tenant.id} AND s.is_available = true) as song_count,
+        (SELECT s.thumbnail FROM playlist_songs ps JOIN songs s ON ps.song_id = s.id WHERE ps.playlist_id = p.id AND ps.tenant_id = ${ctx.tenant.id} AND s.thumbnail IS NOT NULL AND s.is_available = true ORDER BY ps.position ASC, ps.created_at ASC LIMIT 1) as cover_thumbnail
       FROM playlists p
       WHERE p.tenant_id = ${ctx.tenant.id}
       ORDER BY p.is_default DESC, p.created_at DESC

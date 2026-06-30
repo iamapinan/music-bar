@@ -215,7 +215,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     >
       <aside
         className={cn(
-          "admin-command-rail sticky top-0 z-30 hidden h-[calc(100dvh-7rem)] shrink-0 flex-col border-r border-border/60 p-3 transition-[width] duration-300 xl:flex",
+          "admin-command-rail sticky top-0 z-30 hidden h-[100dvh] shrink-0 flex-col border-r border-border/60 p-3 transition-[width] duration-300 xl:flex",
           isSidebarCollapsed ? "w-[76px]" : "w-[240px]",
         )}
       >
