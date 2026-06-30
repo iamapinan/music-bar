@@ -42,19 +42,28 @@ interface YTPlayer {
 
 export function PersistentYouTubePlayer() {
   const { 
-    isPlaying, currentSong, handleSongEnd, setIsPlaying, playerRef, volume, 
+    isPlaying, currentSong, nextSong, handleSongEnd, setIsPlaying, playerRef, volume, 
     isVideoMode, setCurrentTime, setDuration, isFullscreen,
     playMode, currentIndex
   } = usePlayer()
+  const CROSSFADE_SECONDS = 5
 
   const isPlayingRef = useRef(isPlaying)
   useEffect(() => { isPlayingRef.current = isPlaying }, [isPlaying])
 
-  const ytPlayerRef = useRef<YTPlayer | null>(null)
+  const ytPlayerRefs = useRef<[YTPlayer | null, YTPlayer | null]>([null, null])
+  const activeSlotRef = useRef<0 | 1>(0)
+  const preloadedSlotRef = useRef<0 | 1 | null>(null)
+  const crossfadeTimerRef = useRef<number | null>(null)
+  const isCrossfadingRef = useRef(false)
+  const expectedVideoRef = useRef('')
   const isApiReadyRef = useRef(false)
   const isPlayerReadyRef = useRef(false)
   const currentVideoRef = useRef<string>('')
   const containerRef = useRef<HTMLDivElement>(null)
+  const slot0Ref = useRef<HTMLDivElement>(null)
+  const slot1Ref = useRef<HTMLDivElement>(null)
+  const slotRefs = [slot0Ref, slot1Ref] as const
   const lastPlayedKeyRef = useRef<string>('')
   const [videoRect, setVideoRect] = useState<DOMRect | null>(null)
 
@@ -88,58 +97,86 @@ export function PersistentYouTubePlayer() {
 
   // Expose methods to context
   const exposeMethods = useCallback(() => {
+    const getActivePlayer = () => ytPlayerRefs.current[activeSlotRef.current]
     const methods: YouTubePlayerMethods = {
       play: () => {
-        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
-          ytPlayerRef.current.playVideo()
+        const player = getActivePlayer()
+        if (player && isPlayerReadyRef.current && typeof player.playVideo === 'function') {
+          player.playVideo()
         }
       },
       pause: () => {
-        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
-          ytPlayerRef.current.pauseVideo()
+        ytPlayerRefs.current.forEach((player) => {
+          if (player && typeof player.pauseVideo === 'function') player.pauseVideo()
+        })
+        if (crossfadeTimerRef.current) {
+          window.clearInterval(crossfadeTimerRef.current)
+          crossfadeTimerRef.current = null
+          isCrossfadingRef.current = false
         }
       },
       setVolume: (v: number) => {
-        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.setVolume === 'function') {
-          ytPlayerRef.current.setVolume(v)
+        const player = getActivePlayer()
+        if (player && isPlayerReadyRef.current && typeof player.setVolume === 'function') {
+          player.setVolume(v)
         }
       },
       loadVideo: (id: string) => {
-        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.loadVideoById === 'function') {
-          ytPlayerRef.current.loadVideoById(id)
+        const player = getActivePlayer()
+        if (player && isPlayerReadyRef.current && typeof player.loadVideoById === 'function') {
+          player.loadVideoById(id)
         }
       },
       seekTo: (seconds: number) => {
-        if (ytPlayerRef.current && isPlayerReadyRef.current && typeof ytPlayerRef.current.seekTo === 'function') {
-          ytPlayerRef.current.seekTo(seconds, true)
+        const player = getActivePlayer()
+        if (player && isPlayerReadyRef.current && typeof player.seekTo === 'function') {
+          player.seekTo(seconds, true)
         }
       },
     }
     playerRef.current = methods
   }, [playerRef])
 
-  const initPlayer = useCallback((videoId: string) => {
+  const setSlotVisibility = useCallback((slot: 0 | 1) => {
+    slotRefs.forEach((ref, index) => {
+      if (!ref.current) return
+      const isActive = index === slot
+      ref.current.style.opacity = isActive ? '1' : '0'
+      ref.current.style.pointerEvents = isActive && isVideoMode ? 'auto' : 'none'
+      ref.current.style.zIndex = isActive ? '2' : '1'
+    })
+  }, [isVideoMode, slotRefs])
+
+  const destroySlot = useCallback((slot: 0 | 1) => {
+    const player = ytPlayerRefs.current[slot]
+    if (player) {
+      try { player.destroy() } catch {}
+      ytPlayerRefs.current[slot] = null
+    }
+    if (slotRefs[slot].current) {
+      slotRefs[slot].current.innerHTML = ''
+    }
+  }, [slotRefs])
+
+  const initPlayer = useCallback((videoId: string, slot: 0 | 1 = activeSlotRef.current) => {
     if (!isApiReadyRef.current || !videoId) return
 
-    if (ytPlayerRef.current) {
-      isPlayerReadyRef.current = false
-      ytPlayerRef.current.destroy()
-      ytPlayerRef.current = null
-    }
+    destroySlot(slot)
+    isPlayerReadyRef.current = false
 
-    if (containerRef.current) {
+    if (slotRefs[slot].current) {
       const div = document.createElement('div')
-      div.id = 'yt-persistent-player'
-      containerRef.current.innerHTML = ''
-      containerRef.current.appendChild(div)
+      div.id = `yt-persistent-player-${slot}`
+      slotRefs[slot].current.innerHTML = ''
+      slotRefs[slot].current.appendChild(div)
     }
 
-    ytPlayerRef.current = new window.YT.Player('yt-persistent-player', {
+    ytPlayerRefs.current[slot] = new window.YT.Player(`yt-persistent-player-${slot}`, {
       width: '100%',
       height: '100%',
       videoId,
       playerVars: {
-        autoplay: 1,
+        autoplay: slot === activeSlotRef.current ? 1 : 0,
         controls: 0,
         modestbranding: 1,
         rel: 0,
@@ -153,16 +190,17 @@ export function PersistentYouTubePlayer() {
         onReady: (event) => {
           isPlayerReadyRef.current = true
           if (typeof event.target.setVolume === 'function') {
-            event.target.setVolume(volumeRef.current)
+            event.target.setVolume(slot === activeSlotRef.current ? volumeRef.current : 0)
           }
-          if (typeof event.target.playVideo === 'function') {
+          if (slot === activeSlotRef.current && typeof event.target.playVideo === 'function') {
             event.target.playVideo()
           }
-          setIsPlaying(true)
+          if (slot === activeSlotRef.current) setIsPlaying(true)
           exposeMethods()
         },
         onStateChange: (event) => {
           const state = window.YT.PlayerState
+          if (slot !== activeSlotRef.current) return
           if (event.data === state.ENDED) {
             handleSongEndRef.current()
           } else if (event.data === state.PLAYING) {
@@ -172,10 +210,12 @@ export function PersistentYouTubePlayer() {
             if (document.visibilityState === 'hidden' && isPlayingRef.current) {
               // Automatically paused by browser in background, but the app intends to keep playing.
               // Attempt to resume playback after a short delay.
-              if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function') {
+              const activePlayer = ytPlayerRefs.current[activeSlotRef.current]
+              if (activePlayer && typeof activePlayer.playVideo === 'function') {
                 setTimeout(() => {
-                  if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === 'function' && isPlayingRef.current) {
-                    ytPlayerRef.current.playVideo()
+                  const latestActivePlayer = ytPlayerRefs.current[activeSlotRef.current]
+                  if (latestActivePlayer && typeof latestActivePlayer.playVideo === 'function' && isPlayingRef.current) {
+                    latestActivePlayer.playVideo()
                   }
                 }, 200)
               }
@@ -195,8 +235,59 @@ export function PersistentYouTubePlayer() {
         },
       },
     })
-    currentVideoRef.current = videoId
-  }, [setIsPlaying, exposeMethods])
+    if (slot === activeSlotRef.current) {
+      currentVideoRef.current = videoId
+      expectedVideoRef.current = videoId
+      setSlotVisibility(slot)
+    }
+  }, [destroySlot, exposeMethods, setIsPlaying, setSlotVisibility, slotRefs])
+
+  const preloadNext = useCallback((videoId?: string) => {
+    if (!videoId || !isApiReadyRef.current || videoId === currentVideoRef.current) return
+    const standbySlot = activeSlotRef.current === 0 ? 1 : 0
+    if (preloadedSlotRef.current === standbySlot && expectedVideoRef.current === videoId) return
+    preloadedSlotRef.current = standbySlot
+    expectedVideoRef.current = videoId
+    initPlayer(videoId, standbySlot)
+  }, [initPlayer])
+
+  const startCrossfade = useCallback((videoId?: string) => {
+    if (!videoId || isCrossfadingRef.current || !isPlayingRef.current) return
+    const nextSlot = preloadedSlotRef.current ?? (activeSlotRef.current === 0 ? 1 : 0)
+    const currentSlot = activeSlotRef.current
+    const currentPlayer = ytPlayerRefs.current[currentSlot]
+    let nextPlayer = ytPlayerRefs.current[nextSlot]
+
+    if (!nextPlayer || expectedVideoRef.current !== videoId) {
+      initPlayer(videoId, nextSlot)
+      nextPlayer = ytPlayerRefs.current[nextSlot]
+    }
+    if (!currentPlayer || !nextPlayer) return
+
+    isCrossfadingRef.current = true
+    nextPlayer.setVolume(0)
+    nextPlayer.playVideo()
+
+    const startedAt = Date.now()
+    crossfadeTimerRef.current = window.setInterval(() => {
+      const progress = Math.min(1, (Date.now() - startedAt) / (CROSSFADE_SECONDS * 1000))
+      const targetVolume = volumeRef.current
+      currentPlayer.setVolume(Math.round(targetVolume * (1 - progress)))
+      nextPlayer?.setVolume(Math.round(targetVolume * progress))
+
+      if (progress >= 1) {
+        if (crossfadeTimerRef.current) window.clearInterval(crossfadeTimerRef.current)
+        crossfadeTimerRef.current = null
+        try { currentPlayer.stopVideo() } catch {}
+        activeSlotRef.current = nextSlot
+        preloadedSlotRef.current = null
+        currentVideoRef.current = videoId
+        isCrossfadingRef.current = false
+        setSlotVisibility(nextSlot)
+        handleSongEndRef.current()
+      }
+    }, 120)
+  }, [initPlayer, setSlotVisibility])
 
   // Load YouTube IFrame API once
   useEffect(() => {
@@ -226,13 +317,16 @@ export function PersistentYouTubePlayer() {
     const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
     
     if (songKey !== lastPlayedKeyRef.current) {
-      if (ytPlayerRef.current && isPlayerReadyRef.current) {
-        if (typeof ytPlayerRef.current.setVolume === 'function') {
-          ytPlayerRef.current.setVolume(volumeRef.current)
-        }
-        if (typeof ytPlayerRef.current.loadVideoById === 'function') {
-          ytPlayerRef.current.loadVideoById(currentSong.youtube_id)
-        }
+      const activePlayer = ytPlayerRefs.current[activeSlotRef.current]
+      if (currentVideoRef.current === currentSong.youtube_id && activePlayer) {
+        activePlayer.setVolume(volumeRef.current)
+        activePlayer.playVideo()
+        setIsPlaying(true)
+        lastPlayedKeyRef.current = songKey
+        exposeMethods()
+      } else if (activePlayer && isPlayerReadyRef.current) {
+        activePlayer.setVolume(volumeRef.current)
+        activePlayer.loadVideoById(currentSong.youtube_id)
         setIsPlaying(true)
         lastPlayedKeyRef.current = songKey
         currentVideoRef.current = currentSong.youtube_id
@@ -244,18 +338,42 @@ export function PersistentYouTubePlayer() {
     }
   }, [currentSong?.youtube_id, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying])
 
+  useEffect(() => {
+    preloadNext(nextSong?.youtube_id)
+  }, [nextSong?.youtube_id, preloadNext])
+
+  useEffect(() => {
+    ;(window as any).MusicBarNativePlayer = {
+      preloadNext: () => preloadNext(nextSong?.youtube_id),
+      startCrossfade: () => startCrossfade(nextSong?.youtube_id),
+    }
+    return () => {
+      if ((window as any).MusicBarNativePlayer) {
+        delete (window as any).MusicBarNativePlayer
+      }
+    }
+  }, [nextSong?.youtube_id, preloadNext, startCrossfade])
+
   // Track playback progress
   useEffect(() => {
     const interval = setInterval(() => {
-      if (currentVideoRef.current && ytPlayerRef.current && isPlayerReadyRef.current) {
-        const time = typeof ytPlayerRef.current.getCurrentTime === 'function' ? ytPlayerRef.current.getCurrentTime() : 0
-        const dur = typeof ytPlayerRef.current.getDuration === 'function' ? ytPlayerRef.current.getDuration() : 0
+      const activePlayer = ytPlayerRefs.current[activeSlotRef.current]
+      if (currentVideoRef.current && activePlayer && isPlayerReadyRef.current) {
+        const time = typeof activePlayer.getCurrentTime === 'function' ? activePlayer.getCurrentTime() : 0
+        const dur = typeof activePlayer.getDuration === 'function' ? activePlayer.getDuration() : 0
         setCurrentTime(time)
         setDuration(dur)
 
+        if (nextSong?.youtube_id) {
+          preloadNext(nextSong.youtube_id)
+          if (dur > CROSSFADE_SECONDS + 2 && dur - time <= CROSSFADE_SECONDS) {
+            startCrossfade(nextSong.youtube_id)
+          }
+        }
+
         // Safety sync: If React thinks it's playing but the actual player is not
-        if (typeof (ytPlayerRef.current as any).getPlayerState === 'function') {
-          const actualState = (ytPlayerRef.current as any).getPlayerState()
+        if (typeof (activePlayer as any).getPlayerState === 'function') {
+          const actualState = (activePlayer as any).getPlayerState()
           const state = window.YT?.PlayerState
           if (state) {
             const isActualPlaying = actualState === state.PLAYING || actualState === state.BUFFERING
@@ -267,7 +385,15 @@ export function PersistentYouTubePlayer() {
       }
     }, 1000)
     return () => clearInterval(interval)
-  }, [setCurrentTime, setDuration, setIsPlaying])
+  }, [nextSong?.youtube_id, preloadNext, setCurrentTime, setDuration, setIsPlaying, startCrossfade])
+
+  useEffect(() => {
+    return () => {
+      if (crossfadeTimerRef.current) window.clearInterval(crossfadeTimerRef.current)
+      destroySlot(0)
+      destroySlot(1)
+    }
+  }, [destroySlot])
 
   return (
     <div
@@ -298,8 +424,9 @@ export function PersistentYouTubePlayer() {
             }
       }
     >
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-        <div id="yt-persistent-player" style={{ width: '100%', height: '100%' }} />
+      <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
+        <div ref={slotRefs[0]} style={{ position: 'absolute', inset: 0, opacity: 1 }} />
+        <div ref={slotRefs[1]} style={{ position: 'absolute', inset: 0, opacity: 0 }} />
       </div>
     </div>
   )

@@ -699,6 +699,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const dur = Math.floor(duration)
       
       try {
+        const nativeQueue = [currentSong, nextSong].filter(Boolean).map((song) => ({
+          youtube_id: song?.youtube_id,
+          title: song?.title || '',
+          thumbnail: song?.thumbnail || '',
+          artist: song && 'requested_by' in song
+            ? song.requested_by || 'ลูกค้า'
+            : song && 'artist' in song
+              ? song.artist || 'Music Bar'
+              : 'Music Bar',
+        }))
+        if (typeof (window as any).AndroidBridge.configureNativePlayback === 'function') {
+          (window as any).AndroidBridge.configureNativePlayback(JSON.stringify(nativeQueue), 5000)
+        }
         (window as any).AndroidBridge.updatePlaybackState(
           isPlaying,
           title,
@@ -711,7 +724,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         console.error('Failed to update Android playback state', err)
       }
     }
-  }, [currentSong, isPlaying, currentTime, duration])
+  }, [currentSong, nextSong, isPlaying, currentTime, duration])
 
   // Handle Android Native media actions
   useEffect(() => {
@@ -732,6 +745,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             break
           case 'previous':
             handlePrevious()
+            break
+          case 'preload-next':
+            ;(window as any).MusicBarNativePlayer?.preloadNext?.()
+            break
+          case 'crossfade':
+            ;(window as any).MusicBarNativePlayer?.startCrossfade?.()
             break
         }
       }

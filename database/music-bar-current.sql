@@ -94,6 +94,7 @@ CREATE TABLE public.playlist_songs (
     thumbnail character varying(500),
     duration character varying(20),
     artist character varying(255),
+    audio_url text,
     "position" integer DEFAULT 0,
     created_at timestamp without time zone DEFAULT now()
 );
@@ -164,6 +165,7 @@ CREATE TABLE public.song_requests (
     title character varying(500) NOT NULL,
     thumbnail character varying(500),
     duration character varying(20),
+    audio_url text,
     requested_by character varying(100),
     status character varying(20) DEFAULT 'pending'::character varying,
     played_at timestamp without time zone,
@@ -2063,4 +2065,3 @@ ALTER TABLE ONLY public.playlist_songs
 --
 -- PostgreSQL database dump complete
 --
-

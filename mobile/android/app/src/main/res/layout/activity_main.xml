@@ -1,20 +1,321 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_bg">
+    android:background="@drawable/bg_app">
 
-    <ai.gracer.musicbar.BackgroundWebView
-        android:id="@+id/webView"
+    <!-- ==================== Station Select ==================== -->
+    <ScrollView
+        android:id="@+id/stationSelectView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingTop="32dp"
+        android:paddingBottom="24dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <LinearLayout
+            android:id="@+id/stationContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp">
+
+            <!-- Logo / Brand mark -->
+            <View
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_control_primary"
+                android:alpha="0.9" />
+
+            <TextView
+                android:id="@+id/stationSelectTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="Music Bar"
+                android:textColor="@color/white"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.06" />
+
+            <TextView
+                android:id="@+id/stationSelectSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:text="เลือกสถานีเพื่อเปิดฟังเพลง"
+                android:textColor="@color/slate_300"
+                android:textSize="14sp"
+                android:letterSpacing="0.03" />
+
+            <!-- Premium divider -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <View
+                    android:layout_width="24dp"
+                    android:layout_height="1dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="#33406F" />
+
+                <View
+                    android:layout_width="6dp"
+                    android:layout_height="6dp"
+                    android:background="@drawable/bg_chip" />
+
+                <View
+                    android:layout_width="24dp"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="8dp"
+                    android:background="#33406F" />
+            </LinearLayout>
+
+            <!-- Station list -->
+            <LinearLayout
+                android:id="@+id/stationList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ==================== Player ==================== -->
+    <ScrollView
+        android:id="@+id/playerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingTop="24dp"
+        android:paddingBottom="24dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/playerContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp">
+
+            <!-- Back / Station label row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/stationLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Music Bar"
+                    android:textColor="#B8C0FF"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.1" />
+
+                <TextView
+                    android:id="@+id/statusLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:text="Native Music Player"
+                    android:textColor="#6B7296"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- Spacer -->
+            <View android:layout_width="match_parent" android:layout_height="12dp" />
+
+            <!-- Artwork with glow -->
+            <FrameLayout
+                android:id="@+id/artworkFrame"
+                android:layout_width="280dp"
+                android:layout_height="280dp"
+                android:gravity="center"
+                android:background="@drawable/bg_artwork"
+                android:elevation="16dp"
+                android:outlineProvider="bounds"
+                android:padding="6dp">
+
+                <ImageView
+                    android:id="@+id/artworkView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#101429"
+                    android:contentDescription="Album artwork"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_music_note" />
+            </FrameLayout>
+
+            <!-- Song info -->
+            <TextView
+                android:id="@+id/songTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:maxLines="2"
+                android:text="เลือกสถานี"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.02" />
+
+            <TextView
+                android:id="@+id/songArtist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="Music Bar"
+                android:textColor="@color/slate_300"
+                android:textSize="14sp" />
+
+            <!-- Spacer -->
+            <View android:layout_width="match_parent" android:layout_height="8dp" />
+
+            <!-- Progress -->
+            <ProgressBar
+                android:id="@+id/playbackProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:max="1000"
+                android:progress="0"
+                android:progressDrawable="@drawable/progress_musicbar" />
+
+            <!-- Time labels -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/currentTimeLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="0:00"
+                    android:textColor="#6B7296"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/durationLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:text="0:00"
+                    android:textColor="#6B7296"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- Spacer -->
+            <View android:layout_width="match_parent" android:layout_height="8dp" />
+
+            <!-- Controls -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/previousButton"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_control_secondary"
+                    android:contentDescription="Previous"
+                    android:padding="14dp"
+                    android:scaleType="center"
+                    android:src="@drawable/ic_skip_previous" />
+
+                <ImageButton
+                    android:id="@+id/playPauseButton"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:background="@drawable/bg_control_primary"
+                    android:contentDescription="Play"
+                    android:padding="20dp"
+                    android:scaleType="center"
+                    android:src="@drawable/ic_play"
+                    android:elevation="10dp"
+                    android:outlineProvider="bounds" />
+
+                <ImageButton
+                    android:id="@+id/nextButton"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_control_secondary"
+                    android:contentDescription="Next"
+                    android:padding="14dp"
+                    android:scaleType="center"
+                    android:src="@drawable/ic_skip_next" />
+            </LinearLayout>
+
+            <!-- Crossfade chip -->
+            <TextView
+                android:id="@+id/crossfadeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:background="@drawable/bg_chip"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="7dp"
+                android:text="Crossfade 5s"
+                android:textColor="#D7D5FF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+
+            <!-- Queue section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/queueTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Next Up"
+                    android:textColor="@color/white"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.04" />
+
+                <LinearLayout
+                    android:id="@+id/queueList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

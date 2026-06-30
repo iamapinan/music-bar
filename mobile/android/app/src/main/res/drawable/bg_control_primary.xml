@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Primary control button with premium gradient -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="135"
+        android:endColor="#5A4CE8"
+        android:startColor="#7C6DFF" />
+    <corners android:radius="42dp" />
+</shape>

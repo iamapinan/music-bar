@@ -8,4 +8,14 @@
     <color name="musicbar_indigo">#FF1E3A8A</color>
     <color name="musicbar_pink">#FFFF5DB8</color>
     <color name="cloud_white">#FFF8FAFF</color>
+    <color name="slate_300">#FFAAB0D8</color>
+
+    <!-- Premium additions -->
+    <color name="surface_card">#FF151A31</color>
+    <color name="surface_card_border">#FF252C52</color>
+    <color name="glow_violet">#336A5CFF</color>
+    <color name="glow_blue">#333D7BFF</color>
+    <color name="text_muted">#FF6B7296</color>
+    <color name="progress_track">#FF252B47</color>
+    <color name="progress_fill">#FF7C6DFF</color>
 </resources>

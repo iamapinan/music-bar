@@ -20,7 +20,6 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.os.Handler
 import android.os.Looper
-import android.webkit.WebView
 import java.lang.ref.WeakReference
 import java.net.URL
 
@@ -29,11 +28,13 @@ class BackgroundAudioService : Service() {
     private val binder = LocalBinder()
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
-    private var webViewRef: WeakReference<WebView>? = null
+    private var actionHandlerRef: WeakReference<NativeActionHandler>? = null
     private var mediaSession: MediaSession? = null
     private var lastBitmap: Bitmap? = null
     private var currentThumbnailUrl = ""
     private var userRequestedExit = false
+    private var crossfadeMs = 5000
+    private var nativeQueueJson = "[]"
 
     companion object {
         const val CHANNEL_ID = "MusicBarBackgroundChannel"
@@ -44,10 +45,15 @@ class BackgroundAudioService : Service() {
         const val ACTION_PAUSE = "ai.gracer.musicbar.ACTION_PAUSE"
         const val ACTION_NEXT = "ai.gracer.musicbar.ACTION_NEXT"
         const val ACTION_PREV = "ai.gracer.musicbar.ACTION_PREV"
+        const val ACTION_CROSSFADE = "ai.gracer.musicbar.ACTION_CROSSFADE"
     }
 
     inner class LocalBinder : Binder() {
         fun getService(): BackgroundAudioService = this@BackgroundAudioService
+    }
+
+    interface NativeActionHandler {
+        fun onNativeMediaAction(action: String)
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -57,7 +63,6 @@ class BackgroundAudioService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        acquireLocks()
         setupMediaSession()
         startForegroundService()
     }
@@ -67,34 +72,31 @@ class BackgroundAudioService : Service() {
             isActive = true
             setCallback(object : MediaSession.Callback() {
                 override fun onPlay() {
-                    triggerWebAction("play")
+                    triggerNativeAction("play")
                 }
 
                 override fun onPause() {
-                    triggerWebAction("pause")
+                    triggerNativeAction("pause")
                 }
 
                 override fun onSkipToNext() {
-                    triggerWebAction("next")
+                    triggerNativeAction("next")
                 }
 
                 override fun onSkipToPrevious() {
-                    triggerWebAction("previous")
+                    triggerNativeAction("previous")
                 }
             })
         }
     }
 
-    fun setWebView(webView: WebView) {
-        webViewRef = WeakReference(webView)
+    fun setNativeActionHandler(handler: NativeActionHandler) {
+        actionHandlerRef = WeakReference(handler)
     }
 
-    private fun triggerWebAction(action: String) {
-        val webView = webViewRef?.get()
-        if (webView != null) {
-            webView.post {
-                webView.evaluateJavascript("window.handleAndroidMediaAction('$action')", null)
-            }
+    private fun triggerNativeAction(action: String) {
+        Handler(Looper.getMainLooper()).post {
+            actionHandlerRef?.get()?.onNativeMediaAction(action)
         }
     }
 
@@ -106,16 +108,19 @@ class BackgroundAudioService : Service() {
                 return START_NOT_STICKY
             }
             ACTION_PLAY -> {
-                triggerWebAction("play")
+                triggerNativeAction("play")
             }
             ACTION_PAUSE -> {
-                triggerWebAction("pause")
+                triggerNativeAction("pause")
             }
             ACTION_NEXT -> {
-                triggerWebAction("next")
+                triggerNativeAction("next")
             }
             ACTION_PREV -> {
-                triggerWebAction("previous")
+                triggerNativeAction("previous")
+            }
+            ACTION_CROSSFADE -> {
+                triggerNativeAction("crossfade")
             }
         }
 
@@ -136,6 +141,19 @@ class BackgroundAudioService : Service() {
         
         mediaSession?.setPlaybackState(playbackState)
         updateMetadataAndNotification(title, artist, thumbnailUrl, duration, isPlaying)
+    }
+
+    fun configureNativePlayback(queueJson: String, crossfadeDurationMs: Int) {
+        nativeQueueJson = queueJson
+        crossfadeMs = crossfadeDurationMs.coerceIn(0, 15000)
+    }
+
+    fun preloadNext() {
+        triggerNativeAction("preload-next")
+    }
+
+    fun startCrossfade() {
+        triggerNativeAction("crossfade")
     }
 
     private fun updateMetadataAndNotification(title: String, artist: String, thumbnailUrl: String, duration: Long, isPlaying: Boolean) {
@@ -363,6 +381,41 @@ class BackgroundAudioService : Service() {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
+    }
+
+    fun acquirePlaybackLocks() {
+        if (wakeLock == null) {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MusicBar::BackgroundWakeLock").apply {
+                setReferenceCounted(false)
+                acquire(30 * 60 * 1000L) // max 30 min
+            }
+        } else if (wakeLock?.isHeld == false) {
+            wakeLock?.acquire(30 * 60 * 1000L)
+        }
+
+        if (wifiLock == null) {
+            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "MusicBar::BackgroundWifiLock").apply {
+                setReferenceCounted(false)
+                acquire()
+            }
+        } else if (wifiLock?.isHeld == false) {
+            wifiLock?.acquire()
+        }
+    }
+
+    fun releasePlaybackLocks() {
+        try {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+            }
+        } catch (_: Exception) {}
+        try {
+            if (wifiLock?.isHeld == true) {
+                wifiLock?.release()
+            }
+        } catch (_: Exception) {}
     }
 
     private fun acquireLocks() {
