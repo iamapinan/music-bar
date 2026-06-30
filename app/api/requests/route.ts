@@ -188,12 +188,12 @@ export async function PATCH(request: Request) {
       cacheKey('requests', ctx.tenant.id, 'device', result[0].device_id),
     ])
 
-    // Fetch full request with song fields
+    // Fetch full request with song fields (PATCH response)
     const fullRequest = await sql`
       SELECT
         sr.id, sr.tenant_id, sr.song_id, sr.requested_by, sr.device_id,
         sr.status, sr.played_at, sr.created_at,
-        s.youtube_id, s.title, s.thumbnail, s.duration, s.audio_url
+        s.youtube_id, s.title, s.thumbnail, s.duration
       FROM song_requests sr
       JOIN songs s ON sr.song_id = s.id
       WHERE sr.id = ${result[0].id}

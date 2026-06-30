@@ -1,6 +1,11 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto'
 
 const STREAM_SECRET = process.env.STREAM_SIGNING_SECRET || 'music-bar-stream-secret-local'
+
+if (!process.env.STREAM_SIGNING_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('STREAM_SIGNING_SECRET environment variable must be set in production')
+}
+
 const TOKEN_TTL_MS = 5 * 60 * 1000 // 5 minutes
 const HMAC_ALGORITHM = 'sha256'
 const BASE64_ENCODING = 'base64url'

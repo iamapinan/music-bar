@@ -64,7 +64,7 @@ export async function GET(request: Request) {
 
     const response = await fetch(audioUrl.trim(), { headers })
 
-    if (!response.ok && response.status !== 206) {
+    if (!response.ok) {
       console.error(`Audio stream proxy failed: ${response.status} for song ${songId}`)
       return new Response('Failed to fetch audio from upstream', {
         status: 502,
