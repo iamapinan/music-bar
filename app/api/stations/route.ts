@@ -16,13 +16,15 @@ export async function GET(request: Request) {
         COUNT(DISTINCT p.id) as playlist_count,
         COUNT(DISTINCT ps.id) as song_count,
         (
-          SELECT ps2.thumbnail
+          SELECT s.thumbnail
           FROM playlist_songs ps2
+          JOIN songs s ON ps2.song_id = s.id
           JOIN playlists p2 ON p2.id = ps2.playlist_id
           WHERE p2.tenant_id = t.id
             AND ps2.tenant_id = t.id
             AND p2.is_enabled = true
-            AND ps2.thumbnail IS NOT NULL
+            AND s.is_available = true
+            AND s.thumbnail IS NOT NULL
           ORDER BY p2.is_default DESC, ps2.position ASC, ps2.created_at ASC
           LIMIT 1
         ) as cover_thumbnail

@@ -72,7 +72,9 @@ export async function GET(request: Request) {
         title: item.snippet.title,
         thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || '',
         channelTitle: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle || 'Unknown Artist'
-      })).filter((item: any) => item.youtube_id !== 'deleted') || []
+      })).filter((item: any) =>
+        item.youtube_id && item.youtube_id !== 'deleted' && item.youtube_id.trim().length > 0
+      ) || []
       
       return { items: formattedItems }
     })

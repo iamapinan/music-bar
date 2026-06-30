@@ -17,13 +17,18 @@ export async function GET(request: Request) {
 
     if (deviceId) {
       const result = await cachedJson(cacheKey('requests', ctx.tenant.id, 'device', deviceId), 5, () => sql`
-        SELECT *,
-          ROW_NUMBER() OVER (ORDER BY created_at ASC) as queue_position
-        FROM song_requests
-        WHERE tenant_id = ${ctx.tenant.id}
-          AND status = 'pending'
-          AND device_id = ${deviceId}
-        ORDER BY created_at ASC
+        SELECT
+          sr.id, sr.tenant_id, sr.song_id, sr.requested_by, sr.device_id,
+          sr.status, sr.played_at, sr.created_at,
+          ROW_NUMBER() OVER (ORDER BY sr.created_at ASC) as queue_position,
+          s.youtube_id, s.title, s.thumbnail, s.duration, s.audio_url
+        FROM song_requests sr
+        JOIN songs s ON sr.song_id = s.id
+        WHERE sr.tenant_id = ${ctx.tenant.id}
+          AND sr.status = 'pending'
+          AND sr.device_id = ${deviceId}
+          AND s.is_available = true
+        ORDER BY sr.created_at ASC
       `)
       const formatted = (result.data as any[]).map(req => ({
         ...req,
@@ -33,10 +38,16 @@ export async function GET(request: Request) {
     }
 
     const result = await cachedJson(cacheKey('requests', ctx.tenant.id, 'pending'), 5, () => sql`
-      SELECT * FROM song_requests
-      WHERE tenant_id = ${ctx.tenant.id}
-        AND status = 'pending'
-      ORDER BY created_at ASC
+      SELECT
+        sr.id, sr.tenant_id, sr.song_id, sr.requested_by, sr.device_id,
+        sr.status, sr.played_at, sr.created_at,
+        s.youtube_id, s.title, s.thumbnail, s.duration, s.audio_url
+      FROM song_requests sr
+      JOIN songs s ON sr.song_id = s.id
+      WHERE sr.tenant_id = ${ctx.tenant.id}
+        AND sr.status = 'pending'
+        AND s.is_available = true
+      ORDER BY sr.created_at ASC
     `)
     const formatted = (result.data as any[]).map(req => ({
       ...req,
@@ -64,28 +75,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'ขณะนี้ปิดรับขอเพลง' }, { status: 403 })
     }
 
-    const { youtube_id, title, thumbnail, duration, requested_by, device_id } = await request.json()
+    const { youtube_id, title, thumbnail, duration, audio_url, requested_by, device_id } = await request.json()
     const youtubeId = typeof youtube_id === 'string' ? youtube_id.trim() : ''
     const songTitle = typeof title === 'string' ? title.trim() : ''
+    const audioUrl = typeof audio_url === 'string' ? audio_url.trim() : ''
 
     if (!youtubeId || !songTitle) {
       return NextResponse.json({ error: 'ข้อมูลเพลงไม่ครบ กรุณาค้นหาและเลือกเพลงใหม่อีกครั้ง' }, { status: 400 })
     }
 
+    // Check for duplicate pending request — query through songs table
     const existing = await sql`
-      SELECT * FROM song_requests
-      WHERE tenant_id = ${ctx.tenant.id}
-        AND youtube_id = ${youtubeId}
-        AND status = 'pending'
+      SELECT sr.id FROM song_requests sr
+      JOIN songs s ON sr.song_id = s.id
+      WHERE sr.tenant_id = ${ctx.tenant.id}
+        AND s.youtube_id = ${youtubeId}
+        AND sr.status = 'pending'
     `
 
     if (existing.length > 0) {
       return NextResponse.json({ error: 'เพลงนี้อยู่ในคิวแล้ว' }, { status: 400 })
     }
 
+    // Upsert into songs table first
+    const songResult = await sql`
+      INSERT INTO songs (youtube_id, title, thumbnail, duration, artist, audio_url)
+      VALUES (${youtubeId}, ${songTitle}, ${thumbnail || null}, ${duration || null}, NULL, ${audioUrl || null})
+      ON CONFLICT (youtube_id) DO UPDATE SET
+        title = EXCLUDED.title,
+        thumbnail = COALESCE(EXCLUDED.thumbnail, songs.thumbnail),
+        duration = COALESCE(EXCLUDED.duration, songs.duration),
+        audio_url = COALESCE(EXCLUDED.audio_url, songs.audio_url),
+        updated_at = NOW()
+      RETURNING id
+    `
+    const songId = songResult[0].id
+
     const result = await sql`
-      INSERT INTO song_requests (tenant_id, youtube_id, title, thumbnail, duration, requested_by, device_id, status)
-      VALUES (${ctx.tenant.id}, ${youtubeId}, ${songTitle}, ${thumbnail || null}, ${duration || null}, ${requested_by || 'ลูกค้า'}, ${device_id || null}, 'pending')
+      INSERT INTO song_requests (tenant_id, song_id, requested_by, device_id, status)
+      VALUES (${ctx.tenant.id}, ${songId}, ${requested_by || 'ลูกค้า'}, ${device_id || null}, 'pending')
       RETURNING *
     `
     await invalidateCache([
@@ -93,8 +121,19 @@ export async function POST(request: Request) {
       cacheKey('requests', ctx.tenant.id, 'device', device_id),
     ])
 
+    // Fetch the full request with joined song metadata
+    const fullRequest = await sql`
+      SELECT
+        sr.id, sr.tenant_id, sr.song_id, sr.requested_by, sr.device_id,
+        sr.status, sr.played_at, sr.created_at,
+        s.youtube_id, s.title, s.thumbnail, s.duration, s.audio_url
+      FROM song_requests sr
+      JOIN songs s ON sr.song_id = s.id
+      WHERE sr.id = ${result[0].id}
+    `
+
     const { origin } = new URL(request.url)
-    const reqObj = result[0]
+    const reqObj = fullRequest[0]
     if (reqObj && reqObj.thumbnail) {
       reqObj.thumbnail = getProxiedUrl(reqObj.thumbnail, origin)
     }
@@ -137,7 +176,18 @@ export async function PATCH(request: Request) {
       cacheKey('requests', ctx.tenant.id, 'device', result[0].device_id),
     ])
 
-    return NextResponse.json(result[0])
+    // Fetch full request with song fields
+    const fullRequest = await sql`
+      SELECT
+        sr.id, sr.tenant_id, sr.song_id, sr.requested_by, sr.device_id,
+        sr.status, sr.played_at, sr.created_at,
+        s.youtube_id, s.title, s.thumbnail, s.duration, s.audio_url
+      FROM song_requests sr
+      JOIN songs s ON sr.song_id = s.id
+      WHERE sr.id = ${result[0].id}
+    `
+
+    return NextResponse.json(fullRequest[0])
   } catch (error) {
     console.error('Error updating request:', error)
     return NextResponse.json({ error: 'Failed to update request' }, { status: 500 })
@@ -150,11 +200,34 @@ export async function DELETE(request: Request) {
     if (isTenantError(ctx)) return ctx
 
     const { id } = await request.json()
+
+    // Get the song_id before deleting
+    const requestRow = await sql`
+      SELECT song_id FROM song_requests
+      WHERE id = ${id}
+        AND tenant_id = ${ctx.tenant.id}
+    `
+
+    if (requestRow.length === 0) {
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+    }
+
+    const songId = requestRow[0].song_id
+
     await sql`
       DELETE FROM song_requests
       WHERE id = ${id}
         AND tenant_id = ${ctx.tenant.id}
     `
+
+    // Clean up orphaned songs
+    await sql`
+      DELETE FROM songs
+      WHERE id = ${songId}
+        AND id NOT IN (SELECT song_id FROM playlist_songs)
+        AND id NOT IN (SELECT song_id FROM song_requests)
+    `
+
     await invalidateCache([
       cacheKey('requests', ctx.tenant.id, 'pending'),
     ])

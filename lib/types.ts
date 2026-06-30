@@ -11,26 +11,47 @@ export interface Playlist {
   updated_at: string
 }
 
-export interface PlaylistSong {
+// Song: deduplicated song metadata stored in the songs table
+export interface Song {
   id: number
-  tenant_id?: string
-  playlist_id: number
   youtube_id: string
   title: string
   thumbnail: string | null
   duration: string | null
   artist: string | null
-  position: number
+  audio_url: string | null
+  is_available: boolean
   created_at: string
+  updated_at: string
 }
 
-export interface SongRequest {
-  id: number
-  tenant_id?: string
+// Fields shared by PlaylistSong and SongRequest from a joined song
+// API routes JOIN songs and alias columns so the JSON shape stays the same
+// for backward compatibility. These fields are populated via the JOIN.
+export interface SongFields {
   youtube_id: string
   title: string
   thumbnail: string | null
   duration: string | null
+  artist: string | null
+  audio_url: string | null
+}
+
+export interface PlaylistSong extends SongFields {
+  id: number
+  tenant_id?: string
+  playlist_id: number
+  song_id: number
+  song?: Song
+  position: number
+  created_at: string
+}
+
+export interface SongRequest extends SongFields {
+  id: number
+  tenant_id?: string
+  song_id: number
+  song?: Song
   requested_by: string | null
   device_id: string | null
   status: 'pending' | 'playing' | 'played' | 'skipped'
