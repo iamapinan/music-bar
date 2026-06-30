@@ -3,6 +3,7 @@ import { cachedJson, cacheHeaders, cacheKey, invalidateCache } from '@/lib/cache
 import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 import { NextResponse } from 'next/server'
 import { getProxiedUrl } from '@/lib/images'
+import { buildStreamUrl } from '@/lib/audio-stream'
 
 export async function GET(request: Request) {
   const startedAt = Date.now()
@@ -32,7 +33,10 @@ export async function GET(request: Request) {
       `)
       const formatted = (result.data as any[]).map(req => ({
         ...req,
-        thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail
+        thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail,
+        audio_url: req.audio_url
+          ? buildStreamUrl(origin, req.song_id, ctx.tenant.id)
+          : null,
       }))
       return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
     }
@@ -51,7 +55,10 @@ export async function GET(request: Request) {
     `)
     const formatted = (result.data as any[]).map(req => ({
       ...req,
-      thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail
+      thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail,
+      audio_url: req.audio_url
+        ? buildStreamUrl(origin, req.song_id, ctx.tenant.id)
+        : null,
     }))
     return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
   } catch (error) {
@@ -134,8 +141,13 @@ export async function POST(request: Request) {
 
     const { origin } = new URL(request.url)
     const reqObj = fullRequest[0]
-    if (reqObj && reqObj.thumbnail) {
-      reqObj.thumbnail = getProxiedUrl(reqObj.thumbnail, origin)
+    if (reqObj) {
+      if (reqObj.thumbnail) {
+        reqObj.thumbnail = getProxiedUrl(reqObj.thumbnail, origin)
+      }
+      if (reqObj.audio_url) {
+        reqObj.audio_url = buildStreamUrl(origin, reqObj.song_id, ctx.tenant.id)
+      }
     }
 
     return NextResponse.json(reqObj)
