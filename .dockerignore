@@ -1,0 +1,47 @@
+# ── Dependencies ──
+node_modules
+.pnp
+.pnp.js
+
+# ── Build output ──
+.next
+out
+build
+dist
+
+# ── Environment ──
+.env
+.env.*
+!.env.example
+
+# ── Version control ──
+.git
+.gitignore
+.gitattributes
+
+# ── IDE & OS ──
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Mobile app (not needed in Docker) ──
+mobile
+*.apk
+*.aab
+
+# ── Database dumps & migrations ──
+database/music-bar-current.sql
+database/backups
+
+# ── Logs & debug ──
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Cache ──
+.cache
+*.tsbuildinfo

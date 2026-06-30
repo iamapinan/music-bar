@@ -37,6 +37,7 @@ import {
   X,
   ListMusic,
   CheckCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -381,13 +382,21 @@ function SongRow({
       </div>
 
       {/* Audio URL indicator */}
-      {song.audio_url && (
+      {song.audio_url ? (
         <span
           className="flex shrink-0 items-center gap-1 text-[10px] font-bold text-emerald-400"
           title="มี audio_url สำหรับ native playback"
         >
           <CheckCircle className="h-3 w-3" />
           <span className="hidden sm:inline">Audio</span>
+        </span>
+      ) : (
+        <span
+          className="flex shrink-0 items-center gap-1 text-[10px] font-bold text-amber-400"
+          title="ยังไม่มี audio_url — จะเล่นผ่าน YouTube"
+        >
+          <AlertTriangle className="h-3 w-3" />
+          <span className="hidden sm:inline">YT</span>
         </span>
       )}
 
@@ -506,15 +515,22 @@ function SongGridCard({
             </span>
           </div>
         )}
-        {/* Audio URL badge */}
-        {song.audio_url && !(isCurrentSong && isPlaying) && (
+        {/* Audio URL badge — hide when playing (now-playing badge takes priority) */}
+        {!(isCurrentSong && isPlaying) && (song.audio_url ? (
           <div className="absolute bottom-1.5 right-1.5">
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/70 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm">
               <CheckCircle className="h-2.5 w-2.5" />
               Audio
             </span>
           </div>
-        )}
+        ) : (
+          <div className="absolute bottom-1.5 right-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/70 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm">
+              <AlertTriangle className="h-2.5 w-2.5" />
+              YT
+            </span>
+          </div>
+        ))}
       </div>
 
       {/* Info */}
