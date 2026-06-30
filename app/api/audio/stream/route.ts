@@ -27,8 +27,8 @@ export async function GET(request: Request) {
     }
 
     // Look up the actual audio_url from DB
-    const rows = await sql<Array<{ audio_url: string | null; youtube_id: string }>>`
-      SELECT audio_url, youtube_id FROM songs WHERE id = ${songId}
+    const rows = await sql<Array<{ audio_url: string | null }>>`
+      SELECT audio_url FROM songs WHERE id = ${songId}
     `
 
     if (rows.length === 0) {
@@ -38,6 +38,17 @@ export async function GET(request: Request) {
     const audioUrl = rows[0].audio_url
     if (!audioUrl || audioUrl.trim() === '') {
       return new Response('No audio URL available for this song', { status: 404 })
+    }
+
+    // Defense-in-depth: reject non-HTTPS URLs to prevent SSRF
+    let parsedAudioUrl: URL
+    try {
+      parsedAudioUrl = new URL(audioUrl.trim())
+    } catch {
+      return new Response('Invalid audio URL', { status: 502 })
+    }
+    if (parsedAudioUrl.protocol !== 'https:') {
+      return new Response('Invalid audio URL protocol', { status: 502 })
     }
 
     // Proxy the request to the Cloudflare URL
@@ -87,7 +98,7 @@ export async function GET(request: Request) {
     responseHeaders.set('Accept-Ranges', 'bytes')
 
     // Cache for 5 minutes on CDN/browser (but token expiry limits this anyway)
-    responseHeaders.set('Cache-Control', 'public, max-age=300')
+    responseHeaders.set('Cache-Control', 'private, max-age=300')
 
     // Explicitly omit Content-Disposition to prevent "Save As" prompt
 
