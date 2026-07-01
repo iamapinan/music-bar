@@ -947,7 +947,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     // playSilentAudio is NOT called here to avoid consuming the user gesture
     // before the actual audio playback (autoplay policy).
     try {
+      // Stop any existing audio — clear onerror to avoid spurious error
+      // when we clear the old element's src (resolves to page URL).
       if (audioRef.current) {
+        audioRef.current.onerror = null
         audioRef.current.pause()
         audioRef.current.src = ''
         audioRef.current.load()
@@ -959,9 +962,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying(true)
       }).catch((err) => {
         console.warn('Audio play failed:', err.name, err.message)
-        // If play was rejected (autoplay blocked), fallback: try loading
-        // without playing — the useEffect in PersistentYouTubePlayer will
-        // attempt to play when the audio is ready.
         if (err.name === 'NotAllowedError') {
           audio.load()
         }

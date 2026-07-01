@@ -102,10 +102,15 @@ export function PersistentYouTubePlayer() {
     }
     audio.onerror = () => {
         const err = audioRef.current?.error
+        const src = audioRef.current?.src || ''
+        // Ignore errors from cleared src (old audio being stopped)
+        if (!src || src === window.location.href) {
+          return
+        }
         console.warn('Audio playback error:', {
             code: err?.code,
             message: err?.message,
-            src: audioRef.current?.src?.slice(0, 80),
+            src: src.slice(0, 80),
             networkState: audioRef.current?.networkState,
             readyState: audioRef.current?.readyState,
         })
@@ -390,20 +395,20 @@ export function PersistentYouTubePlayer() {
 	      if (songKey === lastPlayedKeyRef.current) return
 	      lastPlayedKeyRef.current = songKey
 	
-	      // Audio is created and started by playSongImmediately (for autoplay).
-	      // If we're here from next/prev (not from a click), the audio hasn't
-	      // been started yet — start it now.
-	      if (!audioRef.current?.src) {
-	        try {
-	          const audio = new Audio(currentSong.audio_url)
-	          audio.volume = volumeRef.current / 100
-	          audio.play().catch(() => {})
-	          audioRef.current = audio
-	          isAudioModeRef.current = true
-	        } catch {}
-	      } else {
-	        isAudioModeRef.current = true
-	      }
+      // Audio is created and started by playSongImmediately (for autoplay).
+      // If we're here from next/prev (not from a click), the audio hasn't
+      // been started yet — start it now.
+      if (!audioRef.current?.src && currentSong.audio_url?.trim()) {
+        try {
+          const audio = new Audio(currentSong.audio_url)
+          audio.volume = volumeRef.current / 100
+          audio.play().catch(() => {})
+          audioRef.current = audio
+          isAudioModeRef.current = true
+        } catch {}
+      } else if (audioRef.current?.src) {
+        isAudioModeRef.current = true
+      }
 	
 	      setupAudioEvents()
 	      exposeMethods()
