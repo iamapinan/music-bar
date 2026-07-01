@@ -1130,10 +1130,14 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             if (hasAudio) {
                 setOnClickListener {
                     if (currentIndex != idx) {
-                        currentIndex = idx
-                        resumePositionMs = 0
-                        renderCurrentSong()
-                        startSong(song, 0)
+                        if (crossfadeEnabled && isPlaying && runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)) {
+                            crossfadeTo(idx, song)
+                        } else {
+                            currentIndex = idx
+                            resumePositionMs = 0
+                            renderCurrentSong()
+                            startSong(song, 0)
+                        }
                     } else {
                         if (isPlaying) pause() else play()
                     }
@@ -1212,10 +1216,14 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             if (hasAudio) {
                 setOnClickListener {
                     if (currentIndex != idx) {
-                        currentIndex = idx
-                        resumePositionMs = 0
-                        renderCurrentSong()
-                        startSong(song, 0)
+                        if (crossfadeEnabled && isPlaying && runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)) {
+                            crossfadeTo(idx, song)
+                        } else {
+                            currentIndex = idx
+                            resumePositionMs = 0
+                            renderCurrentSong()
+                            startSong(song, 0)
+                        }
                     } else {
                         if (isPlaying) pause() else play()
                     }
@@ -2134,10 +2142,14 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         if (prevIndex != -1) {
             val shouldPlay = isPlaying || isPreparing || runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)
             val prevSong = songs[prevIndex]
-            currentIndex = prevIndex
-            resumePositionMs = 0
-            renderCurrentSong()
-            if (shouldPlay) startSong(prevSong, 0)
+            if (crossfadeEnabled && shouldPlay && runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)) {
+                crossfadeTo(prevIndex, prevSong)
+            } else {
+                currentIndex = prevIndex
+                resumePositionMs = 0
+                renderCurrentSong()
+                if (shouldPlay) startSong(prevSong, 0)
+            }
             return
         }
 
