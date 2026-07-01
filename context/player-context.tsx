@@ -927,8 +927,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playSongImmediately = useCallback((song: any) => {
     // Only play songs with audio_url (streaming API only — no YT fallback)
     if (!song.audio_url || typeof song.audio_url !== 'string' || song.audio_url.trim() === '') {
+      console.log('[playSongImmediately] skipped — no audio_url', { title: song.title, audio_url: song.audio_url })
       return
     }
+
+    console.log('[playSongImmediately] starting', { title: song.title, audio_url: song.audio_url?.slice(0, 60) })
 
     const formattedSong = {
       ...song,
@@ -950,6 +953,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       // Stop any existing audio — clear onerror to avoid spurious error
       // when we clear the old element's src (resolves to page URL).
       if (audioRef.current) {
+        console.log('[playSongImmediately] stopping old audio', { oldSrc: audioRef.current.src.slice(0, 60) })
         audioRef.current.onerror = null
         audioRef.current.pause()
         audioRef.current.src = ''
@@ -958,10 +962,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const audio = new Audio(song.audio_url)
       audio.volume = volume / 100
       audioRef.current = audio
+      console.log('[playSongImmediately] calling audio.play()', { volume: volume, muted: audio.muted })
       audio.play().then(() => {
+        console.log('[playSongImmediately] play() resolved OK')
         setIsPlaying(true)
       }).catch((err) => {
-        console.warn('Audio play failed:', err.name, err.message)
+        console.warn('[playSongImmediately] play() rejected:', err.name, err.message)
         if (err.name === 'NotAllowedError') {
           audio.load()
         }

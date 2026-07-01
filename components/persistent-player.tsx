@@ -389,11 +389,17 @@ export function PersistentYouTubePlayer() {
   useEffect(() => {
     if (!currentSong) return
 
-	    // Prefer audio_url over YouTube if available
-	    if (currentSong.audio_url && currentSong.audio_url.trim() !== '') {
-	      const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
-	      if (songKey === lastPlayedKeyRef.current) return
-	      lastPlayedKeyRef.current = songKey
+      // Prefer audio_url over YouTube if available
+      if (currentSong.audio_url && currentSong.audio_url.trim() !== '') {
+        const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
+        if (songKey === lastPlayedKeyRef.current) return
+        lastPlayedKeyRef.current = songKey
+
+        console.log('[PlayerEffect] audio branch', {
+          hasAudioRef: !!audioRef.current,
+          hasSrc: !!audioRef.current?.src,
+          title: currentSong.title?.slice(0, 30),
+        })
 	
       // Audio is created and started by playSongImmediately (for autoplay).
       // If we're here from next/prev (not from a click), the audio hasn't
