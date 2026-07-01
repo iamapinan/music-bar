@@ -1405,9 +1405,14 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         }
                         playlistList.addView(emptyText)
                     } else {
-                        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
-                        if (isTablet) {
-                            val colCount = 4
+                        val screenWidthDp = resources.configuration.smallestScreenWidthDp
+                        val colCount = when {
+                            screenWidthDp >= 720 -> 4
+                            screenWidthDp >= 560 -> 3
+                            screenWidthDp >= 400 -> 2
+                            else -> 1
+                        }
+                        if (colCount > 1) {
                             var currentRow: LinearLayout? = null
                             for (idx in playlists.indices) {
                                 if (idx % colCount == 0) {
@@ -1453,7 +1458,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     }
 
     private fun buildPlaylistCard(name: String, playlistId: Int, coverUrl: String, songCount: Int): View {
-        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
+        val screenWidthDp = resources.configuration.smallestScreenWidthDp
+        val isMultiCol = screenWidthDp >= 400
         val isActive = selectedPlaylistIds.contains(playlistId)
 
         val title = TextView(this).apply {
@@ -1523,7 +1529,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 )
             })
 
-            layoutParams = if (isTablet) {
+            layoutParams = if (isMultiCol) {
                 LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                     marginEnd = dp(6)
                     marginStart = dp(6)
