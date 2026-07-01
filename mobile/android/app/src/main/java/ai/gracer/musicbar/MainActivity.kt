@@ -1259,36 +1259,6 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         if (cachedFile.exists() && cachedFile.length() > 1024 * 128) {
             return cachedFile.absolutePath
         }
-
-        try {
-            val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
-            val url = "$baseUrl/api/playlists/${song.playlistId}/songs?tenant=$tenantParam"
-            val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-                connectTimeout = 10000
-                readTimeout = 15000
-                setRequestProperty("Accept", "application/json")
-            }
-            val json = connection.inputStream.bufferedReader().use { it.readText() }
-            val array = JSONArray(json)
-            for (i in 0 until array.length()) {
-                val item = array.getJSONObject(i)
-                if (item.optString("youtube_id", "") == song.youtubeId) {
-                    val rawAudio = firstNonBlank(
-                        if (item.isNull("audio_url")) "" else item.optString("audio_url", ""),
-                        if (item.isNull("stream_url")) "" else item.optString("stream_url", ""),
-                        if (item.isNull("media_url")) "" else item.optString("media_url", ""),
-                        if (item.isNull("url")) "" else item.optString("url", "")
-                    )
-                    val freshUrl = absoluteUrl(rawAudio)
-                    if (freshUrl.isNotBlank()) {
-                        song.audioUrl = freshUrl
-                        return freshUrl
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
         return song.audioUrl
     }
 
