@@ -1345,9 +1345,32 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         }
                         playlistList.addView(emptyText)
                     } else {
-                        for (pl in playlists) {
-                            val card = buildPlaylistCard(pl.name, pl.id, pl.coverUrl, pl.songCount)
-                            playlistList.addView(card)
+                        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
+                        if (isTablet) {
+                            val colCount = 4
+                            var currentRow: LinearLayout? = null
+                            for (idx in playlists.indices) {
+                                if (idx % colCount == 0) {
+                                    currentRow = LinearLayout(this).apply {
+                                        orientation = LinearLayout.HORIZONTAL
+                                        layoutParams = LinearLayout.LayoutParams(
+                                            LinearLayout.LayoutParams.MATCH_PARENT,
+                                            LinearLayout.LayoutParams.WRAP_CONTENT
+                                        ).apply {
+                                            bottomMargin = dp(16)
+                                        }
+                                    }
+                                    playlistList.addView(currentRow)
+                                }
+                                val pl = playlists[idx]
+                                val card = buildPlaylistCard(pl.name, pl.id, pl.coverUrl, pl.songCount)
+                                currentRow?.addView(card)
+                            }
+                        } else {
+                            for (pl in playlists) {
+                                val card = buildPlaylistCard(pl.name, pl.id, pl.coverUrl, pl.songCount)
+                                playlistList.addView(card)
+                            }
                         }
                     }
                 }
@@ -1440,11 +1463,18 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 )
             })
 
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dp(12)
+            layoutParams = if (isTablet) {
+                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginEnd = dp(6)
+                    marginStart = dp(6)
+                }
+            } else {
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = dp(12)
+                }
             }
 
             setOnClickListener {
