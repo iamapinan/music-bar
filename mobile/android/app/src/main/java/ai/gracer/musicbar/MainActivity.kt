@@ -1317,8 +1317,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 newPlayer.apply {
                     setOnPreparedListener { player ->
                         android.util.Log.d("MusicBarPlayer", "onPrepared: duration=${runCatching { player.duration }.getOrDefault(-1)}, gen=$generation, curGen=$playbackGeneration, isPlaying=$isPlaying")
-                        if (generation != playbackGeneration || !isPlaying) {
-                            android.util.Log.w("MusicBarPlayer", "onPrepared SKIPPED: gen=$generation, curGen=$playbackGeneration, isPlaying=$isPlaying")
+                        if (generation != playbackGeneration) {
+                            android.util.Log.w("MusicBarPlayer", "onPrepared SKIPPED: gen=$generation, curGen=$playbackGeneration")
                             runCatching { player.release() }
                             return@setOnPreparedListener
                         }
