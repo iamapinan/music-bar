@@ -4,6 +4,7 @@ import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 import { NextResponse } from 'next/server'
 import { getProxiedUrl } from '@/lib/images'
 import { buildStreamUrl } from '@/lib/audio-stream'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
   const startedAt = Date.now()
@@ -19,10 +20,10 @@ export async function GET(request: Request) {
     if (deviceId) {
       const result = await cachedJson(cacheKey('requests', ctx.tenant.id, 'device', deviceId), 5, () => sql`
         SELECT
-          sr.id, sr.tenant_id, sr.song_id, sr.requested_by, sr.device_id,
+          sr.id, sr.song_id, sr.requested_by,
           sr.status, sr.played_at, sr.created_at,
           ROW_NUMBER() OVER (ORDER BY sr.created_at ASC) as queue_position,
-          s.youtube_id, s.title, s.thumbnail, s.duration, s.audio_url
+          s.youtube_id, s.title, s.thumbnail, s.duration
         FROM song_requests sr
         JOIN songs s ON sr.song_id = s.id
         WHERE sr.tenant_id = ${ctx.tenant.id}
@@ -34,21 +35,22 @@ export async function GET(request: Request) {
       const formatted = (result.data as any[]).map(req => ({
         ...req,
         thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail,
-        audio_url: req.audio_url
-          ? buildStreamUrl(origin, Number(req.song_id), ctx.tenant.id)
-          : null,
       }))
       return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
     }
 
-    const result = await cachedJson(cacheKey('requests', ctx.tenant.id, 'pending'), 5, () => sql`
+    // Full list requires staff/admin authentication
+    const adminCtx = await requireTenantContext(request, { roles: ['owner', 'admin', 'staff'] })
+    if (isTenantError(adminCtx)) return adminCtx
+
+    const result = await cachedJson(cacheKey('requests', adminCtx.tenant.id, 'pending'), 5, () => sql`
       SELECT
         sr.id, sr.tenant_id, sr.song_id, sr.requested_by, sr.device_id,
         sr.status, sr.played_at, sr.created_at,
         s.youtube_id, s.title, s.thumbnail, s.duration, s.audio_url
       FROM song_requests sr
       JOIN songs s ON sr.song_id = s.id
-      WHERE sr.tenant_id = ${ctx.tenant.id}
+      WHERE sr.tenant_id = ${adminCtx.tenant.id}
         AND sr.status = 'pending'
         AND s.is_available = true
       ORDER BY sr.created_at ASC
@@ -57,7 +59,7 @@ export async function GET(request: Request) {
       ...req,
       thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail,
       audio_url: req.audio_url
-        ? buildStreamUrl(origin, Number(req.song_id), ctx.tenant.id)
+        ? buildStreamUrl(origin, Number(req.song_id), adminCtx.tenant.id)
         : null,
     }))
     return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
@@ -69,6 +71,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    // Rate limit: max 10 song requests per minute per IP
+    const rateCheck = await checkRateLimit(request, { maxRequests: 10, windowMs: 60_000 })
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'ขออภัย คุณขอเพลงบ่อยเกินไป กรุณารอสักครู่' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(rateCheck.retryAfter / 1000)) } },
+      )
+    }
+
     const ctx = await requireTenantContext(request, { public: true })
     if (isTenantError(ctx)) return ctx
 
@@ -159,7 +170,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const ctx = await requireTenantContext(request, { public: true })
+    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin', 'staff'] })
     if (isTenantError(ctx)) return ctx
 
     const { id, status } = await request.json()

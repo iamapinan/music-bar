@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const startedAt = Date.now()
   try {
-    const ctx = await requireTenantContext(request, { public: true })
+    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin'] })
     if (isTenantError(ctx)) return ctx
 
     const result = await cachedJson(cacheKey('settings', ctx.tenant.id), 30, async () => {

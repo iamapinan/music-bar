@@ -126,7 +126,7 @@ class RedisLite {
 }
 
 const redisUrl = process.env.REDIS_URL
-const redis = redisUrl ? new RedisLite(new URL(redisUrl)) : null
+export const redis = redisUrl ? new RedisLite(new URL(redisUrl)) : null
 const namespace = process.env.REDIS_CACHE_NAMESPACE || 'music-bar'
 
 const defaultTtl = Number(process.env.REDIS_CACHE_TTL_SECONDS || 20)

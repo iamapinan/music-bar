@@ -1,8 +1,18 @@
 import { sql } from '@/lib/db'
 import { validateStreamToken } from '@/lib/audio-stream'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
   try {
+    // Rate limit: max 20 stream requests per minute per IP (bandwidth protection)
+    const rateCheck = await checkRateLimit(request, { maxRequests: 20, windowMs: 60_000 })
+    if (!rateCheck.allowed) {
+      return new Response('Too many requests, please slow down', {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil(rateCheck.retryAfter / 1000)) },
+      })
+    }
+
     const { searchParams } = new URL(request.url)
     const songIdParam = searchParams.get('songId')
     const token = searchParams.get('token')
