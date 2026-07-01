@@ -93,6 +93,10 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private var isBound = false
     private var mediaPlayer: MediaPlayer? = null
     private var fadingPlayer: MediaPlayer? = null
+    private var preloadedPlayer: MediaPlayer? = null
+    private var preloadedIndex: Int = -1
+    private var preloadedGeneration: Int = 0
+    private var preloadedReady: Boolean = false
     private var songs: List<NativeSong> = emptyList()
     private var currentIndex = 0
     private var isPlaying = false
@@ -135,6 +139,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             if (isDestroyed) return
             if (playerView.visibility == View.VISIBLE) {
                 updateProgressFromPlayer()
+                checkCrossfadePreload()
                 savePlaybackState()
             }
             mainHandler.postDelayed(this, 1000)
@@ -580,6 +585,64 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 }
             }
         }
+    }
+
+    /** Crossfade preload: prepare next song before current ends */
+    private fun checkCrossfadePreload() {
+        if (!isPlaying || !crossfadeEnabled || fadingPlayer != null) return
+        val player = mediaPlayer ?: return
+        val position = safeCurrentPosition(player)
+        val remaining = durationMs - position
+        if (remaining <= 0) return
+
+        val preloadWindow = crossfadeMs + 5000 // preload when 10s remaining
+        val nextIdx = findPlayableIndex(currentIndex, forward = true, includeCurrent = false)
+
+        // Preload when within window and not already preloaded
+        if (remaining in 5001..preloadWindow && nextIdx >= 0 && nextIdx != preloadedIndex) {
+            cancelPreloadedPlayer()
+            preloadedIndex = nextIdx
+            preloadedGeneration = playbackGeneration
+            val nextSong = songs[nextIdx]
+            audioExecutor.submit {
+                try {
+                    val url = getFreshSongUrl(nextSong)
+                    if (url.isBlank()) return@submit
+                    val player = createPlayer(url)
+                    player.setVolume(0f, 0f)
+                    player.setOnPreparedListener {
+                        if (preloadedIndex == nextIdx && preloadedGeneration == playbackGeneration) {
+                            if (preloadedPlayer != null) return@setOnPreparedListener
+                            preloadedPlayer = player
+                            preloadedReady = true
+                        } else {
+                            runCatching { player.release() }
+                        }
+                    }
+                    player.setOnErrorListener { _, _, _ -> runCatching { player.release() }; true }
+                    player.prepareAsync()
+                } catch (_: Exception) {}
+            }
+        }
+
+        // Start crossfade when within 5s of end
+        if (remaining in 1..crossfadeMs && nextIdx >= 0) {
+            val nextSong = songs[nextIdx]
+            val preloaded = preloadedPlayer?.takeIf { preloadedIndex == nextIdx }
+            cancelPreloadedPlayer()
+            if (preloaded != null) {
+                crossfadeWithPlayer(nextIdx, nextSong, preloaded)
+            } else {
+                crossfadeTo(nextIdx, nextSong)
+            }
+        }
+    }
+
+    private fun cancelPreloadedPlayer() {
+        runCatching { preloadedPlayer?.release() }
+        preloadedPlayer = null
+        preloadedIndex = -1
+        preloadedReady = false
     }
 
     private fun selectStation(station: NativeStation) {
@@ -1755,6 +1818,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     private fun next(useCrossfade: Boolean) {
         if (songs.isEmpty()) return
+        cancelPreloadedPlayer()
         val nextIndex = findPlayableIndex(currentIndex, forward = true, includeCurrent = false)
         if (nextIndex != -1) {
             val shouldPlay = isPlaying || isPreparing || runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)
@@ -1843,8 +1907,93 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         toPlayer.prepareAsync()
     }
 
+    /** Crossfade using a pre-loaded player (already prepared) */
+    private fun crossfadeWithPlayer(nextIndex: Int, nextSong: NativeSong, toPlayer: MediaPlayer) {
+        val generation = ++playbackGeneration
+        statusLabel.text = "กำลังเปลี่ยนเพลง"
+        val fromPlayer = mediaPlayer ?: return
+        fadingPlayer = toPlayer
+        toPlayer.setVolume(0f, 0f)
+        toPlayer.setOnPreparedListener {
+            if (generation != playbackGeneration || !isPlaying) {
+                runCatching { it.release() }
+                return@setOnPreparedListener
+            }
+            it.start()
+            val startedAt = System.currentTimeMillis()
+            val tick = object : Runnable {
+                override fun run() {
+                    val t = min(1f, (System.currentTimeMillis() - startedAt).toFloat() / crossfadeMs.toFloat())
+                    fromPlayer.setVolume(1f - t, 1f - t)
+                    toPlayer.setVolume(sqrt(t), sqrt(t))
+                    if (t >= 1f) {
+                        fromPlayer.stop()
+                        fromPlayer.release()
+                        mediaPlayer = toPlayer
+                        fadingPlayer = null
+                        currentIndex = nextIndex
+                        resumePositionMs = 0
+                        preparedSongId = nextSong.stableId
+                        durationMs = safeDuration(toPlayer).takeIf { it > 0 } ?: parseDuration(nextSong.duration) * 1000
+                        playbackBasePositionMs = 0
+                        playbackStartedAtMs = System.currentTimeMillis()
+                        renderCurrentSong()
+                        statusLabel.text = "กำลังเล่น"
+                        syncNotification()
+                        savePlaybackState()
+                    } else {
+                        mainHandler.postDelayed(this, 100)
+                    }
+                }
+            }
+            mainHandler.post(tick)
+        }
+        toPlayer.setOnCompletionListener { next(useCrossfade = crossfadeEnabled) }
+        toPlayer.setOnErrorListener { _, _, _ ->
+            if (generation == playbackGeneration) {
+                currentIndex = nextIndex
+                resumePositionMs = 0
+                renderCurrentSong()
+                startSong(nextSong, 0)
+            }
+            true
+        }
+        // If already prepared (preloaded), start directly without waiting for onPrepared
+        if (preloadedReady && toPlayer == preloadedPlayer) {
+            toPlayer.start()
+            val startedAt = System.currentTimeMillis()
+            val tick = object : Runnable {
+                override fun run() {
+                    val t = min(1f, (System.currentTimeMillis() - startedAt).toFloat() / crossfadeMs.toFloat())
+                    fromPlayer.setVolume(1f - t, 1f - t)
+                    toPlayer.setVolume(sqrt(t), sqrt(t))
+                    if (t >= 1f) {
+                        fromPlayer.stop()
+                        fromPlayer.release()
+                        mediaPlayer = toPlayer
+                        fadingPlayer = null
+                        currentIndex = nextIndex
+                        resumePositionMs = 0
+                        preparedSongId = nextSong.stableId
+                        durationMs = safeDuration(toPlayer).takeIf { it > 0 } ?: parseDuration(nextSong.duration) * 1000
+                        playbackBasePositionMs = 0
+                        playbackStartedAtMs = System.currentTimeMillis()
+                        renderCurrentSong()
+                        statusLabel.text = "กำลังเล่น"
+                        syncNotification()
+                        savePlaybackState()
+                    } else {
+                        mainHandler.postDelayed(this, 100)
+                    }
+                }
+            }
+            mainHandler.post(tick)
+        }
+    }
+
     private fun previous() {
         if (songs.isEmpty()) return
+        cancelPreloadedPlayer()
         val prevIndex = findPlayableIndex(currentIndex, forward = false, includeCurrent = false)
         if (prevIndex != -1) {
             val shouldPlay = isPlaying || isPreparing || runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)
@@ -2007,6 +2156,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     }
 
     private fun releasePlayer() {
+        cancelPreloadedPlayer()
         runCatching { mediaPlayer?.release() }
         mediaPlayer = null
         runCatching { fadingPlayer?.release() }
