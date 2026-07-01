@@ -1462,7 +1462,10 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         val isActive = selectedPlaylistIds.contains(playlistId)
 
         val cover = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(88), dp(88))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                if (isMultiCol) dp(130) else dp(170)
+            )
             background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
             scaleType = ImageView.ScaleType.CENTER_CROP
             setPadding(dp(2), dp(2), dp(2), dp(2))
@@ -1497,12 +1500,12 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             maxLines = 1
         }
 
-        val textColumn = LinearLayout(this).apply {
+        val textBlock = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = dp(14)
-            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(10) }
             addView(title)
             addView(subtitle.apply {
                 layoutParams = LinearLayout.LayoutParams(
@@ -1513,28 +1516,28 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         }
 
         return LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
+            orientation = LinearLayout.VERTICAL
             setTag(playlistId)
             background = ContextCompat.getDrawable(
                 this@MainActivity,
                 if (isActive) R.drawable.bg_queue_row_active
                 else R.drawable.bg_queue_row
             )
-            setPadding(dp(14), dp(14), dp(14), dp(14))
+            setPadding(dp(10), dp(10), dp(10), dp(10))
             addView(cover)
-            addView(textColumn)
+            addView(textBlock)
             layoutParams = if (isMultiCol) {
                 LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    marginEnd = dp(6)
-                    marginStart = dp(6)
+                    marginEnd = dp(8)
+                    marginStart = dp(8)
+                    bottomMargin = dp(14)
                 }
             } else {
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    bottomMargin = dp(12)
+                    bottomMargin = dp(14)
                 }
             }
             setOnClickListener {
