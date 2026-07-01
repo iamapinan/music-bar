@@ -915,7 +915,9 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         }
         playlistList.addView(loadingText)
 
-        backgroundExecutor.submit {
+        // Use a dedicated thread for the API call (not backgroundExecutor which is
+        // busy with thumbnail downloads from the queue)
+        Thread {
             try {
                 val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
                 val json = getJson("$baseUrl/api/playlists?tenant=$tenantParam")
