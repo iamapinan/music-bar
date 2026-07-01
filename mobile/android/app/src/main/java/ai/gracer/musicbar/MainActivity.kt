@@ -1555,15 +1555,28 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         android.util.Log.e("MusicBarPlayer", "onError: what=$what, extra=$extra")
                         if (generation != playbackGeneration) return@setOnErrorListener true
                         isPreparing = false
-                        setLoadingState(false, "เล่น stream นี้ไม่สำเร็จ ($what/$extra)")
                         this@MainActivity.isPlaying = false
                         preparedSongId = ""
                         playbackStartedAtMs = 0L
                         playbackBasePositionMs = 0
-                        updatePlayPauseIcon()
-                        syncNotification()
-                        savePlaybackState()
-                        audioService?.releasePlaybackLocks()
+                        // Retry once: restart the same song from the beginning
+                        val retryKey = "retry:${song.stableId}"
+                        val alreadyRetried = prefs.getBoolean(retryKey, false)
+                        if (!alreadyRetried) {
+                            prefs.edit().putBoolean(retryKey, true).apply()
+                            // Clear retry flag after 10 seconds
+                            mainHandler.postDelayed({
+                                prefs.edit().remove(retryKey).apply()
+                            }, 10_000)
+                            setLoadingState(false, "กำลังลองใหม่...")
+                            startSong(song, 0)
+                        } else {
+                            setLoadingState(false, "เล่น stream นี้ไม่สำเร็จ ($what/$extra)")
+                            updatePlayPauseIcon()
+                            syncNotification()
+                            savePlaybackState()
+                            audioService?.releasePlaybackLocks()
+                        }
                         true
                     }
                     prepareAsync()
@@ -1664,10 +1677,23 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         if (generation != playbackGeneration) return@setOnErrorListener true
                         isPreparing = false
                         this@MainActivity.isPlaying = false
-                        statusLabel.text = "เล่นไฟล์ไม่สำเร็จ ($what/$extra)"
-                        updatePlayPauseIcon()
-                        syncNotification()
-                        savePlaybackState()
+                        // Retry by falling back to stream
+                        val retryKey = "retry:${song.stableId}"
+                        val alreadyRetried = prefs.getBoolean(retryKey, false)
+                        if (!alreadyRetried) {
+                            prefs.edit().putBoolean(retryKey, true).apply()
+                            mainHandler.postDelayed({
+                                prefs.edit().remove(retryKey).apply()
+                            }, 10_000)
+                            setLoadingState(false, "กำลังลองใหม่...")
+                            startSong(song, 0)
+                        } else {
+                            statusLabel.text = "เล่นไฟล์ไม่สำเร็จ ($what/$extra)"
+                            updatePlayPauseIcon()
+                            syncNotification()
+                            savePlaybackState()
+                            audioService?.releasePlaybackLocks()
+                        }
                         true
                     }
                     prepareAsync()
