@@ -1142,16 +1142,24 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         array.put(pl)
                     }
                 } else if (tenantSlug.isNotBlank()) {
-                    // Fallback: fetch playlists from API directly
+                    // Fallback: fetch playlists from API directly (lightweight endpoint)
                     val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
-                    val json = getJson("$baseUrl/api/mobile/init?tenant=$tenantParam")
-                    val root = JSONObject(json)
-                    val fetched = root.getJSONArray("playlists")
+                    val connection = (URL("$baseUrl/api/playlists?tenant=$tenantParam").openConnection() as java.net.HttpURLConnection).apply {
+                        requestMethod = "GET"
+                        connectTimeout = 8000
+                        readTimeout = 15000
+                        setRequestProperty("Accept", "application/json")
+                    }
+                    val json = if (connection.responseCode in 200..299) {
+                        connection.inputStream.bufferedReader().use { it.readText() }
+                    } else {
+                        connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "[]"
+                    }
+                    val fetched = JSONArray(json)
                     cachedPlaylists.clear()
                     for (i in 0 until fetched.length()) {
-                        val pl = fetched.getJSONObject(i)
-                        cachedPlaylists.add(pl)
-                        array.put(pl)
+                        cachedPlaylists.add(fetched.getJSONObject(i))
+                        array.put(fetched.getJSONObject(i))
                     }
                 }
                 
