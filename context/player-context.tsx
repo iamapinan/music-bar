@@ -930,7 +930,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    playSilentAudio()
     const formattedSong = {
       ...song,
       id: song.id || 999999,
@@ -944,9 +943,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     customSongRef.current = formattedSong
     setIsPlaying(true)
 
-    // Play it immediately (within user gesture context)
+    // Play it immediately (within user gesture context).
+    // playSilentAudio is NOT called here to avoid consuming the user gesture
+    // before the actual audio playback (autoplay policy).
     try {
-      // Stop any existing audio
       if (audioRef.current) {
         audioRef.current.pause()
         audioRef.current.src = ''
@@ -954,12 +954,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       }
       const audio = new Audio(song.audio_url)
       audio.volume = volume / 100
+      audioRef.current = audio
       audio.play().then(() => {
         setIsPlaying(true)
       }).catch((err) => {
-        console.warn('Audio play failed (autoplay policy?):', err)
+        console.warn('Audio play failed:', err)
       })
-      audioRef.current = audio
     } catch (err) {
       console.warn('Failed to create Audio element:', err)
     }
