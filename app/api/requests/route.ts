@@ -35,7 +35,7 @@ export async function GET(request: Request) {
         ...req,
         thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail,
         audio_url: req.audio_url
-          ? buildStreamUrl(origin, req.song_id, ctx.tenant.id)
+          ? buildStreamUrl(origin, Number(req.song_id), ctx.tenant.id)
           : null,
       }))
       return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
       ...req,
       thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail,
       audio_url: req.audio_url
-        ? buildStreamUrl(origin, req.song_id, ctx.tenant.id)
+        ? buildStreamUrl(origin, Number(req.song_id), ctx.tenant.id)
         : null,
     }))
     return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
@@ -146,7 +146,7 @@ export async function POST(request: Request) {
         reqObj.thumbnail = getProxiedUrl(reqObj.thumbnail, origin)
       }
       if (reqObj.audio_url) {
-        reqObj.audio_url = buildStreamUrl(origin, reqObj.song_id, ctx.tenant.id)
+        reqObj.audio_url = buildStreamUrl(origin, Number(reqObj.song_id), ctx.tenant.id)
       }
     }
 

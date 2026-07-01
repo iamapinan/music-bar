@@ -33,7 +33,7 @@ export async function GET(
       ...song,
       thumbnail: song.thumbnail ? getProxiedUrl(song.thumbnail, origin) : song.thumbnail,
       audio_url: song.audio_url
-        ? buildStreamUrl(origin, song.song_id, ctx.tenant.id)
+        ? buildStreamUrl(origin, Number(song.song_id), ctx.tenant.id)
         : null,
     }))
 
@@ -127,7 +127,7 @@ export async function POST(
         song.thumbnail = getProxiedUrl(song.thumbnail, origin)
       }
       if (song.audio_url) {
-        song.audio_url = buildStreamUrl(origin, song.song_id, ctx.tenant.id)
+        song.audio_url = buildStreamUrl(origin, Number(song.song_id), ctx.tenant.id)
       }
     }
 
