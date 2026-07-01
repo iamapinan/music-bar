@@ -432,14 +432,24 @@
             android:layout_weight="1"
             android:clipToPadding="false"
             android:fillViewport="true"
-            android:paddingHorizontal="20dp"
             android:paddingVertical="12dp">
 
+            <!-- Center and constrain width for balanced layout -->
             <LinearLayout
-                android:id="@+id/playlistList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/playlistList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:minWidth="320dp"
+                    android:maxWidth="900dp"
+                    android:paddingHorizontal="20dp" />
+            </LinearLayout>
         </ScrollView>
     </LinearLayout>
 
