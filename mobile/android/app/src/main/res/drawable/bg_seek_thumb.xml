@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Premium seek bar thumb - small rounded circle with glow -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#FF7C6DFF" />
+    <size
+        android:width="14dp"
+        android:height="14dp" />
+</shape>

@@ -206,15 +206,17 @@
                 android:textColor="#8E96BD"
                 android:textSize="11sp" />
 
-            <ProgressBar
+            <SeekBar
                 android:id="@+id/playbackProgress"
-                style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="0dp"
                 android:layout_height="5dp"
                 android:layout_weight="1"
                 android:max="1000"
                 android:progress="0"
-                android:progressDrawable="@drawable/progress_musicbar" />
+                android:progressDrawable="@drawable/progress_musicbar"
+                android:thumb="@drawable/bg_seek_thumb"
+                android:thumbTint="#7C6DFF"
+                android:splitTrack="false" />
 
             <TextView
                 android:id="@+id/durationLabel"

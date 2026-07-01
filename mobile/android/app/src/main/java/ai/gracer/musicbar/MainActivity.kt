@@ -28,6 +28,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Button
 import android.widget.Toast
@@ -64,7 +65,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private lateinit var controlArtworkView: ImageView
     private lateinit var songTitle: TextView
     private lateinit var songArtist: TextView
-    private lateinit var progress: ProgressBar
+    private lateinit var progress: SeekBar
     private lateinit var currentTimeLabel: TextView
     private lateinit var durationLabel: TextView
     private lateinit var backButton: ImageButton
@@ -334,6 +335,35 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             cachedPlaylists.clear()
             showPlaylistSelectionScreen()
         }
+        // Seek bar - tap/drag to seek within the current song
+        progress.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            private var isTracking = false
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser && isTracking) {
+                    val seekMs = (progress * durationMs) / 1000
+                    currentTimeLabel.text = formatTime(seekMs / 1000)
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                isTracking = true
+            }
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                isTracking = false
+                val player = mediaPlayer
+                if (player != null && preparedSongId.isNotBlank()) {
+                    val seekMs = ((seekBar?.progress ?: 0) * durationMs) / 1000
+                    runCatching {
+                        player.seekTo(seekMs)
+                        playbackBasePositionMs = seekMs
+                        playbackStartedAtMs = System.currentTimeMillis()
+                        resumePositionMs = seekMs
+                        savePlaybackState()
+                    }
+                } else {
+                    resumePositionMs = ((seekBar?.progress ?: 0) * durationMs) / 1000
+                }
+            }
+        })
         updateCrossfadeToggle()
     }
 
@@ -1433,7 +1463,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     }
 
     private fun getFreshSongUrl(song: NativeSong): String {
-        val safeName = song.stableId.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        val safeName = song.youtubeId.replace(Regex("[^A-Za-z0-9._-]"), "_")
         val cachedFile = File(cacheDir, "musicbar_$safeName.mp3")
         if (cachedFile.exists() && cachedFile.length() > 1024 * 128) {
             return cachedFile.absolutePath
@@ -1647,7 +1677,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     }
 
     private fun downloadAudioToCache(song: NativeSong): File? {
-        val safeName = song.stableId.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        val safeName = song.youtubeId.replace(Regex("[^A-Za-z0-9._-]"), "_")
         val file = File(cacheDir, "musicbar_$safeName.mp3")
         if (file.exists() && file.length() > 1024 * 128) return file
 
@@ -2022,7 +2052,7 @@ data class NativeSong(
     val duration: String,
     var audioUrl: String,
 ) {
-    val stableId: String = "$playlistId:$id:$youtubeId"
+    val stableId: String = youtubeId
 }
 
 data class NativeStation(
