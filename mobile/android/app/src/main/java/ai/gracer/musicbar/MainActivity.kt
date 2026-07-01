@@ -46,6 +46,7 @@ import java.net.URLEncoder
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import kotlin.concurrent.thread
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -1194,8 +1195,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         }
         playlistList.addView(loadingText)
 
-        // Use cached playlists if available, otherwise show message to select station first
-        Thread {
+        // Use cached playlists if available, otherwise fetch from API
+        thread {
             try {
                 val array = JSONArray()
                 if (cachedPlaylists.isNotEmpty()) {
