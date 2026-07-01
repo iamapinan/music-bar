@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Play,
@@ -12,22 +11,10 @@ import {
   VolumeX,
   Music2,
   Shuffle,
-  ListMusic,
-  LayoutDashboard,
-  Home,
-  Tv,
-  Maximize2,
-  Minimize2,
   MoreVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +22,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { usePlayer } from "@/context/player-context";
-import { QueueList } from "./queue-list";
 import { cn } from "@/lib/utils";
 
 function formatTime(seconds: number) {
@@ -171,18 +157,6 @@ export function PlayerBottomBar() {
   const [isDraggingTime, setIsDraggingTime] = useState(false);
   const [dragTime, setDragTime] = useState(0);
 
-  // Resolve tenant slug
-  const [tenantSlug, setTenantSlug] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fromPath = pathname?.match(/^\/play\/([^/]+)/)?.[1];
-    if (fromPath) {
-      setTenantSlug(fromPath);
-    } else {
-      setTenantSlug(localStorage.getItem("music_bar_active_tenant_slug"));
-    }
-  }, [pathname]);
-
   const displayTime = isDraggingTime ? dragTime : currentTime;
 
   const handleSeek = useCallback(
@@ -228,41 +202,8 @@ export function PlayerBottomBar() {
         />
 
         <div className="relative z-10 flex h-16 items-center justify-between gap-1 px-2.5 sm:h-20 sm:gap-4 sm:px-4">
-          {/* Left: Navigation & Song Info */}
+          {/* Left: Song Info */}
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
-            <div className="hidden lg:flex items-center gap-1 border-r border-white/10 pr-4 mr-2">
-              <Link
-                href={tenantSlug ? `/play/${tenantSlug}` : "/"}
-                title="หน้าเครื่องเล่น"
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "w-10 h-10 rounded-full",
-                    pathname?.startsWith("/play/") &&
-                      "bg-primary/10 text-primary",
-                  )}
-                >
-                  <Home className="w-5 h-5" />
-                </Button>
-              </Link>
-              <Link href="/admin">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "w-10 h-10 rounded-full",
-                    pathname === "/admin"
-                      ? "bg-primary/10 text-primary"
-                      : "text-white/60 hover:text-white",
-                  )}
-                >
-                  <LayoutDashboard className="w-5 h-5" />
-                </Button>
-              </Link>
-            </div>
-
             <div className="relative group shrink-0">
               <div className="h-10 w-10 overflow-hidden rounded border border-white/10 bg-muted sm:h-16 sm:w-16">
                 {currentSong.thumbnail ? (
@@ -333,38 +274,6 @@ export function PlayerBottomBar() {
                 variant="ghost"
                 className={cn(
                   "w-10 h-10 rounded-full",
-                  isVideoMode
-                    ? "text-primary bg-primary/10"
-                    : "text-white/60 hover:text-white",
-                )}
-                onClick={() => setIsVideoMode(!isVideoMode)}
-              >
-                <Tv className="w-4 h-4" />
-              </Button>
-
-              <Button
-                size="icon"
-                variant="ghost"
-                className={cn(
-                  "w-10 h-10 rounded-full",
-                  isFullscreen
-                    ? "text-primary bg-primary/10"
-                    : "text-white/60 hover:text-white",
-                )}
-                onClick={() => setIsFullscreen(!isFullscreen)}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="w-4 h-4" />
-                ) : (
-                  <Maximize2 className="w-4 h-4" />
-                )}
-              </Button>
-
-              <Button
-                size="icon"
-                variant="ghost"
-                className={cn(
-                  "w-10 h-10 rounded-full",
                   isShuffle
                     ? "text-primary bg-primary/10"
                     : "text-white/60 hover:text-white",
@@ -395,43 +304,10 @@ export function PlayerBottomBar() {
                   className="flex-1 cursor-pointer"
                 />
               </div>
-
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 rounded-full bg-primary/10 text-primary hover:bg-primary/15"
-                    title="เปิดคิวเพลง"
-                  >
-                    <ListMusic className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent
-                  side="right"
-                  className="w-full sm:max-w-md p-0 border-l border-white/10 z-[130]"
-                >
-                  <SheetTitle className="sr-only">คิวเพลง</SheetTitle>
-                  <QueueList />
-                </SheetContent>
-              </Sheet>
             </div>
 
             {/* Mobile/Tablet "More" Menu & Primary Actions */}
             <div className="flex items-center gap-0.5 sm:gap-2 lg:hidden">
-              {/* Video Toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "hidden h-9 w-9 rounded-full text-white/60 hover:text-white min-[390px]:flex sm:h-10 sm:w-10",
-                  isVideoMode && "text-primary bg-primary/10",
-                )}
-                onClick={() => setIsVideoMode(!isVideoMode)}
-              >
-                <Tv className="w-4 h-4" />
-              </Button>
-
               {/* More Actions Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -448,17 +324,6 @@ export function PlayerBottomBar() {
                   className="w-48 glass backdrop-blur-xl border-white/10 z-[120]"
                 >
                   <DropdownMenuItem
-                    onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="flex items-center gap-2 py-3"
-                  >
-                    {isFullscreen ? (
-                      <Minimize2 className="w-4 h-4" />
-                    ) : (
-                      <Maximize2 className="w-4 h-4" />
-                    )}
-                    <span>{isFullscreen ? "ย่อหน้าจอ" : "ขยายเต็มจอ"}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
                     onClick={toggleShuffle}
                     className="flex items-center gap-2 py-3"
                   >
@@ -467,41 +332,8 @@ export function PlayerBottomBar() {
                     />
                     <span>สุ่มเพลง: {isShuffle ? "เปิด" : "ปิด"}</span>
                   </DropdownMenuItem>
-                  <div className="h-px bg-white/10 my-1" />
-                  <Link href={tenantSlug ? `/play/${tenantSlug}` : "/"}>
-                    <DropdownMenuItem className="flex items-center gap-2 py-3">
-                      <Home className="w-4 h-4" />
-                      <span>หน้าเครื่องเล่น</span>
-                    </DropdownMenuItem>
-                  </Link>
-                  <Link href="/admin">
-                    <DropdownMenuItem className="flex items-center gap-2 py-3">
-                      <LayoutDashboard className="w-4 h-4" />
-                      <span>หลังบ้าน (Admin)</span>
-                    </DropdownMenuItem>
-                  </Link>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              {/* Playlist (Main Mobile Action) */}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="ml-0.5 h-10 w-10 rounded-full bg-primary/10 text-primary hover:bg-primary/15 sm:ml-1 sm:h-12 sm:w-12"
-                  >
-                    <ListMusic className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent
-                  side="right"
-                  className="w-full sm:max-w-md p-0 border-l border-white/10 z-[130]"
-                >
-                  <SheetTitle className="sr-only">คิวเพลง</SheetTitle>
-                  <QueueList />
-                </SheetContent>
-              </Sheet>
             </div>
           </div>
         </div>

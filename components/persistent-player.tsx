@@ -383,9 +383,21 @@ export function PersistentYouTubePlayer() {
       if (songKey === lastPlayedKeyRef.current) return
       lastPlayedKeyRef.current = songKey
 
-      stopAudio()
-      // Audio is already created and playing by playSongImmediately in the click handler.
-      // We just need to wire up events for progress tracking and song-end detection.
+      // Audio is created and started by playSongImmediately (for autoplay).
+      // If we're here from next/prev (not from a click), the audio hasn't
+      // been started yet — start it now.
+      if (!audioRef.current?.src) {
+        try {
+          const audio = new Audio(currentSong.audio_url)
+          audio.volume = volumeRef.current / 100
+          audio.play().catch(() => {})
+          audioRef.current = audio
+          isAudioModeRef.current = true
+        } catch {}
+      } else {
+        isAudioModeRef.current = true
+      }
+
       setupAudioEvents()
       exposeMethods()
       return
