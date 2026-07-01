@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Secondary control button with subtle gradient and border -->
+<!-- Dark glass secondary control button -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <gradient
-        android:angle="135"
-        android:endColor="#1D2248"
-        android:startColor="#2A305E" />
+    <solid android:color="#1A1C2440" />
     <corners android:radius="32dp" />
     <stroke
-        android:width="1dp"
-        android:color="#3C447B" />
+        android:width="0.5dp"
+        android:color="#1AFFFFFF" />
 </shape>

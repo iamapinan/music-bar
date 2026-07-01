@@ -47,6 +47,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
 class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHandler {
 
@@ -76,9 +77,14 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private lateinit var crossfadeLabel: TextView
     private lateinit var loadingSpinner: ProgressBar
     private lateinit var playlistSelectButton: ImageButton
+    private lateinit var refreshButton: ImageButton
+    private lateinit var playlistRefreshButton: ImageButton
     private lateinit var playlistSelectView: LinearLayout
     private lateinit var playlistList: LinearLayout
     private lateinit var cancelPlaylistSelectButton: ImageButton
+    private lateinit var splashOverlay: FrameLayout
+    private lateinit var splashStationName: TextView
+    private lateinit var splashStatus: TextView
 
 
     // ---- State ----
@@ -100,6 +106,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private var tenantSlug = ""
     private var activePlaylistSignature = ""
     private val selectedPlaylistIds = mutableListOf<Int>()
+    private val cachedPlaylists = mutableListOf<JSONObject>()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val prefs by lazy { getSharedPreferences("musicbar_native_player", Context.MODE_PRIVATE) }
 
@@ -168,6 +175,13 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Enable HTTP response cache for image proxy requests
+        try {
+            val httpCacheDir = File(cacheDir, "http_cache")
+            httpCacheDir.mkdirs()
+            android.net.http.HttpResponseCache.install(httpCacheDir, 10L * 1024 * 1024)
+        } catch (_: Exception) {}
+
         window.setFlags(
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
@@ -257,9 +271,14 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         crossfadeLabel = findViewById(R.id.crossfadeLabel)
         loadingSpinner = findViewById(R.id.loadingSpinner)
         playlistSelectButton = findViewById(R.id.playlistSelectButton)
+        refreshButton = findViewById(R.id.refreshButton)
+        playlistRefreshButton = findViewById(R.id.playlistRefreshButton)
         playlistSelectView = findViewById(R.id.playlistSelectView)
         playlistList = findViewById(R.id.playlistList)
         cancelPlaylistSelectButton = findViewById(R.id.cancelPlaylistSelectButton)
+        splashOverlay = findViewById(R.id.splashOverlay)
+        splashStationName = findViewById(R.id.splashStationName)
+        splashStatus = findViewById(R.id.splashStatus)
         applyRoundedCorners(controlArtworkView, 4)
     }
 
@@ -308,6 +327,11 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         crossfadeToggle.setOnClickListener {
             crossfadeEnabled = !crossfadeEnabled
             updateCrossfadeToggle()
+        }
+        refreshButton.setOnClickListener { refreshSongData() }
+        playlistRefreshButton.setOnClickListener {
+            cachedPlaylists.clear()
+            showPlaylistSelectionScreen()
         }
         updateCrossfadeToggle()
     }
@@ -455,6 +479,60 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     // ===================== Station Selection =====================
 
+    /** Show splash overlay with station name */
+    private fun showSplash(stationName: String) {
+        splashStationName.text = stationName
+        splashStatus.text = "กำลังโหลด..."
+        splashOverlay.alpha = 0f
+        splashOverlay.visibility = View.VISIBLE
+        splashOverlay.animate().alpha(1f).setDuration(300).start()
+    }
+
+    /** Fade out and hide splash overlay */
+    private fun hideSplash() {
+        splashOverlay.animate().alpha(0f).setDuration(200).withEndAction {
+            splashOverlay.visibility = View.GONE
+        }.start()
+    }
+
+    /** Refresh songs data — called from refresh button */
+    private fun refreshSongData() {
+        if (tenantSlug.isBlank()) return
+        statusLabel.text = "กำลังโหลด"
+        refreshButton.animate().rotationBy(360f).setDuration(500).start()
+        pendingFuture = backgroundExecutor.submit {
+            try {
+                val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
+                val initResult = loadMobileInit(tenantParam)
+                val loadedSongs = initResult.songs
+                val oldSongId = songs.getOrNull(currentIndex)?.stableId
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    selectedPlaylistIds.clear()
+                    selectedPlaylistIds.addAll(initResult.activePlaylistIds)
+                    activePlaylistSignature = initResult.activePlaylistIds.joinToString(",")
+                    songs = loadedSongs
+                    val newIdx = loadedSongs.indexOfFirst { it.stableId == oldSongId }
+                    if (newIdx >= 0) currentIndex = newIdx
+                    else currentIndex = 0.coerceAtMost(loadedSongs.size - 1)
+                    resumePositionMs = 0
+                    if (loadedSongs.isEmpty()) {
+                        showError("ไม่มีเพลงใน playlist นี้")
+                    } else {
+                        renderCurrentSong(true)
+                        statusLabel.text = "อัปเดตแล้ว"
+                        if (isPlaying) play()
+                    }
+                    syncNotification()
+                    savePlaybackState()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread { if (!isDestroyed) statusLabel.text = "รีเฟรชไม่สำเร็จ" }
+            }
+        }
+    }
+
     private fun selectStation(station: NativeStation) {
         stationSelectView.visibility = View.GONE
         playerView.visibility = View.VISIBLE
@@ -473,24 +551,39 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         controlArtworkView.setImageResource(R.drawable.ic_music_note)
         updatePlayPauseIcon()
 
+        showSplash(station.displayName)
+
         pendingFuture = backgroundExecutor.submit {
             try {
                 val tenantParam = URLEncoder.encode(station.slug, "UTF-8")
-                val playlistIds = activePlaylistIds(tenantParam)
-                val loadedSongs = loadSongsForPlaylists(tenantParam, playlistIds)
+
+                // Phase 1: load just the primary/active playlist songs (fast)
+                val initResult = loadMobileInit(tenantParam)
+                val playlistIds = initResult.activePlaylistIds
+                val primaryId = playlistIds.firstOrNull()
+                val primarySongs = if (primaryId != null && playlistIds.size > 1) {
+                    // Only 1 active playlist — already have all songs
+                    // Multiple active playlists — load primary first
+                    val primaryResult = loadMobileInit(tenantParam, primaryId)
+                    primaryResult.songs
+                } else {
+                    initResult.songs
+                }
+
                 val canRestore = prefs.getString(KEY_TENANT, null) == station.slug
                 val restoredSongId = if (canRestore) prefs.getString(KEY_SONG_ID, null) else null
                 val restoredPosition = if (canRestore) prefs.getInt(KEY_POSITION_MS, 0) else 0
-                val shouldContinue = canRestore && prefs.getBoolean(KEY_WAS_PLAYING, false)
+
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
                     selectedPlaylistIds.clear()
                     selectedPlaylistIds.addAll(playlistIds)
                     activePlaylistSignature = playlistIds.joinToString(",")
-                    songs = loadedSongs
-                    val targetIndex = songs.indexOfFirst { it.stableId == restoredSongId }.takeIf { it >= 0 } ?: 0
+                    songs = primarySongs
+                    hideSplash()
+                    val targetIndex = primarySongs.indexOfFirst { it.stableId == restoredSongId }.takeIf { it >= 0 } ?: 0
                     resumePositionMs = restoredPosition
-                    if (songs.isEmpty()) {
+                    if (primarySongs.isEmpty()) {
                         showError("active playlist ยังไม่มีเพลง")
                     } else {
                         val playableIdx = findPlayableIndex(targetIndex, true, true)
@@ -503,9 +596,31 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         }
                     }
                 }
+
+                // Phase 2: if there are multiple active playlists, load remaining songs in background
+                if (playlistIds.size > 1) {
+                    try {
+                        val allSongsResult = loadMobileInit(tenantParam)
+                        runOnUiThread {
+                            if (isDestroyed) return@runOnUiThread
+                            songs = allSongsResult.songs
+                            // Preserve current song position
+                            val oldId = songs.getOrNull(currentIndex)?.stableId
+                            if (oldId != null) {
+                                val newIdx = allSongsResult.songs.indexOfFirst { it.stableId == oldId }
+                                if (newIdx >= 0) currentIndex = newIdx
+                            }
+                            renderCurrentSong(true)
+                            statusLabel.text = "อัปเดตแล้ว"
+                            syncNotification()
+                        }
+                    } catch (_: Exception) {}
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
-                showError("โหลด API ไม่สำเร็จ: ${e.message ?: "unknown error"}")
+                runOnUiThread { if (!isDestroyed) hideSplash() }
+                val errMsg = e.message ?: "unknown error"
+                showError("โหลด API ไม่สำเร็จ: $errMsg")
             }
         }
     }
@@ -515,11 +630,12 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         pendingFuture = backgroundExecutor.submit {
             try {
                 val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
-                val playlistIds = activePlaylistIds(tenantParam)
+                val initResult = loadMobileInit(tenantParam)
+                val playlistIds = initResult.activePlaylistIds
                 val signature = playlistIds.joinToString(",")
                 if (signature == activePlaylistSignature) return@submit
                 val oldSongId = songs.getOrNull(currentIndex)?.stableId
-                val loadedSongs = loadSongsForPlaylists(tenantParam, playlistIds)
+                val loadedSongs = initResult.songs
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
                     selectedPlaylistIds.clear()
@@ -539,85 +655,75 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     // ===================== API Helpers =====================
 
-    private fun activePlaylistIds(tenantParam: String): List<Int> {
-        val executor = java.util.concurrent.Executors.newFixedThreadPool(2)
-        val playlistsFuture = executor.submit<String> {
-            getJson("$baseUrl/api/playlists?tenant=$tenantParam")
+    /**
+     * Consolidated mobile init — replaces 4+ round trips with 1.
+     * Returns playlists, active playlist IDs, and songs in one call.
+     */
+    private data class MobileInitResult(
+        val playlists: JSONArray,
+        val activePlaylistIds: List<Int>,
+        val songs: List<NativeSong>,
+    )
+
+    private fun loadMobileInit(tenantParam: String, playlistId: Int? = null): MobileInitResult {
+        val url = if (playlistId != null) {
+            "$baseUrl/api/mobile/init?tenant=$tenantParam&playlist_id=$playlistId"
+        } else {
+            "$baseUrl/api/mobile/init?tenant=$tenantParam"
         }
-        val settingsFuture = executor.submit<String> {
-            getJson("$baseUrl/api/settings?tenant=$tenantParam")
+        val json = getJson(url)
+        val root = JSONObject(json)
+        val playlists = root.getJSONArray("playlists")
+        val activeIds = parseJsonIntArray(root.opt("active_playlist_ids"))
+        val songsArray = root.optJSONArray("songs") ?: JSONArray()
+
+        // Update cached playlists for playlist selection screen
+        cachedPlaylists.clear()
+        for (i in 0 until playlists.length()) {
+            cachedPlaylists.add(playlists.getJSONObject(i))
         }
-        val playlists = JSONArray(playlistsFuture.get())
+
         if (playlists.length() == 0) {
-            executor.shutdown()
             error("ยังไม่มี playlist")
         }
-        val settings = JSONObject(settingsFuture.get())
-        executor.shutdown()
-        val active = parseActivePlaylistIds(settings.opt("active_playlist_ids"))
-        val enabledIds = mutableListOf<Int>()
-        var defaultId = playlists.getJSONObject(0).getInt("id")
-        for (i in 0 until playlists.length()) {
-            val playlist = playlists.getJSONObject(i)
-            val id = playlist.getInt("id")
-            if (playlist.optBoolean("is_default", false)) defaultId = id
-            if (playlist.optBoolean("is_enabled", true) && active.contains(id)) enabledIds.add(id)
+
+        val resolvedIds = if (activeIds.isNotEmpty()) activeIds
+            else {
+                // Fall back to default playlist
+                val defaultId = (0 until playlists.length())
+                    .map { playlists.getJSONObject(it) }
+                    .firstOrNull { it.optBoolean("is_default", false) }
+                    ?.getInt("id")
+                    ?: playlists.getJSONObject(0).getInt("id")
+                listOf(defaultId)
+            }
+
+        val songs = (0 until songsArray.length()).map { index ->
+            val item = songsArray.getJSONObject(index)
+            NativeSong(
+                id = item.optInt("id", index),
+                playlistId = item.optInt("playlist_id", 0),
+                youtubeId = item.optString("youtube_id", ""),
+                title = item.optString("title", "Untitled"),
+                artist = item.optString("artist", "Music Bar").ifBlank { "Music Bar" },
+                thumbnail = item.optString("thumbnail", ""),
+                duration = item.optString("duration", ""),
+                audioUrl = item.optString("audio_url", ""),
+            )
         }
-        return enabledIds.ifEmpty { listOf(defaultId) }
+
+        return MobileInitResult(playlists, resolvedIds, songs)
     }
 
-    private fun parseActivePlaylistIds(value: Any?): Set<Int> {
+    private fun parseJsonIntArray(value: Any?): List<Int> {
         return when (value) {
-            is JSONArray -> (0 until value.length()).mapNotNull { value.optInt(it).takeIf { id -> id > 0 } }.toSet()
+            is JSONArray -> (0 until value.length()).mapNotNull { value.optInt(it).takeIf { id -> id >= 0 || id > 0 } }
             is String -> runCatching {
                 val array = JSONArray(value)
-                (0 until array.length()).mapNotNull { array.optInt(it).takeIf { id -> id > 0 } }.toSet()
-            }.getOrDefault(emptySet())
-            else -> emptySet()
+                (0 until array.length()).mapNotNull { array.optInt(it).takeIf { id -> id >= 0 } }
+            }.getOrDefault(emptyList())
+            else -> emptyList()
         }
-    }
-
-    private fun loadSongsForPlaylists(tenantParam: String, playlistIds: List<Int>): List<NativeSong> {
-        if (playlistIds.isEmpty()) return emptyList()
-        val executor = java.util.concurrent.Executors.newFixedThreadPool(playlistIds.size.coerceAtMost(4))
-        val futures = playlistIds.map { playlistId ->
-            executor.submit<List<NativeSong>> {
-                try {
-                    val songArray = JSONArray(getJson("$baseUrl/api/playlists/$playlistId/songs?tenant=$tenantParam"))
-                    (0 until songArray.length()).map { index ->
-                        val item = songArray.getJSONObject(index)
-                        NativeSong(
-                            id = item.optInt("id", index),
-                            playlistId = playlistId,
-                            youtubeId = item.optString("youtube_id", ""),
-                            title = item.optString("title", "Untitled"),
-                            artist = item.optString("artist", "Music Bar").ifBlank { "Music Bar" },
-                            thumbnail = item.optString("thumbnail", ""),
-                            duration = item.optString("duration", ""),
-                            audioUrl = absoluteUrl(firstNonBlank(
-                                if (item.isNull("audio_url")) "" else item.optString("audio_url", ""),
-                                if (item.isNull("stream_url")) "" else item.optString("stream_url", ""),
-                                if (item.isNull("media_url")) "" else item.optString("media_url", ""),
-                                if (item.isNull("url")) "" else item.optString("url", ""),
-                            )),
-                        )
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    emptyList()
-                }
-            }
-        }
-        val mergedList = mutableListOf<NativeSong>()
-        for (f in futures) {
-            mergedList.addAll(f.get())
-        }
-        executor.shutdown()
-        return mergedList
-    }
-
-    private fun firstNonBlank(vararg values: String): String {
-        return values.firstOrNull { it.isNotBlank() && it != "null" } ?: ""
     }
 
     private fun showError(message: String) {
@@ -915,13 +1021,13 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         }
         playlistList.addView(loadingText)
 
-        // Use a dedicated thread for the API call (not backgroundExecutor which is
-        // busy with thumbnail downloads from the queue)
+        // Use the playlists cached from the last mobile init call (no new HTTP request)
         Thread {
             try {
-                val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
-                val json = getJson("$baseUrl/api/playlists?tenant=$tenantParam")
-                val array = JSONArray(json)
+                val array = JSONArray()
+                for (pl in cachedPlaylists) {
+                    array.put(pl)
+                }
                 
                 data class PlaylistInfo(val name: String, val id: Int, val coverUrl: String, val songCount: Int)
                 val playlists = mutableListOf<PlaylistInfo>()
@@ -1114,7 +1220,20 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         backgroundExecutor.submit {
             try {
                 val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
-                val loadedSongs = loadSongsForPlaylists(tenantParam, listOf(playlistId))
+                val songArray = JSONArray(getJson("$baseUrl/api/playlists/$playlistId/songs?tenant=$tenantParam"))
+                val loadedSongs = (0 until songArray.length()).map { index ->
+                    val item = songArray.getJSONObject(index)
+                    NativeSong(
+                        id = item.optInt("id", index),
+                        playlistId = playlistId,
+                        youtubeId = item.optString("youtube_id", ""),
+                        title = item.optString("title", "Untitled"),
+                        artist = item.optString("artist", "Music Bar").ifBlank { "Music Bar" },
+                        thumbnail = item.optString("thumbnail", ""),
+                        duration = item.optString("duration", ""),
+                        audioUrl = item.optString("audio_url", ""),
+                    )
+                }
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
                     selectedPlaylistIds.clear()
@@ -1367,7 +1486,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         savePlaybackState()
                     }
                     setOnCompletionListener {
-                        if (generation == playbackGeneration) next(useCrossfade = false)
+                        if (generation == playbackGeneration) next(useCrossfade = crossfadeEnabled)
                     }
                     setOnErrorListener { _, what, extra ->
                         android.util.Log.e("MusicBarPlayer", "onError: what=$what, extra=$extra")
@@ -1476,7 +1595,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         savePlaybackState()
                     }
                     setOnCompletionListener {
-                        if (generation == playbackGeneration) next(useCrossfade = false)
+                        if (generation == playbackGeneration) next(useCrossfade = crossfadeEnabled)
                     }
                     setOnErrorListener { _, what, extra ->
                         if (generation != playbackGeneration) return@setOnErrorListener true
@@ -1595,10 +1714,12 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             val startedAt = System.currentTimeMillis()
             val tick = object : Runnable {
                 override fun run() {
-                    val p = min(1f, (System.currentTimeMillis() - startedAt).toFloat() / crossfadeMs.toFloat())
-                    fromPlayer.setVolume(1f - p, 1f - p)
-                    toPlayer.setVolume(p, p)
-                    if (p >= 1f) {
+                    val t = min(1f, (System.currentTimeMillis() - startedAt).toFloat() / crossfadeMs.toFloat())
+                    // New song: sqrt ramp-up (fast at start, audible earlier at ~77% by 3s)
+                    // Old song: linear fade-out (smooth decay over full duration)
+                    fromPlayer.setVolume(1f - t, 1f - t)
+                    toPlayer.setVolume(sqrt(t), sqrt(t))
+                    if (t >= 1f) {
                         fromPlayer.stop()
                         fromPlayer.release()
                         mediaPlayer = toPlayer
@@ -1620,7 +1741,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             }
             mainHandler.post(tick)
         }
-        toPlayer.setOnCompletionListener { next(useCrossfade = false) }
+        toPlayer.setOnCompletionListener { next(useCrossfade = crossfadeEnabled) }
         toPlayer.setOnErrorListener { _, _, _ ->
             if (generation == playbackGeneration) {
                 currentIndex = nextIndex

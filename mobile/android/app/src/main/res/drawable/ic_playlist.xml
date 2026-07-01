@@ -1,28 +1,26 @@
-<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- List lines on the left -->
+    <!-- Playlist icon: stacked lines -->
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
         android:strokeLineCap="round"
-        android:pathData="M 4,6 L 14,6" />
+        android:pathData="M 8,6 L 20,6" />
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
         android:strokeLineCap="round"
-        android:pathData="M 4,12 L 12,12" />
+        android:pathData="M 8,12 L 18,12" />
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
         android:strokeLineCap="round"
-        android:pathData="M 4,18 L 10,18" />
-
-    <!-- Musical Note on the right -->
+        android:pathData="M 8,18 L 14,18" />
+    <!-- Play triangle -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M 18,5 L 22,5 L 22,7 L 18,7 L 18,13 A 2.5,2.5 0 1 1 15.5,10.5 A 2.5,2.5 0 0 1 18,13 L 18,5 Z" />
+        android:pathData="M 4,10 L 6,8 L 6,16 Z" />
 </vector>

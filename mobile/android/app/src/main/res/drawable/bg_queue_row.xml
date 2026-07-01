@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Premium row/card with subtle border glow -->
+<!-- Dark glass queue row -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <gradient
         android:angle="180"
-        android:endColor="#13182E"
-        android:startColor="#181D38" />
+        android:endColor="#141824"
+        android:startColor="#181C2C" />
     <corners android:radius="16dp" />
     <stroke
-        android:width="1dp"
-        android:color="#252C52" />
+        android:width="0.5dp"
+        android:color="#1AFFFFFF" />
 </shape>

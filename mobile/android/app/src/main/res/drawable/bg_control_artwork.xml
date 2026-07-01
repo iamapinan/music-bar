@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Dark glass control artwork background -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="#11162B" />
+    <solid android:color="#141824" />
     <corners android:radius="12dp" />
     <stroke
-        android:width="1dp"
-        android:color="#3A4374" />
+        android:width="0.5dp"
+        android:color="#1AFFFFFF" />
 </shape>

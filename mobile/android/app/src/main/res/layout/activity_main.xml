@@ -92,6 +92,18 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
+                <!-- Refresh button to reload songs data -->
+                <ImageButton
+                    android:id="@+id/refreshButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Refresh"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_refresh" />
+
                 <!-- Button to open Playlist Selection dialog/overlay -->
                 <ImageButton
                     android:id="@+id/playlistSelectButton"
@@ -161,18 +173,20 @@
         </ScrollView>
     </LinearLayout>
 
-    <!-- Translucent fixed control bar at the bottom -->
+    <!-- Premium full rounded glass control bar at the bottom -->
     <LinearLayout
         android:id="@+id/controlBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginBottom="12dp"
         android:background="@drawable/bg_control_bar"
         android:elevation="22dp"
         android:orientation="vertical"
         android:paddingHorizontal="18dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="18dp"
         android:visibility="gone">
 
         <!-- Seekbar at the top of the control bar -->
@@ -380,10 +394,23 @@
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_back" />
 
+            <ImageButton
+                android:id="@+id/playlistRefreshButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Refresh Playlists"
+                android:padding="8dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_refresh" />
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toEndOf="@id/cancelPlaylistSelectButton"
+                android:layout_toStartOf="@id/playlistRefreshButton"
                 android:layout_centerVertical="true"
                 android:layout_marginStart="12dp"
                 android:text="เลือก Playlist"
@@ -413,4 +440,56 @@
                 android:orientation="vertical" />
         </ScrollView>
     </LinearLayout>
+
+    <!-- Splash Screen Overlay (shown during loading) -->
+    <FrameLayout
+        android:id="@+id/splashOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#E6001E2D"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/splashLogo"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/logo_white" />
+
+            <TextView
+                android:id="@+id/splashStationName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="" />
+
+            <ProgressBar
+                android:id="@+id/splashSpinner"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginTop="24dp"
+                android:indeterminateTint="#D7D5FF" />
+
+            <TextView
+                android:id="@+id/splashStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="#8E96BD"
+                android:textSize="13sp"
+                android:text="กำลังโหลด..." />
+        </LinearLayout>
+    </FrameLayout>
 </FrameLayout>
