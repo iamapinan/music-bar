@@ -1133,6 +1133,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             controlArtworkView.setImageBitmap(cached)
             return
         }
+        // Load artwork on background thread (won't block playback)
         pendingFuture = backgroundExecutor.submit {
             val bitmap = downloadBitmap(imageUrl)
             runOnUiThread {
@@ -1274,9 +1275,93 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         audioService?.acquirePlaybackLocks()
         releasePlayer()
 
-        // Always download to cache first, then play from local file
-        // CDN doesn't support Range requests, so MediaPlayer can't stream directly
-        prepareCachedAndPlay(song, seekMs, generation)
+        audioFuture?.cancel(true)
+        audioFuture = audioExecutor.submit {
+            val freshSource = getFreshSongUrl(song)
+            android.util.Log.d("MusicBarPlayer", "freshSource=$freshSource")
+            if (generation != playbackGeneration) return@submit
+
+            runOnUiThread {
+                if (generation != playbackGeneration) return@runOnUiThread
+
+                if (freshSource.isBlank()) {
+                    isPreparing = false
+                    setLoadingState(false, "เปิด stream ไม่สำเร็จ (URL ว่าง)")
+                    isPlaying = false
+                    updatePlayPauseIcon()
+                    syncNotification()
+                    savePlaybackState()
+                    audioService?.releasePlaybackLocks()
+                    return@runOnUiThread
+                }
+
+                mediaPlayer = try {
+                    createPlayer(freshSource)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
+                }
+
+                val newPlayer = mediaPlayer
+                if (newPlayer == null) {
+                    isPreparing = false
+                    setLoadingState(false, "เปิด stream ไม่สำเร็จ")
+                    isPlaying = false
+                    updatePlayPauseIcon()
+                    syncNotification()
+                    savePlaybackState()
+                    audioService?.releasePlaybackLocks()
+                    return@runOnUiThread
+                }
+
+                newPlayer.apply {
+                    setOnPreparedListener { player ->
+                        android.util.Log.d("MusicBarPlayer", "onPrepared: duration=${runCatching { player.duration }.getOrDefault(-1)}, gen=$generation, curGen=$playbackGeneration, isPlaying=$isPlaying")
+                        if (generation != playbackGeneration || !isPlaying) {
+                            android.util.Log.w("MusicBarPlayer", "onPrepared SKIPPED: gen=$generation, curGen=$playbackGeneration, isPlaying=$isPlaying")
+                            runCatching { player.release() }
+                            return@setOnPreparedListener
+                        }
+                        isPreparing = false
+                        setLoadingState(false, "กำลังเล่น")
+                        preparedSongId = song.stableId
+                        durationMs = safeDuration(player)
+                        if (seekMs > 0) player.seekTo(seekMs)
+                        try {
+                            player.start()
+                            android.util.Log.d("MusicBarPlayer", "player.start() SUCCESS, isPlaying=${runCatching { player.isPlaying }.getOrDefault(false)}")
+                        } catch (e: Exception) {
+                            android.util.Log.e("MusicBarPlayer", "player.start() FAILED", e)
+                        }
+                        playbackBasePositionMs = seekMs.coerceAtLeast(0)
+                        playbackStartedAtMs = System.currentTimeMillis()
+                        resumePositionMs = playbackBasePositionMs
+                        updatePlayPauseIcon()
+                        syncNotification()
+                        savePlaybackState()
+                    }
+                    setOnCompletionListener {
+                        if (generation == playbackGeneration) next(useCrossfade = false)
+                    }
+                    setOnErrorListener { _, what, extra ->
+                        android.util.Log.e("MusicBarPlayer", "onError: what=$what, extra=$extra")
+                        if (generation != playbackGeneration) return@setOnErrorListener true
+                        isPreparing = false
+                        setLoadingState(false, "เล่น stream นี้ไม่สำเร็จ ($what/$extra)")
+                        this@MainActivity.isPlaying = false
+                        preparedSongId = ""
+                        playbackStartedAtMs = 0L
+                        playbackBasePositionMs = 0
+                        updatePlayPauseIcon()
+                        syncNotification()
+                        savePlaybackState()
+                        audioService?.releasePlaybackLocks()
+                        true
+                    }
+                    prepareAsync()
+                }
+            }
+        }
     }
 
     private fun createPlayer(url: String): MediaPlayer {

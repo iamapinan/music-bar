@@ -3,7 +3,6 @@ import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
   try {
-    // Rate limit: max 20 stream requests per minute per IP (bandwidth protection)
     const rateCheck = await checkRateLimit(request, { maxRequests: 20, windowMs: 60_000 })
     if (!rateCheck.allowed) {
       return new Response('Too many requests, please slow down', {
@@ -24,7 +23,6 @@ export async function GET(request: Request) {
       return new Response('Invalid songId', { status: 400 })
     }
 
-    // Look up the audio URL from DB
     const rows = await sql<Array<{ audio_url: string | null }>>`
       SELECT audio_url FROM songs WHERE id = ${songId}
     `
@@ -38,7 +36,7 @@ export async function GET(request: Request) {
       return new Response('No audio URL available for this song', { status: 404 })
     }
 
-    // Defense-in-depth: reject non-HTTPS URLs to prevent SSRF
+    // Validate URL
     let parsedAudioUrl: URL
     try {
       parsedAudioUrl = new URL(audioUrl.trim())
@@ -49,8 +47,51 @@ export async function GET(request: Request) {
       return new Response('Invalid audio URL protocol', { status: 502 })
     }
 
-    // Redirect to the actual audio URL directly
-    return Response.redirect(audioUrl.trim(), 302)
+    // Fetch from CDN (CDN doesn't support Range, returns full file)
+    const headers: Record<string, string> = {
+      'User-Agent': 'Mozilla/5.0 (compatible; MusicBarAudioProxy/1.0)',
+    }
+    const rangeHeader = request.headers.get('range')
+    if (rangeHeader) {
+      headers['Range'] = rangeHeader
+    }
+
+    const upstream = await fetch(audioUrl.trim(), { headers })
+
+    if (!upstream.ok) {
+      console.error(`Audio proxy failed: ${upstream.status} for song ${songId}`)
+      return new Response('Failed to fetch audio', {
+        status: 502,
+      })
+    }
+
+    // Build response headers
+    const responseHeaders = new Headers()
+
+    const contentType = upstream.headers.get('content-type')
+    responseHeaders.set('Content-Type', contentType || 'audio/mpeg')
+
+    const contentLength = upstream.headers.get('content-length')
+    if (contentLength) {
+      responseHeaders.set('Content-Length', contentLength)
+    }
+
+    // Forward Content-Range if upstream returned 206
+    const contentRange = upstream.headers.get('content-range')
+    if (contentRange) {
+      responseHeaders.set('Content-Range', contentRange)
+    }
+
+    // Ensure Accept-Ranges so Android MediaPlayer knows Range is supported
+    responseHeaders.set('Accept-Ranges', 'bytes')
+
+    // Cache on CDN for 1 hour (audio files don't change)
+    responseHeaders.set('Cache-Control', 'public, max-age=3600')
+
+    return new Response(upstream.body, {
+      status: upstream.status,
+      headers: responseHeaders,
+    })
   } catch (error) {
     console.error('Error in audio stream endpoint:', error)
     return new Response('Internal server error', { status: 500 })

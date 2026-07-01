@@ -31,7 +31,7 @@ export async function GET(
     const songs = (result.data as any[]).map(song => ({
       ...song,
       thumbnail: song.thumbnail ? getProxiedUrl(song.thumbnail, origin) : song.thumbnail,
-      audio_url: song.audio_url || null,
+      audio_url: song.audio_url ? `${origin}/api/audio/stream?songId=${song.song_id}` : null,
     }))
 
     return NextResponse.json(songs, { headers: cacheHeaders(result.cache, startedAt) })
@@ -123,6 +123,7 @@ export async function POST(
       if (song.thumbnail) {
         song.thumbnail = getProxiedUrl(song.thumbnail, origin)
       }
+      song.audio_url = song.audio_url ? `${origin}/api/audio/stream?songId=${song.song_id}` : null
     }
 
     return NextResponse.json(song)

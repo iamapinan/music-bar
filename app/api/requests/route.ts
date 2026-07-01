@@ -57,7 +57,7 @@ export async function GET(request: Request) {
     const formatted = (result.data as any[]).map(req => ({
       ...req,
       thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail,
-      audio_url: req.audio_url || null,
+      audio_url: req.audio_url ? `${origin}/api/audio/stream?songId=${req.song_id}` : null,
     }))
     return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
   } catch (error) {
@@ -153,6 +153,7 @@ export async function POST(request: Request) {
       if (reqObj.thumbnail) {
         reqObj.thumbnail = getProxiedUrl(reqObj.thumbnail, origin)
       }
+      reqObj.audio_url = reqObj.audio_url ? `${origin}/api/audio/stream?songId=${reqObj.song_id}` : null
     }
 
     return NextResponse.json(reqObj)
