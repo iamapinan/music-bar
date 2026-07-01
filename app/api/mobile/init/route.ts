@@ -25,24 +25,30 @@ export async function GET(request: Request) {
     // ---- 1. Fetch playlists (cached 60s) ----
     const playlistsResult = await cachedJson(cacheKey('mobile:playlists', tenantId), 60, () =>
       sql`
+        WITH playlist_counts AS (
+          SELECT ps.playlist_id, COUNT(*)::int as song_count
+          FROM playlist_songs ps
+          JOIN songs s ON ps.song_id = s.id
+          WHERE ps.tenant_id = ${tenantId}
+            AND s.is_available = true
+          GROUP BY ps.playlist_id
+        ),
+        playlist_covers AS (
+          SELECT DISTINCT ON (ps.playlist_id) ps.playlist_id, s.thumbnail
+          FROM playlist_songs ps
+          JOIN songs s ON ps.song_id = s.id
+          WHERE ps.tenant_id = ${tenantId}
+            AND s.thumbnail IS NOT NULL
+            AND s.is_available = true
+          ORDER BY ps.playlist_id, ps.position ASC, ps.created_at ASC
+        )
         SELECT
           p.id, p.name, p.is_default, p.is_enabled, p.description,
-          (SELECT COUNT(*)
-           FROM playlist_songs ps
-           JOIN songs s ON ps.song_id = s.id
-           WHERE ps.playlist_id = p.id
-             AND ps.tenant_id = ${tenantId}
-             AND s.is_available = true) as song_count,
-          (SELECT s.thumbnail
-           FROM playlist_songs ps
-           JOIN songs s ON ps.song_id = s.id
-           WHERE ps.playlist_id = p.id
-             AND ps.tenant_id = ${tenantId}
-             AND s.thumbnail IS NOT NULL
-             AND s.is_available = true
-           ORDER BY ps.position ASC, ps.created_at ASC
-           LIMIT 1) as cover_thumbnail
+          COALESCE(pc.song_count, 0) as song_count,
+          pv.thumbnail as cover_thumbnail
         FROM playlists p
+        LEFT JOIN playlist_counts pc ON pc.playlist_id = p.id
+        LEFT JOIN playlist_covers pv ON pv.playlist_id = p.id
         WHERE p.tenant_id = ${tenantId}
         ORDER BY p.is_default DESC, p.created_at DESC
       `,

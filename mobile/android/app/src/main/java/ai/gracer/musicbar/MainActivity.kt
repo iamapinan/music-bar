@@ -1040,7 +1040,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         }
         playlistList.addView(loadingText)
 
-        // Use cached playlists if available, otherwise fetch from API
+        // Use cached playlists if available, otherwise show message to select station first
         Thread {
             try {
                 val array = JSONArray()
@@ -1048,7 +1048,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     for (pl in cachedPlaylists) {
                         array.put(pl)
                     }
-                } else {
+                } else if (tenantSlug.isNotBlank()) {
                     // Fallback: fetch playlists from API directly
                     val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
                     val json = getJson("$baseUrl/api/mobile/init?tenant=$tenantParam")
