@@ -85,7 +85,7 @@ export async function GET(request: Request) {
     // ---- 3. Progressive loading: if ?playlist_id is specified, only return songs for that playlist ----
     const primaryPlaylistId = searchParams.get('playlist_id')
     const activeIdsToLoad = primaryPlaylistId
-      ? [parseInt(primaryPlaylistId)].filter((id) => resolvedIds.includes(id))
+      ? [parseInt(primaryPlaylistId)]
       : resolvedIds
 
     // ---- 4. Fetch songs for selected playlists in ONE query (cached 120s) ----

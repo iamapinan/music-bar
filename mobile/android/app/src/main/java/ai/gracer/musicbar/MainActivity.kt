@@ -682,26 +682,44 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
                 // Phase 1: load just the primary/active playlist songs (fast)
                 val initResult = loadMobileInit(tenantParam)
-                val playlistIds = initResult.activePlaylistIds
+                var playlistIds = initResult.activePlaylistIds
                 val primaryId = playlistIds.firstOrNull()
-                val primarySongs = if (primaryId != null && playlistIds.size > 1) {
-                    // Only 1 active playlist — already have all songs
-                    // Multiple active playlists — load primary first
-                    val primaryResult = loadMobileInit(tenantParam, primaryId)
+                val canRestore = prefs.getString(KEY_TENANT, null) == station.slug
+                val restoredSongId = if (canRestore) prefs.getString(KEY_SONG_ID, null) else null
+                val restoredPosition = if (canRestore) prefs.getInt(KEY_POSITION_MS, 0) else 0
+                val restoredPlaylists = if (canRestore) prefs.getString(KEY_PLAYLISTS, null) else null
+
+                // Override API active playlist with locally saved playlist if available
+                if (restoredPlaylists != null && restoredPlaylists.isNotBlank()) {
+                    val savedIds = restoredPlaylists.split(",").mapNotNull { it.toIntOrNull() }
+                    if (savedIds.isNotEmpty()) {
+                        playlistIds = savedIds
+                    }
+                }
+
+                // Load songs for the resolved playlist IDs
+                val resolvedPlaylistIds = playlistIds
+                val primaryIdResolved = resolvedPlaylistIds.firstOrNull()
+                val primarySongs = if (primaryIdResolved != null && resolvedPlaylistIds.size > 1) {
+                    val primaryResult = loadMobileInit(tenantParam, primaryIdResolved)
                     primaryResult.songs
+                } else if (primaryIdResolved != null) {
+                    // Only 1 playlist — load songs for it specifically if it differs from API's default
+                    if (resolvedPlaylistIds != initResult.activePlaylistIds) {
+                        val altResult = loadMobileInit(tenantParam, primaryIdResolved)
+                        altResult.songs
+                    } else {
+                        initResult.songs
+                    }
                 } else {
                     initResult.songs
                 }
 
-                val canRestore = prefs.getString(KEY_TENANT, null) == station.slug
-                val restoredSongId = if (canRestore) prefs.getString(KEY_SONG_ID, null) else null
-                val restoredPosition = if (canRestore) prefs.getInt(KEY_POSITION_MS, 0) else 0
-
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
                     selectedPlaylistIds.clear()
-                    selectedPlaylistIds.addAll(playlistIds)
-                    activePlaylistSignature = playlistIds.joinToString(",")
+                    selectedPlaylistIds.addAll(resolvedPlaylistIds)
+                    activePlaylistSignature = resolvedPlaylistIds.joinToString(",")
                     songs = primarySongs
                     hideSplash()
                     val targetIndex = primarySongs.indexOfFirst { it.stableId == restoredSongId }.takeIf { it >= 0 } ?: 0
@@ -721,9 +739,22 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 }
 
                 // Phase 2: if there are multiple active playlists, load remaining songs in background
-                if (playlistIds.size > 1) {
+                if (resolvedPlaylistIds.size > 1) {
                     try {
-                        val allSongsResult = loadMobileInit(tenantParam)
+                        val remainingIds = resolvedPlaylistIds.filter { it != primaryIdResolved }
+                        val allSongsResult = if (remainingIds.isNotEmpty()) {
+                            val extraSongs = mutableListOf<NativeSong>()
+                            for (pid in remainingIds) {
+                                val pr = loadMobileInit(tenantParam, pid)
+                                extraSongs.addAll(pr.songs)
+                            }
+                            // Merge primary songs with extra songs, preserving order
+                            val merged = primarySongs.toMutableList()
+                            merged.addAll(extraSongs)
+                            MobileInitResult(JSONArray(), resolvedPlaylistIds, merged)
+                        } else {
+                            loadMobileInit(tenantParam)
+                        }
                         runOnUiThread {
                             if (isDestroyed) return@runOnUiThread
                             songs = allSongsResult.songs
