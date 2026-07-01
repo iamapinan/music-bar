@@ -123,6 +123,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     // ---- Performance: Thread pool & lifecycle ----
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
     private val audioExecutor = Executors.newSingleThreadExecutor()
+    private val imageLoader = java.util.concurrent.Executors.newFixedThreadPool(4)
     private var pendingFuture: Future<*>? = null
     private var audioFuture: Future<*>? = null
     private var isDestroyed = false
@@ -238,6 +239,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         pendingFuture?.cancel(true)
         audioFuture?.cancel(true)
         backgroundExecutor.shutdownNow()
+        imageLoader.shutdownNow()
         audioExecutor.shutdownNow()
         try {
             unregisterReceiver(stopReceiver)
@@ -1483,7 +1485,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             return
         }
         // Load artwork on background thread (won't block playback)
-        pendingFuture = backgroundExecutor.submit {
+        imageLoader.submit {
             val bitmap = downloadBitmap(imageUrl)
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
@@ -1507,7 +1509,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             mirrorTarget?.setImageBitmap(cached)
             return
         }
-        pendingFuture = backgroundExecutor.submit {
+        imageLoader.submit {
             val bitmap = downloadBitmap(imageUrl)
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
