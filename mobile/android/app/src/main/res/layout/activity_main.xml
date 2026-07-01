@@ -98,7 +98,6 @@
         android:layout_height="match_parent"
         android:fillViewport="true"
         android:clipToPadding="false"
-        android:paddingTop="24dp"
         android:paddingBottom="24dp"
         android:visibility="gone">
 
@@ -106,7 +105,7 @@
             android:id="@+id/playerContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
+            android:gravity="center"
             android:orientation="vertical"
             android:paddingHorizontal="20dp">
 

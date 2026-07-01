@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private val mainHandler = Handler(Looper.getMainLooper())
     private val prefs by lazy { getSharedPreferences("musicbar_native_player", Context.MODE_PRIVATE) }
 
-    private val baseUrl = "http://10.0.2.2:3000" // Local dev server (emulator → host)
+    private val baseUrl = "https://musicbar.gracer.ai"
     private val crossfadeMs = 5000
 
     // ---- Performance: Thread pool & lifecycle ----
