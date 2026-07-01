@@ -498,7 +498,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                             showError("ไม่มีเพลงที่เล่นได้ในสถานีนี้")
                         } else {
                             currentIndex = playableIdx
-                            renderCurrentSong()
+                            renderCurrentSong(true)
                             play()
                         }
                     }
@@ -528,7 +528,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     songs = loadedSongs
                     currentIndex = songs.indexOfFirst { it.stableId == oldSongId }.takeIf { it >= 0 } ?: 0
                     statusLabel.text = "อัปเดตแล้ว"
-                    renderCurrentSong()
+                    renderCurrentSong(true)
                     if (isPlaying) play()
                 }
             } catch (_: Exception) {
@@ -643,19 +643,39 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     // ===================== Rendering =====================
 
-    private fun renderCurrentSong() {
+    private fun renderCurrentSong(rebuildQueue: Boolean = false) {
         val song = songs.getOrNull(currentIndex) ?: return
         songTitle.text = song.title
         songTitle.isSelected = true
         songArtist.text = song.artist
         durationMs = parseDuration(song.duration) * 1000
         updateProgress(positionMs = resumePositionMs.takeIf { it > 0 } ?: 0, durationMs = durationMs)
-        renderQueue()
+        if (rebuildQueue) renderQueue()
+        else updateActiveHighlight()
         loadArtwork(song.thumbnail)
         if (!isPlaying && !isPreparing) statusLabel.text = "พร้อมเล่น"
         updatePlayPauseIcon()
         syncNotification()
         savePlaybackState()
+    }
+
+    /** Update just the highlight of old/new current song without rebuilding all views */
+    private fun updateActiveHighlight() {
+        if (songs.isEmpty()) return
+        for (i in 0 until queueList.childCount) {
+            val row = queueList.getChildAt(i) as? LinearLayout ?: continue
+            for (j in 0 until row.childCount) {
+                val card = row.getChildAt(j)
+                val tagIdx = card?.getTag() as? Int ?: continue
+                if (tagIdx == currentIndex) {
+                    card.setBackgroundResource(R.drawable.bg_playlist_card_active)
+                    card.alpha = 1f
+                } else {
+                    card.setBackgroundResource(R.drawable.bg_playlist_card)
+                    card.alpha = 0.4f
+                }
+            }
+        }
     }
 
     private fun renderQueue() {
@@ -762,8 +782,10 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             })
         }
 
+        // buildSongCard
         return LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
+            setTag(idx)
             background = ContextCompat.getDrawable(
                 this@MainActivity,
                 if (isCurrent) R.drawable.bg_playlist_card_active
@@ -844,9 +866,11 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             })
         }
 
+        // buildSongRow
         return LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
+            setTag(idx)
             background = if (isCurrent) {
                 ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_playlist_card_active)
             } else {
@@ -1102,7 +1126,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         showError("ไม่มีเพลงที่เล่นได้ใน playlist นี้")
                     } else {
                         currentIndex = playableIdx
-                        renderCurrentSong()
+                        renderCurrentSong(true)
                         play()
                     }
                 }
