@@ -536,6 +536,13 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         if (tenantSlug.isBlank()) return
         statusLabel.text = "กำลังโหลด"
 
+        // Clear local cache so refresh forces a fresh fetch
+        val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
+        prefs.edit()
+            .remove("init:$tenantParam:all")
+            .remove("init:$tenantParam:all:ts")
+            .apply()
+
         // Start continuous rotation animation
         refreshAnimator?.cancel()
         refreshButton.rotation = 0f
@@ -548,7 +555,6 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
         pendingFuture = backgroundExecutor.submit {
             try {
-                val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
                 val initResult = loadMobileInit(tenantParam)
                 val loadedSongs = initResult.songs
                 val oldSongId = songs.getOrNull(currentIndex)?.stableId
@@ -778,6 +784,53 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     )
 
     private fun loadMobileInit(tenantParam: String, playlistId: Int? = null): MobileInitResult {
+        val cacheKey = "init:$tenantParam:${playlistId ?: "all"}"
+        val cacheTtlMs = 300_000L // 5 minutes
+
+        // Try local cache first
+        val cachedJson = prefs.getString(cacheKey, null)
+        val cachedTime = prefs.getLong("${cacheKey}:ts", 0L)
+        if (cachedJson != null && System.currentTimeMillis() - cachedTime < cacheTtlMs && playlistId == null) {
+            try {
+                val root = JSONObject(cachedJson)
+                val playlists = root.getJSONArray("playlists")
+                val activeIds = parseJsonIntArray(root.opt("active_playlist_ids"))
+                val songsArray = root.optJSONArray("songs") ?: JSONArray()
+
+                cachedPlaylists.clear()
+                for (i in 0 until playlists.length()) {
+                    cachedPlaylists.add(playlists.getJSONObject(i))
+                }
+
+                if (playlists.length() == 0) error("ยังไม่มี playlist")
+
+                val resolvedIds = if (activeIds.isNotEmpty()) activeIds
+                    else {
+                        val defaultId = (0 until playlists.length())
+                            .map { playlists.getJSONObject(it) }
+                            .firstOrNull { it.optBoolean("is_default", false) }
+                            ?.getInt("id")
+                            ?: playlists.getJSONObject(0).getInt("id")
+                        listOf(defaultId)
+                    }
+
+                val songs = (0 until songsArray.length()).map { index ->
+                    val item = songsArray.getJSONObject(index)
+                    NativeSong(
+                        id = item.optInt("id", index),
+                        playlistId = item.optInt("playlist_id", 0),
+                        youtubeId = item.optString("youtube_id", ""),
+                        title = item.optString("title", "Untitled"),
+                        artist = item.optString("artist", "Music Bar").ifBlank { "Music Bar" },
+                        thumbnail = item.optString("thumbnail", ""),
+                        duration = item.optString("duration", ""),
+                        audioUrl = item.optString("audio_url", ""),
+                    )
+                }
+                return MobileInitResult(playlists, resolvedIds, songs)
+            } catch (_: Exception) { /* cache stale, fall through to API */ }
+        }
+
         val url = if (playlistId != null) {
             "$baseUrl/api/mobile/init?tenant=$tenantParam&playlist_id=$playlistId"
         } else {
@@ -822,6 +875,14 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 duration = item.optString("duration", ""),
                 audioUrl = item.optString("audio_url", ""),
             )
+        }
+
+        // Save to local cache
+        if (playlistId == null) {
+            prefs.edit()
+                .putString(cacheKey, root.toString())
+                .putLong("${cacheKey}:ts", System.currentTimeMillis())
+                .apply()
         }
 
         return MobileInitResult(playlists, resolvedIds, songs)
