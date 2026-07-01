@@ -3,7 +3,6 @@ import { cachedJson, cacheHeaders, cacheKey, invalidateCache } from '@/lib/cache
 import { isTenantError, requireTenantContext } from '@/lib/tenancy'
 import { NextResponse } from 'next/server'
 import { getProxiedUrl } from '@/lib/images'
-import { buildStreamUrl } from '@/lib/audio-stream'
 
 export async function GET(
   request: Request,
@@ -32,9 +31,7 @@ export async function GET(
     const songs = (result.data as any[]).map(song => ({
       ...song,
       thumbnail: song.thumbnail ? getProxiedUrl(song.thumbnail, origin) : song.thumbnail,
-      audio_url: song.audio_url
-        ? buildStreamUrl(origin, Number(song.song_id), ctx.tenant.id)
-        : null,
+      audio_url: song.audio_url || null,
     }))
 
     return NextResponse.json(songs, { headers: cacheHeaders(result.cache, startedAt) })
@@ -125,9 +122,6 @@ export async function POST(
     if (song) {
       if (song.thumbnail) {
         song.thumbnail = getProxiedUrl(song.thumbnail, origin)
-      }
-      if (song.audio_url) {
-        song.audio_url = buildStreamUrl(origin, Number(song.song_id), ctx.tenant.id)
       }
     }
 

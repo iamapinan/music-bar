@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Track 1 (Left) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M 5,3 L 5,21" />
+
+    <!-- Track 2 (Center) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M 12,3 L 12,21" />
+
+    <!-- Track 3 (Right) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M 19,3 L 19,21" />
+
+    <!-- Knob 1 (High, centered at Y=7) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 1.5,6 A 1,1 0 0 1 2.5,5 L 7.5,5 A 1,1 0 0 1 8.5,6 L 8.5,8 A 1,1 0 0 1 7.5,9 L 2.5,9 A 1,1 0 0 1 1.5,8 Z" />
+
+    <!-- Knob 2 (Middle, centered at Y=11) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 8.5,10.5 A 1,1 0 0 1 9.5,9.5 L 14.5,9.5 A 1,1 0 0 1 15.5,10.5 L 15.5,12.5 A 1,1 0 0 1 14.5,13.5 L 9.5,13.5 A 1,1 0 0 1 8.5,12.5 Z" />
+
+    <!-- Knob 3 (Low, centered at Y=16.5) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 15.5,16 A 1,1 0 0 1 16.5,15 L 21.5,15 A 1,1 0 0 1 22.5,16 L 22.5,18 A 1,1 0 0 1 21.5,19 L 16.5,19 A 1,1 0 0 1 15.5,18 Z" />
+</vector>

@@ -29,6 +29,8 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -51,7 +53,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     // ---- Views ----
     private lateinit var artworkFrame: FrameLayout
     private lateinit var stationSelectView: ScrollView
-    private lateinit var playerView: ScrollView
+    private lateinit var playerView: LinearLayout
     private lateinit var stationContent: LinearLayout
     private lateinit var playerContent: LinearLayout
     private lateinit var stationList: LinearLayout
@@ -68,12 +70,16 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private lateinit var playPauseButton: ImageButton
     private lateinit var previousButton: ImageButton
     private lateinit var nextButton: ImageButton
-    private lateinit var crossfadeToggle: TextView
+    private lateinit var crossfadeToggle: ImageButton
     private lateinit var controlBar: LinearLayout
     private lateinit var queueList: LinearLayout
-    private lateinit var stationSelectTitle: TextView
-    private lateinit var stationSelectSubtitle: TextView
     private lateinit var crossfadeLabel: TextView
+    private lateinit var loadingSpinner: ProgressBar
+    private lateinit var playlistSelectButton: ImageButton
+    private lateinit var playlistSelectView: LinearLayout
+    private lateinit var playlistList: LinearLayout
+    private lateinit var cancelPlaylistSelectButton: ImageButton
+
 
     // ---- State ----
     private var audioService: BackgroundAudioService? = null
@@ -248,9 +254,22 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         crossfadeToggle = findViewById(R.id.crossfadeToggle)
         controlBar = findViewById(R.id.controlBar)
         queueList = findViewById(R.id.queueList)
-        stationSelectTitle = findViewById(R.id.stationSelectTitle)
-        stationSelectSubtitle = findViewById(R.id.stationSelectSubtitle)
         crossfadeLabel = findViewById(R.id.crossfadeLabel)
+        loadingSpinner = findViewById(R.id.loadingSpinner)
+        playlistSelectButton = findViewById(R.id.playlistSelectButton)
+        playlistSelectView = findViewById(R.id.playlistSelectView)
+        playlistList = findViewById(R.id.playlistList)
+        cancelPlaylistSelectButton = findViewById(R.id.cancelPlaylistSelectButton)
+        applyRoundedCorners(controlArtworkView, 4)
+    }
+
+    private fun applyRoundedCorners(imageView: ImageView, radiusDp: Int) {
+        imageView.clipToOutline = true
+        imageView.outlineProvider = object : android.view.ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: android.graphics.Outline) {
+                outline.setRoundRect(0, 0, view.width, view.height, dp(radiusDp).toFloat())
+            }
+        }
     }
 
     private fun makeResponsive() {
@@ -259,6 +278,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         val maxContentPx = (680 * density).toInt()
         val contentWidth = min(width - (48 * density).toInt(), maxContentPx).coerceAtLeast((280 * density).toInt())
         stationContent.layoutParams = stationContent.layoutParams.apply { this.width = contentWidth }
+        playlistList.layoutParams = playlistList.layoutParams.apply { this.width = contentWidth }
         playerContent.layoutParams = playerContent.layoutParams.apply { this.width = LinearLayout.LayoutParams.MATCH_PARENT }
 
         artworkFrame.visibility = View.GONE
@@ -274,6 +294,14 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         }
         playPauseButton.setOnClickListener {
             if (isPlaying) pause() else play()
+        }
+        playlistSelectButton.setOnClickListener {
+            showPlaylistSelectionScreen()
+        }
+        cancelPlaylistSelectButton.setOnClickListener {
+            playlistSelectView.visibility = View.GONE
+            playerView.visibility = View.VISIBLE
+            controlBar.visibility = View.VISIBLE
         }
         nextButton.setOnClickListener { next(useCrossfade = crossfadeEnabled) }
         previousButton.setOnClickListener { previous() }
@@ -460,13 +488,19 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     selectedPlaylistIds.addAll(playlistIds)
                     activePlaylistSignature = playlistIds.joinToString(",")
                     songs = loadedSongs
-                    currentIndex = songs.indexOfFirst { it.stableId == restoredSongId }.takeIf { it >= 0 } ?: 0
+                    val targetIndex = songs.indexOfFirst { it.stableId == restoredSongId }.takeIf { it >= 0 } ?: 0
                     resumePositionMs = restoredPosition
                     if (songs.isEmpty()) {
                         showError("active playlist ยังไม่มีเพลง")
                     } else {
-                        renderCurrentSong()
-                        if (shouldContinue) play()
+                        val playableIdx = findPlayableIndex(targetIndex, true, true)
+                        if (playableIdx == -1) {
+                            showError("ไม่มีเพลงที่เล่นได้ในสถานีนี้")
+                        } else {
+                            currentIndex = playableIdx
+                            renderCurrentSong()
+                            play()
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -506,9 +540,20 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     // ===================== API Helpers =====================
 
     private fun activePlaylistIds(tenantParam: String): List<Int> {
-        val playlists = JSONArray(getJson("$baseUrl/api/playlists?tenant=$tenantParam"))
-        if (playlists.length() == 0) error("ยังไม่มี playlist")
-        val settings = JSONObject(getJson("$baseUrl/api/settings?tenant=$tenantParam"))
+        val executor = java.util.concurrent.Executors.newFixedThreadPool(2)
+        val playlistsFuture = executor.submit<String> {
+            getJson("$baseUrl/api/playlists?tenant=$tenantParam")
+        }
+        val settingsFuture = executor.submit<String> {
+            getJson("$baseUrl/api/settings?tenant=$tenantParam")
+        }
+        val playlists = JSONArray(playlistsFuture.get())
+        if (playlists.length() == 0) {
+            executor.shutdown()
+            error("ยังไม่มี playlist")
+        }
+        val settings = JSONObject(settingsFuture.get())
+        executor.shutdown()
         val active = parseActivePlaylistIds(settings.opt("active_playlist_ids"))
         val enabledIds = mutableListOf<Int>()
         var defaultId = playlists.getJSONObject(0).getInt("id")
@@ -533,27 +578,42 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     }
 
     private fun loadSongsForPlaylists(tenantParam: String, playlistIds: List<Int>): List<NativeSong> {
-        return playlistIds.flatMap { playlistId ->
-            val songArray = JSONArray(getJson("$baseUrl/api/playlists/$playlistId/songs?tenant=$tenantParam"))
-            (0 until songArray.length()).map { index ->
-                val item = songArray.getJSONObject(index)
-                NativeSong(
-                    id = item.optInt("id", index),
-                    playlistId = playlistId,
-                    youtubeId = item.optString("youtube_id", ""),
-                    title = item.optString("title", "Untitled"),
-                    artist = item.optString("artist", "Music Bar").ifBlank { "Music Bar" },
-                    thumbnail = item.optString("thumbnail", ""),
-                    duration = item.optString("duration", ""),
-                    audioUrl = absoluteUrl(firstNonBlank(
-                        item.optString("audio_url", ""),
-                        item.optString("stream_url", ""),
-                        item.optString("media_url", ""),
-                        item.optString("url", ""),
-                    )),
-                )
+        if (playlistIds.isEmpty()) return emptyList()
+        val executor = java.util.concurrent.Executors.newFixedThreadPool(playlistIds.size.coerceAtMost(4))
+        val futures = playlistIds.map { playlistId ->
+            executor.submit<List<NativeSong>> {
+                try {
+                    val songArray = JSONArray(getJson("$baseUrl/api/playlists/$playlistId/songs?tenant=$tenantParam"))
+                    (0 until songArray.length()).map { index ->
+                        val item = songArray.getJSONObject(index)
+                        NativeSong(
+                            id = item.optInt("id", index),
+                            playlistId = playlistId,
+                            youtubeId = item.optString("youtube_id", ""),
+                            title = item.optString("title", "Untitled"),
+                            artist = item.optString("artist", "Music Bar").ifBlank { "Music Bar" },
+                            thumbnail = item.optString("thumbnail", ""),
+                            duration = item.optString("duration", ""),
+                            audioUrl = absoluteUrl(firstNonBlank(
+                                if (item.isNull("audio_url")) "" else item.optString("audio_url", ""),
+                                if (item.isNull("stream_url")) "" else item.optString("stream_url", ""),
+                                if (item.isNull("media_url")) "" else item.optString("media_url", ""),
+                                if (item.isNull("url")) "" else item.optString("url", ""),
+                            )),
+                        )
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    emptyList()
+                }
             }
         }
+        val mergedList = mutableListOf<NativeSong>()
+        for (f in futures) {
+            mergedList.addAll(f.get())
+        }
+        executor.shutdown()
+        return mergedList
     }
 
     private fun firstNonBlank(vararg values: String): String {
@@ -573,8 +633,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private fun getJson(urlString: String): String {
         val connection = (URL(urlString).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            connectTimeout = 10000
-            readTimeout = 10000
+            connectTimeout = 30000
+            readTimeout = 30000
             setRequestProperty("Accept", "application/json")
         }
         val stream = if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream
@@ -600,63 +660,460 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     private fun renderQueue() {
         queueList.removeAllViews()
-        if (songs.size <= 1) return
-        val maxItems = minOf(8, songs.size - 1)
-        for (offset in 1..maxItems) {
-            val song = songs[(currentIndex + offset) % songs.size]
+        if (songs.isEmpty()) return
 
-            val cover = ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
-                background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setPadding(dp(2), dp(2), dp(2), dp(2))
-                setImageResource(R.drawable.ic_music_note)
-                if (song.thumbnail.isNotBlank()) loadBitmap(song.thumbnail, this, null)
-            }
+        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
+        if (isTablet) {
+            val colCount = 4
+            var currentRow: LinearLayout? = null
+            for (idx in songs.indices) {
+                val song = songs[idx]
+                val isCurrent = idx == currentIndex
 
-            val title = TextView(this).apply {
-                text = song.title
-                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.cloud_white))
-                textSize = 14f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                maxLines = 1
-            }
-
-            val artist = TextView(this).apply {
-                text = song.artist
-                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.slate_300))
-                textSize = 12f
-                maxLines = 1
-            }
-
-            val textColumn = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    marginStart = dp(12)
+                if (idx % colCount == 0) {
+                    currentRow = LinearLayout(this).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        ).apply {
+                            bottomMargin = dp(12)
+                        }
+                    }
+                    queueList.addView(currentRow)
                 }
-                addView(title)
-                addView(artist.apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                    ).apply { topMargin = dp(3) }
-                })
+
+                val card = buildSongCard(song, idx, isCurrent)
+                currentRow?.addView(card)
             }
 
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_queue_row)
-                setPadding(dp(12), dp(10), dp(12), dp(10))
-                addView(cover)
-                addView(textColumn)
+            // Fill remainder of the last row
+            val remainder = songs.size % colCount
+            if (remainder > 0 && currentRow != null) {
+                for (i in 0 until (colCount - remainder)) {
+                    val spacer = View(this).apply {
+                        layoutParams = LinearLayout.LayoutParams(0, 1, 1f).apply {
+                            marginEnd = dp(6)
+                            marginStart = dp(6)
+                        }
+                    }
+                    currentRow.addView(spacer)
+                }
+            }
+        } else {
+            // Mobile: vertical list of rows
+            for (idx in songs.indices) {
+                val song = songs[idx]
+                val isCurrent = idx == currentIndex
+                val row = buildSongRow(song, idx, isCurrent)
+                queueList.addView(row)
+            }
+        }
+    }
+
+    private fun buildSongCard(song: NativeSong, idx: Int, isCurrent: Boolean): View {
+        val hasAudio = song.audioUrl.isNotBlank() && absoluteUrl(song.audioUrl).isNotBlank()
+
+        val cover = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(110)).apply {
+                bottomMargin = dp(8)
+            }
+            background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setPadding(dp(2), dp(2), dp(2), dp(2))
+            setImageResource(R.drawable.ic_music_note)
+            applyRoundedCorners(this, 4)
+            if (song.thumbnail.isNotBlank()) loadBitmap(song.thumbnail, this, null)
+        }
+
+        val title = TextView(this).apply {
+            text = song.title
+            setTextColor(
+                if (isCurrent) ContextCompat.getColor(this@MainActivity, R.color.white)
+                else ContextCompat.getColor(this@MainActivity, R.color.cloud_white)
+            )
+            textSize = 13f
+            setTypeface(typeface, if (isCurrent) android.graphics.Typeface.BOLD_ITALIC else android.graphics.Typeface.BOLD)
+            maxLines = 2
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        }
+
+        val artist = TextView(this).apply {
+            text = song.artist
+            setTextColor(
+                if (isCurrent) android.graphics.Color.parseColor("#D7D5FF")
+                else ContextCompat.getColor(this@MainActivity, R.color.slate_300)
+            )
+            textSize = 11f
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        }
+
+        val cardContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+            addView(cover)
+            addView(title)
+            addView(artist.apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(2) }
+            })
+        }
+
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            background = ContextCompat.getDrawable(
+                this@MainActivity,
+                if (isCurrent) R.drawable.bg_playlist_card_active
+                else R.drawable.bg_playlist_card
+            )
+            addView(cardContent.apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            })
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginEnd = dp(6)
+                marginStart = dp(6)
+            }
+            if (hasAudio) {
+                setOnClickListener {
+                    if (currentIndex != idx) {
+                        currentIndex = idx
+                        resumePositionMs = 0
+                        renderCurrentSong()
+                        startSong(song, 0)
+                    } else {
+                        if (isPlaying) pause() else play()
+                    }
+                }
+            } else {
+                alpha = 0.4f
+            }
+        }
+    }
+
+    private fun buildSongRow(song: NativeSong, idx: Int, isCurrent: Boolean): View {
+        val hasAudio = song.audioUrl.isNotBlank() && absoluteUrl(song.audioUrl).isNotBlank()
+
+        val cover = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+            background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setPadding(dp(2), dp(2), dp(2), dp(2))
+            setImageResource(R.drawable.ic_music_note)
+            applyRoundedCorners(this, 4)
+            if (song.thumbnail.isNotBlank()) loadBitmap(song.thumbnail, this, null)
+        }
+
+        val title = TextView(this).apply {
+            text = song.title
+            setTextColor(
+                if (isCurrent) ContextCompat.getColor(this@MainActivity, R.color.white)
+                else ContextCompat.getColor(this@MainActivity, R.color.cloud_white)
+            )
+            textSize = 14f
+            setTypeface(typeface, if (isCurrent) android.graphics.Typeface.BOLD_ITALIC else android.graphics.Typeface.BOLD)
+            maxLines = 1
+        }
+
+        val artist = TextView(this).apply {
+            text = song.artist
+            setTextColor(
+                if (isCurrent) android.graphics.Color.parseColor("#D7D5FF")
+                else ContextCompat.getColor(this@MainActivity, R.color.slate_300)
+            )
+            textSize = 12f
+            maxLines = 1
+        }
+
+        val textColumn = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = dp(12)
+            }
+            addView(title)
+            addView(artist.apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { bottomMargin = dp(8) }
+                ).apply { topMargin = dp(3) }
+            })
+        }
+
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            background = if (isCurrent) {
+                ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_playlist_card_active)
+            } else {
+                null
+            }
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            addView(cover)
+            addView(textColumn)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = dp(8) }
+            if (hasAudio) {
+                setOnClickListener {
+                    if (currentIndex != idx) {
+                        currentIndex = idx
+                        resumePositionMs = 0
+                        renderCurrentSong()
+                        startSong(song, 0)
+                    } else {
+                        if (isPlaying) pause() else play()
+                    }
+                }
+            } else {
+                alpha = 0.4f
+            }
+        }
+    }
+
+    private fun showPlaylistSelectionScreen() {
+        playerView.visibility = View.GONE
+        controlBar.visibility = View.GONE
+        playlistSelectView.visibility = View.VISIBLE
+        playlistList.removeAllViews()
+
+        val loadingText = TextView(this).apply {
+            text = "กำลังโหลด..."
+            setTextColor(android.graphics.Color.WHITE)
+            textSize = 16f
+            gravity = android.view.Gravity.CENTER
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+        }
+        playlistList.addView(loadingText)
+
+        backgroundExecutor.submit {
+            try {
+                val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
+                val json = getJson("$baseUrl/api/playlists?tenant=$tenantParam")
+                val array = JSONArray(json)
+                
+                data class PlaylistInfo(val name: String, val id: Int, val coverUrl: String, val songCount: Int)
+                val playlists = mutableListOf<PlaylistInfo>()
+                for (i in 0 until array.length()) {
+                    val pl = array.getJSONObject(i)
+                    if (pl.optBoolean("is_enabled", true)) {
+                        playlists.add(PlaylistInfo(
+                            name = pl.getString("name"),
+                            id = pl.getInt("id"),
+                            coverUrl = pl.optString("cover_thumbnail", ""),
+                            songCount = pl.optInt("song_count", 0)
+                        ))
+                    }
+                }
+                
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    playlistList.removeAllViews()
+                    if (playlists.isEmpty()) {
+                        val emptyText = TextView(this).apply {
+                            text = "ไม่มี Playlist"
+                            setTextColor(android.graphics.Color.WHITE)
+                            textSize = 16f
+                            gravity = android.view.Gravity.CENTER
+                            setPadding(dp(16), dp(16), dp(16), dp(16))
+                        }
+                        playlistList.addView(emptyText)
+                    } else {
+                        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
+                        if (isTablet) {
+                            val colCount = 4
+                            var currentRow: LinearLayout? = null
+                            for (idx in playlists.indices) {
+                                if (idx % colCount == 0) {
+                                    currentRow = LinearLayout(this).apply {
+                                        orientation = LinearLayout.HORIZONTAL
+                                        layoutParams = LinearLayout.LayoutParams(
+                                            LinearLayout.LayoutParams.MATCH_PARENT,
+                                            LinearLayout.LayoutParams.WRAP_CONTENT
+                                        ).apply {
+                                            bottomMargin = dp(16)
+                                        }
+                                    }
+                                    playlistList.addView(currentRow)
+                                }
+                                val card = buildPlaylistCard(
+                                    playlists[idx].name,
+                                    playlists[idx].id,
+                                    playlists[idx].coverUrl,
+                                    playlists[idx].songCount
+                                )
+                                currentRow?.addView(card)
+                            }
+                            
+                            // Fill remainder of the last row
+                            val remainder = playlists.size % colCount
+                            if (remainder > 0 && currentRow != null) {
+                                for (i in 0 until (colCount - remainder)) {
+                                    val dummy = View(this).apply {
+                                        layoutParams = LinearLayout.LayoutParams(0, 1, 1f).apply {
+                                            marginEnd = dp(8)
+                                            marginStart = dp(8)
+                                        }
+                                    }
+                                    currentRow.addView(dummy)
+                                }
+                            }
+                        } else {
+                            for (pl in playlists) {
+                                val card = buildPlaylistCard(pl.name, pl.id, pl.coverUrl, pl.songCount)
+                                playlistList.addView(card)
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    playlistList.removeAllViews()
+                    val errorText = TextView(this).apply {
+                        text = "โหลด Playlist ไม่สำเร็จ"
+                        setTextColor(android.graphics.Color.RED)
+                        textSize = 16f
+                        gravity = android.view.Gravity.CENTER
+                        setPadding(dp(16), dp(16), dp(16), dp(16))
+                    }
+                    playlistList.addView(errorText)
+                }
+            }
+        }
+    }
+
+    private fun buildPlaylistCard(name: String, playlistId: Int, coverUrl: String, songCount: Int): View {
+        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
+        val isActive = selectedPlaylistIds.contains(playlistId)
+
+        val title = TextView(this).apply {
+            text = name
+            setTextColor(
+                if (isActive) ContextCompat.getColor(this@MainActivity, R.color.white)
+                else ContextCompat.getColor(this@MainActivity, R.color.cloud_white)
+            )
+            textSize = 14f
+            setTypeface(typeface, if (isActive) android.graphics.Typeface.BOLD_ITALIC else android.graphics.Typeface.BOLD)
+            maxLines = 2
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        }
+
+        val subtitle = TextView(this).apply {
+            text = "$songCount เพลง"
+            setTextColor(
+                if (isActive) android.graphics.Color.parseColor("#D7D5FF")
+                else ContextCompat.getColor(this@MainActivity, R.color.slate_300)
+            )
+            textSize = 12f
+            maxLines = 1
+        }
+
+        val cover = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(110)).apply {
+                bottomMargin = dp(8)
+            }
+            background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
+            applyRoundedCorners(this, 4)
+            if (coverUrl.isNotBlank()) {
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setPadding(0, 0, 0, 0)
+                loadBitmap(coverUrl, this, null)
+            } else {
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                setPadding(dp(24), dp(24), dp(24), dp(24))
+                setImageResource(R.drawable.ic_playlist)
+                setColorFilter(ContextCompat.getColor(this@MainActivity, R.color.white))
+            }
+        }
+
+        val cardContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+            addView(cover)
+            addView(title)
+            addView(subtitle.apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(2) }
+            })
+        }
+
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            background = ContextCompat.getDrawable(
+                this@MainActivity,
+                if (isActive) R.drawable.bg_playlist_card_active
+                else R.drawable.bg_playlist_card
+            )
+            addView(cardContent.apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            })
+
+            layoutParams = if (isTablet) {
+                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginEnd = dp(6)
+                    marginStart = dp(6)
+                }
+            } else {
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = dp(12)
+                }
             }
 
-            queueList.addView(row)
+            setOnClickListener {
+                playlistSelectView.visibility = View.GONE
+                playerView.visibility = View.VISIBLE
+                controlBar.visibility = View.VISIBLE
+                loadPlaylistSongs(playlistId)
+            }
+        }
+    }
+
+    private fun loadPlaylistSongs(playlistId: Int) {
+        setLoadingState(true)
+        backgroundExecutor.submit {
+            try {
+                val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
+                val loadedSongs = loadSongsForPlaylists(tenantParam, listOf(playlistId))
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    selectedPlaylistIds.clear()
+                    selectedPlaylistIds.add(playlistId)
+                    activePlaylistSignature = playlistId.toString()
+                    songs = loadedSongs
+                    resumePositionMs = 0
+
+                    val playableIdx = findPlayableIndex(0, true, true)
+                    if (playableIdx == -1) {
+                        showError("ไม่มีเพลงที่เล่นได้ใน playlist นี้")
+                    } else {
+                        currentIndex = playableIdx
+                        renderCurrentSong()
+                        play()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    if (!isDestroyed) {
+                        setLoadingState(false, "โหลดเพลงล้มเหลว")
+                    }
+                }
+            }
         }
     }
 
@@ -718,7 +1175,11 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             val options = BitmapFactory.Options().apply {
                 inSampleSize = 2 // Downscale to half resolution
             }
-            URL(urlString).openStream().use { BitmapFactory.decodeStream(it, null, options) }
+            val connection = (URL(urlString).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 8000
+                readTimeout = 15000
+            }
+            connection.inputStream.use { BitmapFactory.decodeStream(it, null, options) }
         } catch (_: Exception) {
             null
         }
@@ -777,82 +1238,167 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         return -1
     }
 
+    private fun setLoadingState(isLoading: Boolean, statusText: String? = null) {
+        runOnUiThread {
+            if (isLoading) {
+                loadingSpinner.visibility = View.VISIBLE
+                statusLabel.visibility = View.GONE
+            } else {
+                loadingSpinner.visibility = View.GONE
+                statusLabel.visibility = View.VISIBLE
+                if (statusText != null) {
+                    statusLabel.text = statusText
+                }
+            }
+        }
+    }
+
+    private fun getFreshSongUrl(song: NativeSong): String {
+        val safeName = song.stableId.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        val cachedFile = File(cacheDir, "musicbar_$safeName.mp3")
+        if (cachedFile.exists() && cachedFile.length() > 1024 * 128) {
+            return cachedFile.absolutePath
+        }
+
+        try {
+            val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
+            val url = "$baseUrl/api/playlists/${song.playlistId}/songs?tenant=$tenantParam"
+            val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 10000
+                readTimeout = 15000
+                setRequestProperty("Accept", "application/json")
+            }
+            val json = connection.inputStream.bufferedReader().use { it.readText() }
+            val array = JSONArray(json)
+            for (i in 0 until array.length()) {
+                val item = array.getJSONObject(i)
+                if (item.optString("youtube_id", "") == song.youtubeId) {
+                    val rawAudio = firstNonBlank(
+                        if (item.isNull("audio_url")) "" else item.optString("audio_url", ""),
+                        if (item.isNull("stream_url")) "" else item.optString("stream_url", ""),
+                        if (item.isNull("media_url")) "" else item.optString("media_url", ""),
+                        if (item.isNull("url")) "" else item.optString("url", "")
+                    )
+                    val freshUrl = absoluteUrl(rawAudio)
+                    if (freshUrl.isNotBlank()) {
+                        song.audioUrl = freshUrl
+                        return freshUrl
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return song.audioUrl
+    }
+
     private fun startSong(song: NativeSong, seekMs: Int) {
+        android.util.Log.d("MusicBarPlayer", "startSong: title=${song.title}, audioUrl=${song.audioUrl}")
         val generation = ++playbackGeneration
         isPlaying = true
         isPreparing = true
-        statusLabel.text = "กำลังโหลด"
+        setLoadingState(true)
         updatePlayPauseIcon()
         syncNotification()
         savePlaybackState()
         audioService?.acquirePlaybackLocks()
         releasePlayer()
-        if (song.audioUrl.startsWith("http://") || song.audioUrl.startsWith("https://")) {
-            statusLabel.text = "กำลังโหลดไฟล์"
-            prepareCachedAndPlay(song, seekMs, generation)
-            return
-        }
-        mediaPlayer = try {
-            createPlayer(song.audioUrl)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-        val newPlayer = mediaPlayer
-        if (newPlayer == null) {
-            isPreparing = false
-            isPlaying = false
-            statusLabel.text = "เปิด stream ไม่สำเร็จ"
-            updatePlayPauseIcon()
-            syncNotification()
-            savePlaybackState()
-            audioService?.releasePlaybackLocks()
-            return
-        }
-        newPlayer.apply {
-            mainHandler.postDelayed({
-                if (!isDestroyed && generation == playbackGeneration && isPreparing) {
-                    releasePlayer()
-                    statusLabel.text = "กำลังโหลดไฟล์"
-                    prepareCachedAndPlay(song, seekMs, generation)
+
+        backgroundExecutor.submit {
+            val freshSource = getFreshSongUrl(song)
+            android.util.Log.d("MusicBarPlayer", "freshSource=$freshSource")
+            if (generation != playbackGeneration) return@submit
+
+            runOnUiThread {
+                if (generation != playbackGeneration) return@runOnUiThread
+
+                if (freshSource.isBlank()) {
+                    isPreparing = false
+                    setLoadingState(false, "เปิด stream ไม่สำเร็จ (URL ว่าง)")
+                    isPlaying = false
+                    updatePlayPauseIcon()
+                    syncNotification()
+                    savePlaybackState()
+                    audioService?.releasePlaybackLocks()
+                    return@runOnUiThread
                 }
-            }, 8000)
-            setOnPreparedListener { player ->
-                if (generation != playbackGeneration || !isPlaying) {
-                    runCatching { player.release() }
-                    return@setOnPreparedListener
+
+                mediaPlayer = try {
+                    createPlayer(freshSource)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
                 }
-                isPreparing = false
-                preparedSongId = song.stableId
-                durationMs = safeDuration(player)
-                if (seekMs > 0) player.seekTo(seekMs)
-                player.start()
-                playbackBasePositionMs = seekMs.coerceAtLeast(0)
-                playbackStartedAtMs = System.currentTimeMillis()
-                resumePositionMs = playbackBasePositionMs
-                statusLabel.text = "กำลังเล่น"
-                updatePlayPauseIcon()
-                syncNotification()
-                savePlaybackState()
+
+                val newPlayer = mediaPlayer
+                if (newPlayer == null) {
+                    isPreparing = false
+                    setLoadingState(false, "เปิด stream ไม่สำเร็จ")
+                    isPlaying = false
+                    updatePlayPauseIcon()
+                    syncNotification()
+                    savePlaybackState()
+                    audioService?.releasePlaybackLocks()
+                    return@runOnUiThread
+                }
+
+                // If playing from stream, download to cache in the background
+                val safeName = song.stableId.replace(Regex("[^A-Za-z0-9._-]"), "_")
+                val cachedFile = File(cacheDir, "musicbar_$safeName.mp3")
+                if (freshSource == song.audioUrl && !cachedFile.exists()) {
+                    audioFuture?.cancel(true)
+                    audioFuture = audioExecutor.submit {
+                        downloadAudioToCache(song)
+                    }
+                }
+
+                newPlayer.apply {
+                    setOnPreparedListener { player ->
+                        android.util.Log.d("MusicBarPlayer", "onPrepared: duration=${runCatching { player.duration }.getOrDefault(-1)}, gen=$generation, curGen=$playbackGeneration, isPlaying=$isPlaying")
+                        if (generation != playbackGeneration || !isPlaying) {
+                            android.util.Log.w("MusicBarPlayer", "onPrepared SKIPPED: gen=$generation, curGen=$playbackGeneration, isPlaying=$isPlaying")
+                            runCatching { player.release() }
+                            return@setOnPreparedListener
+                        }
+                        isPreparing = false
+                        setLoadingState(false, "กำลังเล่น")
+                        preparedSongId = song.stableId
+                        durationMs = safeDuration(player)
+                        if (seekMs > 0) player.seekTo(seekMs)
+                        try {
+                            player.start()
+                            android.util.Log.d("MusicBarPlayer", "player.start() SUCCESS, isPlaying=${runCatching { player.isPlaying }.getOrDefault(false)}")
+                        } catch (e: Exception) {
+                            android.util.Log.e("MusicBarPlayer", "player.start() FAILED", e)
+                        }
+                        playbackBasePositionMs = seekMs.coerceAtLeast(0)
+                        playbackStartedAtMs = System.currentTimeMillis()
+                        resumePositionMs = playbackBasePositionMs
+                        updatePlayPauseIcon()
+                        syncNotification()
+                        savePlaybackState()
+                    }
+                    setOnCompletionListener {
+                        if (generation == playbackGeneration) next(useCrossfade = false)
+                    }
+                    setOnErrorListener { _, what, extra ->
+                        android.util.Log.e("MusicBarPlayer", "onError: what=$what, extra=$extra")
+                        if (generation != playbackGeneration) return@setOnErrorListener true
+                        isPreparing = false
+                        setLoadingState(false, "เล่น stream นี้ไม่สำเร็จ ($what/$extra)")
+                        this@MainActivity.isPlaying = false
+                        preparedSongId = ""
+                        playbackStartedAtMs = 0L
+                        playbackBasePositionMs = 0
+                        updatePlayPauseIcon()
+                        syncNotification()
+                        savePlaybackState()
+                        audioService?.releasePlaybackLocks()
+                        true
+                    }
+                    prepareAsync()
+                }
             }
-            setOnCompletionListener {
-                if (generation == playbackGeneration) next(useCrossfade = false)
-            }
-            setOnErrorListener { _, what, extra ->
-                if (generation != playbackGeneration) return@setOnErrorListener true
-                isPreparing = false
-                this@MainActivity.isPlaying = false
-                preparedSongId = ""
-                playbackStartedAtMs = 0L
-                playbackBasePositionMs = 0
-                statusLabel.text = "เล่น stream นี้ไม่สำเร็จ ($what/$extra)"
-                updatePlayPauseIcon()
-                syncNotification()
-                savePlaybackState()
-                audioService?.releasePlaybackLocks()
-                true
-            }
-            prepareAsync()
         }
     }
 
@@ -860,6 +1406,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         val clean = url.trim()
         val localFile = File(clean)
         val source = if (localFile.isAbsolute && localFile.exists()) clean else absoluteUrl(clean)
+        android.util.Log.d("MusicBarPlayer", "createPlayer source=$source")
         return MediaPlayer().apply {
             setAudioAttributes(
                 AudioAttributes.Builder()
@@ -868,8 +1415,13 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     .build(),
             )
             if (localFile.isAbsolute && localFile.exists()) {
+                android.util.Log.d("MusicBarPlayer", "setDataSource from local file: $clean")
                 setDataSource(this@MainActivity, Uri.fromFile(localFile))
+            } else if (source.startsWith("http://") || source.startsWith("https://")) {
+                android.util.Log.d("MusicBarPlayer", "setDataSource from URI: $source")
+                setDataSource(this@MainActivity, Uri.parse(source))
             } else {
+                android.util.Log.d("MusicBarPlayer", "setDataSource from raw string: $source")
                 setDataSource(source)
             }
         }
@@ -955,10 +1507,12 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     }
 
     private fun downloadAudioToCache(song: NativeSong): File? {
-        return try {
-            val safeName = song.stableId.replace(Regex("[^A-Za-z0-9._-]"), "_")
-            val file = File(cacheDir, "musicbar_$safeName.mp3")
-            if (file.exists() && file.length() > 1024 * 128) return file
+        val safeName = song.stableId.replace(Regex("[^A-Za-z0-9._-]"), "_")
+        val file = File(cacheDir, "musicbar_$safeName.mp3")
+        if (file.exists() && file.length() > 1024 * 128) return file
+
+        var success = false
+        try {
             val connection = (URL(song.audioUrl).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 15000
                 readTimeout = 30000
@@ -968,17 +1522,24 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             connection.inputStream.use { input ->
                 file.outputStream().use { output -> input.copyTo(output) }
             }
-            file.takeIf { it.length() > 0 }
+            val expected = connection.contentLength
+            success = file.length() > 0 && (expected <= 0 || file.length() >= expected)
+            if (success) return file
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+        } finally {
+            if (!success) {
+                runCatching { file.delete() }
+            }
         }
+        return null
     }
 
     private fun pause() {
         playbackGeneration++
         isPlaying = false
         isPreparing = false
+        setLoadingState(false, "หยุดชั่วคราว")
         val player = mediaPlayer
         resumePositionMs = if (player != null) safeCurrentPosition(player) else resumePositionMs
         if (player != null) {
@@ -990,7 +1551,6 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         }
         playbackBasePositionMs = resumePositionMs
         playbackStartedAtMs = 0L
-        statusLabel.text = "หยุดชั่วคราว"
         updatePlayPauseIcon()
         syncNotification()
         savePlaybackState()
@@ -1128,8 +1688,11 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     }
 
     private fun updateCrossfadeToggle() {
-        crossfadeToggle.text = if (crossfadeEnabled) "CF ON" else "CF OFF"
-        crossfadeToggle.alpha = if (crossfadeEnabled) 1f else 0.55f
+        crossfadeToggle.alpha = if (crossfadeEnabled) 1f else 0.4f
+        crossfadeToggle.setColorFilter(
+            if (crossfadeEnabled) ContextCompat.getColor(this, R.color.progress_fill)
+            else android.graphics.Color.WHITE
+        )
     }
 
     private fun updateProgressFromPlayer() {
@@ -1315,7 +1878,7 @@ data class NativeSong(
     val artist: String,
     val thumbnail: String,
     val duration: String,
-    val audioUrl: String,
+    var audioUrl: String,
 ) {
     val stableId: String = "$playlistId:$id:$youtubeId"
 }

@@ -38,8 +38,8 @@
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboard|keyboardHidden|navigation|uiMode"
             android:launchMode="singleTask"
-            android:resizeableActivity="false"
-            android:screenOrientation="portrait"
+            android:resizeableActivity="true"
+            android:screenOrientation="unspecified"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.MusicBar">
             <intent-filter>

@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_app">
 
+    <!-- Station Select View -->
     <ScrollView
         android:id="@+id/stationSelectView"
         android:layout_width="match_parent"
@@ -15,49 +16,20 @@
 
         <LinearLayout
             android:id="@+id/stationContent"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_gravity="center_horizontal"
             android:gravity="center"
             android:orientation="vertical">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_station_hero"
-                android:elevation="14dp"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:paddingHorizontal="22dp"
-                android:paddingVertical="24dp">
-
-                <View
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:alpha="0.95"
-                    android:background="@drawable/bg_control_primary" />
-
-                <TextView
-                    android:id="@+id/stationSelectTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="15dp"
-                    android:gravity="center"
-                    android:letterSpacing="0.05"
-                    android:text="Music Bar"
-                    android:textColor="@color/white"
-                    android:textSize="34sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/stationSelectSubtitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="7dp"
-                    android:gravity="center"
-                    android:text="เลือกสถานีเพื่อเริ่มเล่นเพลง"
-                    android:textColor="@color/slate_300"
-                    android:textSize="14sp" />
-            </LinearLayout>
+            <!-- Centered App Logo (Bright) -->
+            <ImageView
+                android:id="@+id/stationSelectLogo"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="24dp"
+                android:src="@drawable/logo_white" />
 
             <LinearLayout
                 android:id="@+id/stationList"
@@ -69,46 +41,77 @@
         </LinearLayout>
     </ScrollView>
 
-    <ScrollView
+    <!-- Player View (Fixed header at top + scrollable playlist in middle) -->
+    <LinearLayout
         android:id="@+id/playerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:fillViewport="true"
-        android:paddingBottom="200dp"
+        android:orientation="vertical"
+        android:paddingBottom="120dp"
         android:visibility="gone">
 
-        <LinearLayout
-            android:id="@+id/playerContent"
+        <!-- Header containing back button on left, status / spinner on right -->
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:layout_height="56dp"
             android:paddingHorizontal="18dp"
-            android:paddingTop="16dp">
+            android:gravity="center_vertical">
+
+            <ImageButton
+                android:id="@+id/backButton"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_back" />
+
+            <!-- Station name displayed right after the back button -->
+            <TextView
+                android:id="@+id/stationLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toEndOf="@id/backButton"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="12dp"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:visibility="visible" />
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
+                <!-- Button to open Playlist Selection dialog/overlay -->
                 <ImageButton
-                    android:id="@+id/backButton"
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
-                    android:background="@drawable/bg_control_secondary"
-                    android:contentDescription="Back"
-                    android:padding="12dp"
-                    android:scaleType="center"
-                    android:src="@drawable/ic_skip_previous" />
+                    android:id="@+id/playlistSelectButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="12dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Select Playlist"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_playlist" />
 
-                <TextView
-                    android:id="@+id/stationLabel"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text=""
-                    android:visibility="invisible" />
+                <ProgressBar
+                    android:id="@+id/loadingSpinner"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="10dp"
+                    android:indeterminateTint="#D7D5FF"
+                    android:visibility="gone" />
 
                 <TextView
                     android:id="@+id/statusLabel"
@@ -125,40 +128,40 @@
                     android:textSize="11sp"
                     android:textStyle="bold" />
             </LinearLayout>
+        </RelativeLayout>
 
-            <FrameLayout
-                android:id="@+id/artworkFrame"
-                android:layout_width="1dp"
-                android:layout_height="1dp"
-                android:visibility="gone">
-
-                <ImageView
-                    android:id="@+id/artworkView"
-                    android:layout_width="1dp"
-                    android:layout_height="1dp"
-                    android:contentDescription="Album artwork"
-                    android:src="@drawable/ic_music_note" />
-            </FrameLayout>
-
-            <TextView
-                android:id="@+id/queueTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="Playlist"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+        <!-- Scrollable Playlist middle area -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:paddingHorizontal="18dp">
 
             <LinearLayout
-                android:id="@+id/queueList"
+                android:id="@+id/playerContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="vertical" />
-        </LinearLayout>
-    </ScrollView>
+                android:orientation="vertical">
 
+                <LinearLayout
+                    android:id="@+id/playlistContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <!-- Full-screen playlist items list -->
+                <LinearLayout
+                    android:id="@+id/queueList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- Translucent fixed control bar at the bottom -->
     <LinearLayout
         android:id="@+id/controlBar"
         android:layout_width="match_parent"
@@ -168,163 +171,246 @@
         android:elevation="22dp"
         android:orientation="vertical"
         android:paddingHorizontal="18dp"
-        android:paddingTop="14dp"
+        android:paddingTop="12dp"
         android:paddingBottom="16dp"
         android:visibility="gone">
 
+        <!-- Seekbar at the top of the control bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <ImageView
-                android:id="@+id/controlArtworkView"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:background="@drawable/bg_control_artwork"
-                android:contentDescription="Current song artwork"
-                android:padding="3dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_music_note" />
+            <TextView
+                android:id="@+id/currentTimeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="0:00"
+                android:textColor="#8E96BD"
+                android:textSize="11sp" />
 
+            <ProgressBar
+                android:id="@+id/playbackProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="0dp"
+                android:layout_height="5dp"
+                android:layout_weight="1"
+                android:max="1000"
+                android:progress="0"
+                android:progressDrawable="@drawable/progress_musicbar" />
+
+            <TextView
+                android:id="@+id/durationLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="0:00"
+                android:textColor="#8E96BD"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Sub-Seekbar layout: song info on left, playback controls on right -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Left: Song cover + stacked Title & Artist -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_weight="1.2"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <ProgressBar
-                    android:id="@+id/playbackProgress"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="5dp"
-                    android:max="1000"
-                    android:progress="0"
-                    android:progressDrawable="@drawable/progress_musicbar" />
-
-                <TextView
-                    android:id="@+id/songTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:ellipsize="marquee"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:freezesText="true"
-                    android:gravity="start"
-                    android:marqueeRepeatLimit="marquee_forever"
-                    android:maxLines="1"
-                    android:scrollHorizontally="true"
-                    android:singleLine="true"
-                    android:text="เลือกสถานี"
-                    android:textColor="@color/white"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/songArtist"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:text="Music Bar"
-                    android:textColor="@color/slate_300"
-                    android:textSize="12sp" />
+                <ImageView
+                    android:id="@+id/controlArtworkView"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_control_artwork"
+                    android:contentDescription="Current song artwork"
+                    android:padding="2dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_music_note" />
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:orientation="horizontal">
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/currentTimeLabel"
-                        android:layout_width="0dp"
+                        android:id="@+id/songTitle"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="0:00"
-                        android:textColor="#8E96BD"
-                        android:textSize="11sp" />
+                        android:ellipsize="marquee"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:freezesText="true"
+                        android:gravity="start"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:maxLines="1"
+                        android:scrollHorizontally="true"
+                        android:singleLine="true"
+                        android:text="เลือกสถานี"
+                        android:textColor="@color/white"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/durationLabel"
-                        android:layout_width="0dp"
+                        android:id="@+id/songArtist"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="end"
-                        android:text="0:00"
-                        android:textColor="#8E96BD"
-                        android:textSize="11sp" />
+                        android:layout_marginTop="2dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:text="Music Bar"
+                        android:textColor="@color/slate_300"
+                        android:textSize="12sp" />
                 </LinearLayout>
+            </LinearLayout>
+
+            <!-- Right: Playback buttons (prev, play, next) + Crossfade Toggle -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/previousButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_control_secondary"
+                    android:contentDescription="Previous"
+                    android:padding="12dp"
+                    android:scaleType="center"
+                    android:src="@drawable/ic_skip_previous" />
+
+                <ImageButton
+                    android:id="@+id/playPauseButton"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginHorizontal="12dp"
+                    android:background="@drawable/bg_control_primary"
+                    android:contentDescription="Play"
+                    android:elevation="8dp"
+                    android:outlineProvider="bounds"
+                    android:padding="16dp"
+                    android:scaleType="center"
+                    android:src="@drawable/ic_play" />
+
+                <ImageButton
+                    android:id="@+id/nextButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_control_secondary"
+                    android:contentDescription="Next"
+                    android:padding="12dp"
+                    android:scaleType="center"
+                    android:src="@drawable/ic_skip_next" />
+
+                <ImageButton
+                    android:id="@+id/crossfadeToggle"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_control_secondary"
+                    android:contentDescription="Crossfade"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_crossfade" />
             </LinearLayout>
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-
-            <ImageButton
-                android:id="@+id/previousButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_control_secondary"
-                android:contentDescription="Previous"
-                android:padding="13dp"
-                android:scaleType="center"
-                android:src="@drawable/ic_skip_previous" />
-
-            <ImageButton
-                android:id="@+id/playPauseButton"
-                android:layout_width="66dp"
-                android:layout_height="66dp"
-                android:layout_marginHorizontal="18dp"
-                android:background="@drawable/bg_control_primary"
-                android:contentDescription="Play"
-                android:elevation="10dp"
-                android:outlineProvider="bounds"
-                android:padding="18dp"
-                android:scaleType="center"
-                android:src="@drawable/ic_play" />
-
-            <ImageButton
-                android:id="@+id/nextButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_control_secondary"
-                android:contentDescription="Next"
-                android:padding="13dp"
-                android:scaleType="center"
-                android:src="@drawable/ic_skip_next" />
-
-            <TextView
-                android:id="@+id/crossfadeToggle"
-                android:layout_width="64dp"
-                android:layout_height="38dp"
-                android:layout_marginStart="14dp"
-                android:background="@drawable/bg_chip"
-                android:gravity="center"
-                android:text="CF ON"
-                android:textColor="#D7D5FF"
-                android:textSize="10sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
+        <!-- Dummy view to preserve crossfadeLabel reference in code -->
         <TextView
             android:id="@+id/crossfadeLabel"
-            android:layout_width="1dp"
-            android:layout_height="1dp"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:text=""
             android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Invisible artworkFrame to preserve layout binding references -->
+    <FrameLayout
+        android:id="@+id/artworkFrame"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/artworkView"
+            android:layout_width="1dp"
+            android:layout_height="1dp"
+            android:contentDescription="Album artwork"
+            android:src="@drawable/ic_music_note" />
+    </FrameLayout>
+
+    <!-- Playlist Select View (Fullscreen layout) -->
+    <LinearLayout
+        android:id="@+id/playlistSelectView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_app"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- Header matching the player view header -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:paddingHorizontal="18dp"
+            android:gravity="center_vertical">
+
+            <ImageButton
+                android:id="@+id/cancelPlaylistSelectButton"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_back" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toEndOf="@id/cancelPlaylistSelectButton"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="12dp"
+                android:text="เลือก Playlist"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:ellipsize="end"
+                android:maxLines="1" />
+        </RelativeLayout>
+
+        <!-- Scrollable card grid content -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="12dp">
+
+            <LinearLayout
+                android:id="@+id/playlistList"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center_horizontal"
+                android:orientation="vertical" />
+        </ScrollView>
     </LinearLayout>
 </FrameLayout>
