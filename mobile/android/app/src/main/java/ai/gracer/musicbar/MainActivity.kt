@@ -1345,50 +1345,9 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         }
                         playlistList.addView(emptyText)
                     } else {
-                        val isTablet = resources.configuration.smallestScreenWidthDp >= 600
-                        if (isTablet) {
-                            val colCount = 4
-                            var currentRow: LinearLayout? = null
-                            for (idx in playlists.indices) {
-                                if (idx % colCount == 0) {
-                                    currentRow = LinearLayout(this).apply {
-                                        orientation = LinearLayout.HORIZONTAL
-                                        layoutParams = LinearLayout.LayoutParams(
-                                            LinearLayout.LayoutParams.MATCH_PARENT,
-                                            LinearLayout.LayoutParams.WRAP_CONTENT
-                                        ).apply {
-                                            bottomMargin = dp(16)
-                                        }
-                                    }
-                                    playlistList.addView(currentRow)
-                                }
-                                val card = buildPlaylistCard(
-                                    playlists[idx].name,
-                                    playlists[idx].id,
-                                    playlists[idx].coverUrl,
-                                    playlists[idx].songCount
-                                )
-                                currentRow?.addView(card)
-                            }
-                            
-                            // Fill remainder of the last row
-                            val remainder = playlists.size % colCount
-                            if (remainder > 0 && currentRow != null) {
-                                for (i in 0 until (colCount - remainder)) {
-                                    val dummy = View(this).apply {
-                                        layoutParams = LinearLayout.LayoutParams(0, 1, 1f).apply {
-                                            marginEnd = dp(8)
-                                            marginStart = dp(8)
-                                        }
-                                    }
-                                    currentRow.addView(dummy)
-                                }
-                            }
-                        } else {
-                            for (pl in playlists) {
-                                val card = buildPlaylistCard(pl.name, pl.id, pl.coverUrl, pl.songCount)
-                                playlistList.addView(card)
-                            }
+                        for (pl in playlists) {
+                            val card = buildPlaylistCard(pl.name, pl.id, pl.coverUrl, pl.songCount)
+                            playlistList.addView(card)
                         }
                     }
                 }
@@ -1481,18 +1440,11 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 )
             })
 
-            layoutParams = if (isTablet) {
-                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    marginEnd = dp(6)
-                    marginStart = dp(6)
-                }
-            } else {
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    bottomMargin = dp(12)
-                }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = dp(12)
             }
 
             setOnClickListener {
