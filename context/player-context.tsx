@@ -925,6 +925,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [playSilentAudio])
 
   const playSongImmediately = useCallback((song: any) => {
+    // Only play songs with audio_url (streaming API only — no YT fallback)
+    if (!song.audio_url || typeof song.audio_url !== 'string' || song.audio_url.trim() === '') {
+      return
+    }
+
     playSilentAudio()
     const formattedSong = {
       ...song,
@@ -939,26 +944,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     customSongRef.current = formattedSong
     setIsPlaying(true)
 
-    // If the song has audio_url, play it immediately (within user gesture context)
-    if (song.audio_url && typeof song.audio_url === 'string' && song.audio_url.trim() !== '') {
-      try {
-        // Stop any existing audio
-        if (audioRef.current) {
-          audioRef.current.pause()
-          audioRef.current.src = ''
-          audioRef.current.load()
-        }
-        const audio = new Audio(song.audio_url)
-        audio.volume = volume / 100
-        audio.play().then(() => {
-          setIsPlaying(true)
-        }).catch((err) => {
-          console.warn('Audio play failed (autoplay policy?):', err)
-        })
-        audioRef.current = audio
-      } catch (err) {
-        console.warn('Failed to create Audio element:', err)
+    // Play it immediately (within user gesture context)
+    try {
+      // Stop any existing audio
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+        audioRef.current.load()
       }
+      const audio = new Audio(song.audio_url)
+      audio.volume = volume / 100
+      audio.play().then(() => {
+        setIsPlaying(true)
+      }).catch((err) => {
+        console.warn('Audio play failed (autoplay policy?):', err)
+      })
+      audioRef.current = audio
+    } catch (err) {
+      console.warn('Failed to create Audio element:', err)
     }
 
     // Save to playback_state immediately so other tabs/pages pick it up

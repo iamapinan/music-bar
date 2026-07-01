@@ -329,6 +329,7 @@ function SongRow({
   isPlaying,
   onPlayPause,
   onRemove,
+  hasAudio,
 }: {
   song: PlaylistSong;
   index: number;
@@ -336,6 +337,7 @@ function SongRow({
   isPlaying: boolean;
   onPlayPause: () => void;
   onRemove: () => void;
+  hasAudio: boolean;
 }) {
   return (
     <div
@@ -407,28 +409,33 @@ function SongRow({
         </span>
       )}
 
-      {/* Play/Pause */}
-      <button
-        type="button"
-        onClick={onPlayPause}
-        className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
-          isCurrentSong && isPlaying
-            ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
-            : "text-muted-foreground/60 hover:bg-primary/10 hover:text-primary",
-        )}
-        aria-label={
-          isPlaying && isCurrentSong
-            ? `หยุด ${song.title}`
-            : `เล่น ${song.title}`
-        }
-      >
-        {isCurrentSong && isPlaying ? (
-          <Pause className="h-3.5 w-3.5" />
-        ) : (
-          <Play className="h-3.5 w-3.5 ml-0.5" />
-        )}
-      </button>
+	      {/* Play/Pause */}
+	      <button
+	        type="button"
+	        onClick={hasAudio ? onPlayPause : undefined}
+	        disabled={!hasAudio}
+	        className={cn(
+	          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200",
+	          !hasAudio && "opacity-30 cursor-not-allowed",
+	          isCurrentSong && isPlaying
+	            ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
+	            : "text-muted-foreground/60 hover:bg-primary/10 hover:text-primary",
+	        )}
+	        aria-label={
+	          isPlaying && isCurrentSong
+	            ? `หยุด ${song.title}`
+	            : hasAudio
+	              ? `เล่น ${song.title}`
+	              : `ไม่มีไฟล์เสียง`
+	        }
+	        title={hasAudio ? `เล่น ${song.title}` : "เพลงนี้ยังไม่มีไฟล์เสียง — รออัปโหลด audio_url"}
+	      >
+	        {isCurrentSong && isPlaying ? (
+	          <Pause className="h-3.5 w-3.5" />
+	        ) : (
+	          <Play className="h-3.5 w-3.5 ml-0.5" />
+	        )}
+	      </button>
 
       {/* Delete */}
       <button
@@ -450,12 +457,14 @@ function SongGridCard({
   isPlaying,
   onPlayPause,
   onRemove,
+  hasAudio,
 }: {
   song: PlaylistSong;
   isCurrentSong: boolean;
   isPlaying: boolean;
   onPlayPause: () => void;
   onRemove: () => void;
+  hasAudio: boolean;
 }) {
   return (
     <div
@@ -484,13 +493,16 @@ function SongGridCard({
         >
           <button
             type="button"
-            onClick={onPlayPause}
+            onClick={hasAudio ? onPlayPause : undefined}
+            disabled={!hasAudio}
             className={cn(
               "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200 hover:scale-110",
+              !hasAudio && "opacity-30 cursor-not-allowed",
               isCurrentSong && isPlaying
                 ? "bg-primary text-primary-foreground shadow-[0_0_20px_rgb(106_92_255_/_0.4)]"
                 : "bg-primary/90 text-white hover:bg-primary",
             )}
+            title={hasAudio ? "เล่น" : "ยังไม่มีไฟล์เสียง"}
           >
             {isCurrentSong && isPlaying ? (
               <Pause className="h-4 w-4" />
@@ -1185,6 +1197,7 @@ export function AdminView() {
                       isPlaying={isPlaying}
                       onPlayPause={() => handlePlayPauseSong(song)}
                       onRemove={() => handleRemoveFromPlaylist(song.id)}
+                      hasAudio={!!(song.audio_url && typeof song.audio_url === 'string' && song.audio_url.trim() !== '')}
                     />
                   ))}
                 </div>
@@ -1200,6 +1213,7 @@ export function AdminView() {
                       isPlaying={isPlaying}
                       onPlayPause={() => handlePlayPauseSong(song)}
                       onRemove={() => handleRemoveFromPlaylist(song.id)}
+                      hasAudio={!!(song.audio_url && typeof song.audio_url === 'string' && song.audio_url.trim() !== '')}
                     />
                   ))}
                 </div>

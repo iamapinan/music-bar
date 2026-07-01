@@ -377,60 +377,38 @@ export function PersistentYouTubePlayer() {
   useEffect(() => {
     if (!currentSong) return
 
-    // Prefer audio_url over YouTube if available
-    if (currentSong.audio_url && currentSong.audio_url.trim() !== '') {
-      const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
-      if (songKey === lastPlayedKeyRef.current) return
-      lastPlayedKeyRef.current = songKey
-
-      // Audio is created and started by playSongImmediately (for autoplay).
-      // If we're here from next/prev (not from a click), the audio hasn't
-      // been started yet — start it now.
-      if (!audioRef.current?.src) {
-        try {
-          const audio = new Audio(currentSong.audio_url)
-          audio.volume = volumeRef.current / 100
-          audio.play().catch(() => {})
-          audioRef.current = audio
-          isAudioModeRef.current = true
-        } catch {}
-      } else {
-        isAudioModeRef.current = true
-      }
-
-      setupAudioEvents()
-      exposeMethods()
-      return
-    }
-
-    // Fall back to YouTube player
-    if (!currentSong?.youtube_id || !isApiReadyRef.current) return
-
-    stopAudio()
-
-    const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
-    
-    if (songKey !== lastPlayedKeyRef.current) {
-      const activePlayer = ytPlayerRefs.current[activeSlotRef.current]
-      if (currentVideoRef.current === currentSong.youtube_id && activePlayer) {
-        activePlayer.setVolume(volumeRef.current)
-        activePlayer.playVideo()
-        setIsPlaying(true)
-        lastPlayedKeyRef.current = songKey
-        exposeMethods()
-      } else if (activePlayer && isPlayerReadyRef.current) {
-        activePlayer.setVolume(volumeRef.current)
-        activePlayer.loadVideoById(currentSong.youtube_id)
-        setIsPlaying(true)
-        lastPlayedKeyRef.current = songKey
-        currentVideoRef.current = currentSong.youtube_id
-        exposeMethods()
-      } else {
-        initPlayer(currentSong.youtube_id)
-        lastPlayedKeyRef.current = songKey
-      }
-    }
-  }, [currentSong?.youtube_id, currentSong?.audio_url, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying, setupAudioEvents, stopAudio])
+	    // Prefer audio_url over YouTube if available
+	    if (currentSong.audio_url && currentSong.audio_url.trim() !== '') {
+	      const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
+	      if (songKey === lastPlayedKeyRef.current) return
+	      lastPlayedKeyRef.current = songKey
+	
+	      // Audio is created and started by playSongImmediately (for autoplay).
+	      // If we're here from next/prev (not from a click), the audio hasn't
+	      // been started yet — start it now.
+	      if (!audioRef.current?.src) {
+	        try {
+	          const audio = new Audio(currentSong.audio_url)
+	          audio.volume = volumeRef.current / 100
+	          audio.play().catch(() => {})
+	          audioRef.current = audio
+	          isAudioModeRef.current = true
+	        } catch {}
+	      } else {
+	        isAudioModeRef.current = true
+	      }
+	
+	      setupAudioEvents()
+	      exposeMethods()
+	      return
+	    }
+	
+	    // No audio_url — skip playback (YT-only songs not allowed)
+	    if (lastPlayedKeyRef.current !== `${playMode}-${currentIndex}-${(currentSong as any)?.id}`) {
+	      lastPlayedKeyRef.current = `${playMode}-${currentIndex}-${(currentSong as any)?.id}`
+	      setIsPlaying(false)
+	    }
+	  }, [currentSong?.youtube_id, currentSong?.audio_url, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying, setupAudioEvents, stopAudio])
 
   useEffect(() => {
     preloadNext(nextSong?.youtube_id)
