@@ -1203,24 +1203,18 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         array.put(pl)
                     }
                 } else if (tenantSlug.isNotBlank()) {
-                    // Fallback: fetch playlists from API directly (lightweight endpoint)
+                    // Try SharedPreferences cache before calling API
                     val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
-                    val connection = (URL("$baseUrl/api/playlists?tenant=$tenantParam").openConnection() as java.net.HttpURLConnection).apply {
-                        requestMethod = "GET"
-                        connectTimeout = 8000
-                        readTimeout = 15000
-                        setRequestProperty("Accept", "application/json")
-                    }
-                    val json = if (connection.responseCode in 200..299) {
-                        connection.inputStream.bufferedReader().use { it.readText() }
-                    } else {
-                        connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "[]"
-                    }
-                    val fetched = JSONArray(json)
-                    cachedPlaylists.clear()
-                    for (i in 0 until fetched.length()) {
-                        cachedPlaylists.add(fetched.getJSONObject(i))
-                        array.put(fetched.getJSONObject(i))
+                    val cachedRaw = prefs.getString("init:$tenantParam:all", null)
+                    val cachedTime = prefs.getLong("init:$tenantParam:all:ts", 0L)
+                    if (cachedRaw != null && System.currentTimeMillis() - cachedTime < 300_000L) {
+                        val root = JSONObject(cachedRaw)
+                        val fetched = root.getJSONArray("playlists")
+                        cachedPlaylists.clear()
+                        for (i in 0 until fetched.length()) {
+                            cachedPlaylists.add(fetched.getJSONObject(i))
+                            array.put(fetched.getJSONObject(i))
+                        }
                     }
                 }
                 
