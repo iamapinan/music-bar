@@ -1025,11 +1025,11 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 val card = row.getChildAt(j)
                 val tagIdx = card?.getTag() as? Int ?: continue
                 if (tagIdx == currentIndex) {
-                    card.setBackgroundResource(R.drawable.bg_playlist_card_active)
+                    card.setBackgroundResource(R.drawable.bg_queue_row_active)
                     card.alpha = 1f
                 } else {
-                    card.setBackgroundResource(R.drawable.bg_playlist_card)
-                    card.alpha = 0.4f
+                    card.setBackgroundResource(R.drawable.bg_queue_row)
+                    card.alpha = 0.7f
                 }
             }
         }
@@ -1092,16 +1092,29 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         val hasAudio = song.audioUrl.isNotBlank() && absoluteUrl(song.audioUrl).isNotBlank()
 
         val cover = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(110)).apply {
-                bottomMargin = dp(8)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(120)).apply {
+                bottomMargin = dp(10)
             }
             background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
             scaleType = ImageView.ScaleType.CENTER_CROP
-            setPadding(dp(2), dp(2), dp(2), dp(2))
+            setPadding(0, 0, 0, 0)
             setImageResource(R.drawable.ic_music_note)
-            applyRoundedCorners(this, 4)
+            applyRoundedCorners(this, 10)
             if (song.thumbnail.isNotBlank()) loadBitmap(song.thumbnail, this, null)
         }
+
+        // Now playing indicator dot
+        val playingDot = if (isCurrent) {
+            TextView(this).apply {
+                text = "●"
+                textSize = 8f
+                setTextColor(android.graphics.Color.parseColor("#7C6DFF"))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { marginEnd = dp(4) }
+            }
+        } else null
 
         val title = TextView(this).apply {
             text = song.title
@@ -1109,8 +1122,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 if (isCurrent) ContextCompat.getColor(this@MainActivity, R.color.white)
                 else ContextCompat.getColor(this@MainActivity, R.color.cloud_white)
             )
-            textSize = 13f
-            setTypeface(typeface, if (isCurrent) android.graphics.Typeface.BOLD_ITALIC else android.graphics.Typeface.BOLD)
+            textSize = 12f
+            setTypeface(typeface, if (isCurrent) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
             maxLines = 2
             ellipsize = android.text.TextUtils.TruncateAt.END
         }
@@ -1128,9 +1141,30 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
         val cardContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(8), dp(8), dp(8), dp(8))
+            setPadding(dp(10), dp(10), dp(10), dp(10))
             addView(cover)
-            addView(title)
+            if (playingDot != null) {
+                val titleRow = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = dp(8) }
+                    addView(playingDot)
+                    addView(title.apply {
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    })
+                }
+                addView(titleRow)
+            } else {
+                addView(title.apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = dp(8) }
+                })
+            }
             addView(artist.apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1145,8 +1179,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             setTag(idx)
             background = ContextCompat.getDrawable(
                 this@MainActivity,
-                if (isCurrent) R.drawable.bg_playlist_card_active
-                else R.drawable.bg_playlist_card
+                if (isCurrent) R.drawable.bg_queue_row_active
+                else R.drawable.bg_queue_row
             )
             addView(cardContent.apply {
                 layoutParams = LinearLayout.LayoutParams(
@@ -1183,12 +1217,12 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         val hasAudio = song.audioUrl.isNotBlank() && absoluteUrl(song.audioUrl).isNotBlank()
 
         val cover = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+            layoutParams = LinearLayout.LayoutParams(dp(52), dp(52))
             background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
             scaleType = ImageView.ScaleType.CENTER_CROP
             setPadding(dp(2), dp(2), dp(2), dp(2))
             setImageResource(R.drawable.ic_music_note)
-            applyRoundedCorners(this, 4)
+            applyRoundedCorners(this, 8)
             if (song.thumbnail.isNotBlank()) loadBitmap(song.thumbnail, this, null)
         }
 
@@ -1199,7 +1233,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 else ContextCompat.getColor(this@MainActivity, R.color.cloud_white)
             )
             textSize = 14f
-            setTypeface(typeface, if (isCurrent) android.graphics.Typeface.BOLD_ITALIC else android.graphics.Typeface.BOLD)
+            setTypeface(typeface, if (isCurrent) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
             maxLines = 1
         }
 
@@ -1213,12 +1247,38 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             maxLines = 1
         }
 
+        // Now playing indicator for active song
+        val playingDot = if (isCurrent) {
+            TextView(this).apply {
+                text = "●"
+                textSize = 8f
+                setTextColor(android.graphics.Color.parseColor("#7C6DFF"))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { marginEnd = dp(6) }
+            }
+        } else null
+
         val textColumn = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginStart = dp(12)
             }
-            addView(title)
+            if (playingDot != null) {
+                // Title row with playing indicator
+                val titleRow = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    addView(playingDot)
+                    addView(title.apply {
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    })
+                }
+                addView(titleRow)
+            } else {
+                addView(title)
+            }
             addView(artist.apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1227,23 +1287,23 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             })
         }
 
-        // buildSongRow
+        // buildSongRow premium
         return LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
             setTag(idx)
-            background = if (isCurrent) {
-                ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_playlist_card_active)
-            } else {
-                null
-            }
-            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = ContextCompat.getDrawable(
+                this@MainActivity,
+                if (isCurrent) R.drawable.bg_queue_row_active
+                else R.drawable.bg_queue_row
+            )
+            setPadding(dp(16), dp(12), dp(16), dp(12))
             addView(cover)
             addView(textColumn)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { bottomMargin = dp(8) }
+            ).apply { bottomMargin = dp(10) }
             if (hasAudio) {
                 setOnClickListener {
                     if (currentIndex != idx) {
