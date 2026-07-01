@@ -113,6 +113,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private var activePlaylistSignature = ""
     private val selectedPlaylistIds = mutableListOf<Int>()
     private val cachedPlaylists = mutableListOf<JSONObject>()
+    private val requestQueue = mutableListOf<NativeSong>()
+    private val requestIdMap = mutableMapOf<String, Int>() // stableId -> requestId
     private val mainHandler = Handler(Looper.getMainLooper())
     private var refreshAnimator: android.animation.ObjectAnimator? = null
     private val prefs by lazy { getSharedPreferences("musicbar_native_player", Context.MODE_PRIVATE) }
@@ -152,7 +154,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         override fun run() {
             if (isDestroyed || playerView.visibility != View.VISIBLE) return
             refreshActivePlaylistIfNeeded()
-            mainHandler.postDelayed(this, 60000) // reduced from 30s to 60s
+            fetchPendingRequests()
+            mainHandler.postDelayed(this, 60000)
         }
     }
 
@@ -737,6 +740,9 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         }
                     } catch (_: Exception) {}
                 }
+
+                // Initial fetch of pending song requests
+                fetchPendingRequests()
             } catch (e: Exception) {
                 e.printStackTrace()
                 runOnUiThread { if (!isDestroyed) hideSplash() }
@@ -899,6 +905,45 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 (0 until array.length()).mapNotNull { array.optInt(it).takeIf { id -> id >= 0 } }
             }.getOrDefault(emptyList())
             else -> emptyList()
+        }
+    }
+
+    /** Fetch pending song requests and add them to request queue */
+    private fun fetchPendingRequests() {
+        if (tenantSlug.isBlank()) return
+        backgroundExecutor.submit {
+            try {
+                val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
+                val json = getJson("$baseUrl/api/requests?tenant=$tenantParam")
+                val array = JSONArray(json)
+                if (array.length() == 0) return@submit
+                for (i in 0 until array.length()) {
+                    val item = array.getJSONObject(i)
+                    val reqId = item.getInt("id")
+                    val youtubeId = item.optString("youtube_id", "")
+                    if (youtubeId.isBlank()) continue
+                    val stableKey = youtubeId
+                    if (requestIdMap.containsKey(stableKey)) continue
+                    val song = NativeSong(
+                        id = item.optInt("song_id", 0),
+                        playlistId = 0,
+                        youtubeId = youtubeId,
+                        title = item.optString("title", "ขอเพลง"),
+                        artist = item.optString("requested_by", "ลูกค้า"),
+                        thumbnail = item.optString("thumbnail", ""),
+                        duration = item.optString("duration", ""),
+                        audioUrl = item.optString("audio_url", ""),
+                    )
+                    requestQueue.add(song)
+                    requestIdMap[stableKey] = reqId
+                }
+                // Update queue UI if visible
+                runOnUiThread {
+                    if (!isDestroyed && songs.isNotEmpty()) {
+                        statusLabel.text = "มีคำขอเพลงใหม่ ${requestQueue.size} เพลง"
+                    }
+                }
+            } catch (_: Exception) {}
         }
     }
 
@@ -1446,6 +1491,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     selectedPlaylistIds.add(playlistId)
                     activePlaylistSignature = playlistId.toString()
                     songs = loadedSongs
+                    requestQueue.clear()
+                    requestIdMap.clear()
                     resumePositionMs = 0
 
                     val playableIdx = findPlayableIndex(0, true, true)
@@ -1899,6 +1946,16 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private fun next(useCrossfade: Boolean) {
         if (songs.isEmpty()) return
         cancelPreloadedPlayer()
+
+        // Check request queue first
+        if (requestQueue.isNotEmpty()) {
+            val reqSong = requestQueue.removeAt(0)
+            currentIndex = songs.indexOfFirst { it.stableId == reqSong.stableId }.takeIf { it >= 0 } ?: 0
+            renderCurrentSong()
+            startSong(reqSong, 0)
+            return
+        }
+
         val nextIndex = findPlayableIndex(currentIndex, forward = true, includeCurrent = false)
         if (nextIndex != -1) {
             val shouldPlay = isPlaying || isPreparing || runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)
