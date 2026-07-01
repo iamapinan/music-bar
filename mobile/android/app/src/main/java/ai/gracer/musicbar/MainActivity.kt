@@ -1203,13 +1203,27 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         array.put(pl)
                     }
                 } else if (tenantSlug.isNotBlank()) {
-                    // Try SharedPreferences cache before calling API
+                    // Try SharedPreferences cache first
                     val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
                     val cachedRaw = prefs.getString("init:$tenantParam:all", null)
                     val cachedTime = prefs.getLong("init:$tenantParam:all:ts", 0L)
+                    var loadedFromCache = false
                     if (cachedRaw != null && System.currentTimeMillis() - cachedTime < 300_000L) {
-                        val root = JSONObject(cachedRaw)
-                        val fetched = root.getJSONArray("playlists")
+                        try {
+                            val root = JSONObject(cachedRaw)
+                            val fetched = root.getJSONArray("playlists")
+                            cachedPlaylists.clear()
+                            for (i in 0 until fetched.length()) {
+                                cachedPlaylists.add(fetched.getJSONObject(i))
+                                array.put(fetched.getJSONObject(i))
+                            }
+                            loadedFromCache = true
+                        } catch (_: Exception) {}
+                    }
+                    if (!loadedFromCache) {
+                        // Fallback: fetch from API
+                        val json = getJson("$baseUrl/api/playlists?tenant=$tenantParam")
+                        val fetched = JSONArray(json)
                         cachedPlaylists.clear()
                         for (i in 0 until fetched.length()) {
                             cachedPlaylists.add(fetched.getJSONObject(i))
