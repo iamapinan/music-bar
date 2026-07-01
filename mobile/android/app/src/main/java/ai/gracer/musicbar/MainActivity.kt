@@ -664,20 +664,37 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     // ===================== Playback =====================
 
     private fun play() {
-        val song = songs.getOrNull(currentIndex) ?: return
-        if (song.audioUrl.isBlank()) {
+        if (songs.isEmpty()) return
+
+        // Find next song that has audio_url (auto-skip YT-only songs)
+        val song = findNextPlayableSong(currentIndex)
+        if (song == null) {
             isPlaying = false
-            statusLabel.text = "API ยังไม่มี audio_url สำหรับ native playback"
+            statusLabel.text = "ไม่มีเพลงที่มี audio_url ใน playlist นี้"
             updatePlayPauseIcon()
             syncNotification()
             savePlaybackState()
             return
         }
+
         isPlaying = true
         updatePlayPauseIcon()
         audioService?.acquirePlaybackLocks()
         prepareAndPlay(song, resumePositionMs)
         resumePositionMs = 0
+    }
+
+    private fun findNextPlayableSong(fromIndex: Int): NativeSong? {
+        if (songs.isEmpty()) return null
+        for (offset in 0 until songs.size) {
+            val idx = (fromIndex + offset) % songs.size
+            val s = songs[idx]
+            if (s.audioUrl.isNotBlank()) {
+                if (idx != currentIndex) currentIndex = idx
+                return s
+            }
+        }
+        return null
     }
 
     private fun prepareAndPlay(song: NativeSong, seekMs: Int) {
@@ -734,16 +751,28 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     private fun next(useCrossfade: Boolean) {
         if (songs.isEmpty()) return
-        val nextIndex = (currentIndex + 1) % songs.size
-        val nextSong = songs[nextIndex]
-        if (useCrossfade && isPlaying && nextSong.audioUrl.isNotBlank() && mediaPlayer?.isPlaying == true) {
-            crossfadeTo(nextIndex, nextSong)
-        } else {
-            currentIndex = nextIndex
-            resumePositionMs = 0
-            renderCurrentSong()
-            if (isPlaying) play()
+        // Find next song with audio_url (skip YT-only songs)
+        for (offset in 1..songs.size) {
+            val nextIndex = (currentIndex + offset) % songs.size
+            val nextSong = songs[nextIndex]
+            if (nextSong.audioUrl.isNotBlank()) {
+                if (useCrossfade && isPlaying && mediaPlayer?.isPlaying == true) {
+                    crossfadeTo(nextIndex, nextSong)
+                } else {
+                    currentIndex = nextIndex
+                    resumePositionMs = 0
+                    renderCurrentSong()
+                    if (isPlaying) play()
+                }
+                return
+            }
         }
+        // No playable song found — stop
+        statusLabel.text = "ไม่มีเพลงที่เล่นได้"
+        isPlaying = false
+        updatePlayPauseIcon()
+        syncNotification()
+        savePlaybackState()
     }
 
     private fun crossfadeTo(nextIndex: Int, nextSong: NativeSong) {
@@ -784,10 +813,24 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     private fun previous() {
         if (songs.isEmpty()) return
-        currentIndex = (currentIndex - 1 + songs.size) % songs.size
-        resumePositionMs = 0
-        renderCurrentSong()
-        if (isPlaying) play()
+        // Find previous song with audio_url (skip YT-only songs)
+        for (offset in 1..songs.size) {
+            val prevIndex = ((currentIndex - offset) % songs.size + songs.size) % songs.size
+            val prevSong = songs[prevIndex]
+            if (prevSong.audioUrl.isNotBlank()) {
+                currentIndex = prevIndex
+                resumePositionMs = 0
+                renderCurrentSong()
+                if (isPlaying) play()
+                return
+            }
+        }
+        // No playable song found
+        statusLabel.text = "ไม่มีเพลงที่เล่นได้"
+        isPlaying = false
+        updatePlayPauseIcon()
+        syncNotification()
+        savePlaybackState()
     }
 
     // ===================== Native Actions =====================
