@@ -570,6 +570,8 @@ export function AdminView() {
     currentSong,
     isPlaying,
     togglePlay,
+    currentTime,
+    duration,
   } = usePlayer();
 
   const [activePlaylistId, setActivePlaylistId] = useState<number | null>(null);
@@ -841,12 +843,38 @@ export function AdminView() {
     title: string;
     thumbnail?: string | null;
     artist?: string | null;
+    audio_url?: string | null;
   }) => {
-    if (currentSong?.youtube_id === song.youtube_id) {
-      togglePlay();
-    } else {
-      playSongImmediately(song);
+    const isSameSong = currentSong?.youtube_id === song.youtube_id;
+    const hasValidAudio =
+      song.audio_url &&
+      typeof song.audio_url === "string" &&
+      song.audio_url.trim() !== "";
+
+    if (isSameSong) {
+      // If the current song is already playing and healthy, just toggle
+      if (isPlaying && duration > 0) {
+        togglePlay();
+        return;
+      }
+      // If playback is broken (no duration) or paused without a working audio,
+      // restart playback from scratch only if we have an audio_url
+      if (hasValidAudio) {
+        playSongImmediately(song);
+        return;
+      }
     }
+
+    // Different song: require audio_url to play
+    if (!hasValidAudio) {
+      toast.error("เพลงนี้ยังไม่มีไฟล์เสียง", {
+        description:
+          "กรุณาเพิ่มเพลงเข้า playlist ก่อน แล้วระบบจะจัดการไฟล์เสียงให้อัตโนมัติ",
+      });
+      return;
+    }
+
+    playSongImmediately(song);
   };
 
   const handlePreviewPlaylist = async (pl: YouTubePlaylistResult) => {
@@ -1387,6 +1415,7 @@ export function AdminView() {
                               title: result.title,
                               thumbnail: result.thumbnail,
                               artist: result.channelTitle,
+                              audio_url: (result as any).audio_url,
                             })
                           }
                           className={cn(
@@ -1521,6 +1550,7 @@ export function AdminView() {
                                   title: result.title,
                                   thumbnail: result.thumbnail,
                                   artist: result.channelTitle,
+                                  audio_url: (result as any).audio_url,
                                 })
                               }
                               className={cn(
@@ -1706,6 +1736,7 @@ export function AdminView() {
                               title: req.title,
                               thumbnail: req.thumbnail,
                               artist: req.requested_by || "ลูกค้าทั่วไป",
+                              audio_url: req.audio_url,
                             })
                           }
                           className={cn(
@@ -1766,6 +1797,7 @@ export function AdminView() {
                                   title: req.title,
                                   thumbnail: req.thumbnail,
                                   artist: req.requested_by || "ลูกค้าทั่วไป",
+                                  audio_url: req.audio_url,
                                 })
                               }
                               className={cn(
@@ -1910,9 +1942,31 @@ export function AdminView() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => handlePlayPauseSong(song)}
+                          onClick={() =>
+                            handlePlayPauseSong({
+                              youtube_id: song.youtube_id || (song as any).id,
+                              title: song.title,
+                              thumbnail: song.thumbnail,
+                              artist: (song as any).channelTitle,
+                              audio_url: (song as any).audio_url,
+                            })
+                          }
+                          disabled={
+                            !(
+                              (song as any).audio_url &&
+                              typeof (song as any).audio_url === "string" &&
+                              (song as any).audio_url.trim() !== ""
+                            )
+                          }
+                          title={
+                            (song as any).audio_url
+                              ? `เล่น ${song.title}`
+                              : "เพลงนี้ยังไม่มีไฟล์เสียง — เพิ่มเข้า playlist ก่อน"
+                          }
                           className={cn(
                             "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all",
+                            !(song as any).audio_url &&
+                              "opacity-30 cursor-not-allowed",
                             isThisSongPlaying
                               ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(106_92_255_/_0.3)]"
                               : "text-foreground/60 hover:bg-primary/10 hover:text-primary",

@@ -930,6 +930,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playSongImmediately = useCallback((song: any) => {
     // Only play songs with audio_url (streaming API only — no YT fallback)
     if (!song.audio_url || typeof song.audio_url !== 'string' || song.audio_url.trim() === '') {
+      console.warn('[playSongImmediately] skipping — no audio_url for:', song.title || song.youtube_id || '(unknown)')
       return
     }
 
@@ -964,13 +965,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.play().then(() => {
         setIsPlaying(true)
       }).catch((err) => {
-        console.warn('Audio play failed:', err.name, err.message)
+        console.warn('[playSongImmediately] play() failed:', err.name, err.message)
         if (err.name === 'NotAllowedError') {
           audio.load()
         }
       })
     } catch (err) {
-      console.warn('Failed to create Audio element:', err)
+      console.warn('[playSongImmediately] Failed to create Audio element:', err)
     }
 
     // Save to playback_state immediately so other tabs/pages pick it up

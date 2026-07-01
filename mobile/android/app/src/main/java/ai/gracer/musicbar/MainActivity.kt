@@ -13,6 +13,7 @@ import android.graphics.BitmapFactory
 import android.graphics.drawable.GradientDrawable
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -39,6 +40,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import kotlin.math.max
@@ -56,14 +58,18 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private lateinit var stationLabel: TextView
     private lateinit var statusLabel: TextView
     private lateinit var artworkView: ImageView
+    private lateinit var controlArtworkView: ImageView
     private lateinit var songTitle: TextView
     private lateinit var songArtist: TextView
     private lateinit var progress: ProgressBar
     private lateinit var currentTimeLabel: TextView
     private lateinit var durationLabel: TextView
+    private lateinit var backButton: ImageButton
     private lateinit var playPauseButton: ImageButton
     private lateinit var previousButton: ImageButton
     private lateinit var nextButton: ImageButton
+    private lateinit var crossfadeToggle: TextView
+    private lateinit var controlBar: LinearLayout
     private lateinit var queueList: LinearLayout
     private lateinit var stationSelectTitle: TextView
     private lateinit var stationSelectSubtitle: TextView
@@ -78,6 +84,11 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private var currentIndex = 0
     private var isPlaying = false
     private var isPreparing = false
+    private var crossfadeEnabled = true
+    private var playbackGeneration = 0
+    private var preparedSongId = ""
+    private var playbackStartedAtMs = 0L
+    private var playbackBasePositionMs = 0
     private var durationMs = 0
     private var resumePositionMs = 0
     private var tenantSlug = ""
@@ -91,7 +102,9 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     // ---- Performance: Thread pool & lifecycle ----
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
+    private val audioExecutor = Executors.newSingleThreadExecutor()
     private var pendingFuture: Future<*>? = null
+    private var audioFuture: Future<*>? = null
     private var isDestroyed = false
 
     // ---- Performance: Bitmap LRU cache (4MB) ----
@@ -181,6 +194,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     override fun onBackPressed() {
         if (playerView.visibility == View.VISIBLE) {
             playerView.visibility = View.GONE
+            controlBar.visibility = View.GONE
             stationSelectView.visibility = View.VISIBLE
         } else {
             moveTaskToBack(true)
@@ -194,7 +208,9 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         mainHandler.removeCallbacks(activePlaylistTicker)
         // Cancel pending background work
         pendingFuture?.cancel(true)
+        audioFuture?.cancel(true)
         backgroundExecutor.shutdownNow()
+        audioExecutor.shutdownNow()
         try {
             unregisterReceiver(stopReceiver)
         } catch (_: Exception) {}
@@ -219,14 +235,18 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         stationLabel = findViewById(R.id.stationLabel)
         statusLabel = findViewById(R.id.statusLabel)
         artworkView = findViewById(R.id.artworkView)
+        controlArtworkView = findViewById(R.id.controlArtworkView)
         songTitle = findViewById(R.id.songTitle)
         songArtist = findViewById(R.id.songArtist)
         progress = findViewById(R.id.playbackProgress)
         currentTimeLabel = findViewById(R.id.currentTimeLabel)
         durationLabel = findViewById(R.id.durationLabel)
+        backButton = findViewById(R.id.backButton)
         playPauseButton = findViewById(R.id.playPauseButton)
         previousButton = findViewById(R.id.previousButton)
         nextButton = findViewById(R.id.nextButton)
+        crossfadeToggle = findViewById(R.id.crossfadeToggle)
+        controlBar = findViewById(R.id.controlBar)
         queueList = findViewById(R.id.queueList)
         stationSelectTitle = findViewById(R.id.stationSelectTitle)
         stationSelectSubtitle = findViewById(R.id.stationSelectSubtitle)
@@ -239,25 +259,29 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         val maxContentPx = (680 * density).toInt()
         val contentWidth = min(width - (48 * density).toInt(), maxContentPx).coerceAtLeast((280 * density).toInt())
         stationContent.layoutParams = stationContent.layoutParams.apply { this.width = contentWidth }
-        playerContent.layoutParams = playerContent.layoutParams.apply { this.width = contentWidth }
+        playerContent.layoutParams = playerContent.layoutParams.apply { this.width = LinearLayout.LayoutParams.MATCH_PARENT }
 
-        val maxArtworkPx = (if (width / density >= 720) 360 else 320) * density
-        val minArtworkPx = (220 * density).toInt()
-        val size = min(maxArtworkPx.toInt(), max(minArtworkPx, contentWidth - (72 * density).toInt()))
-        artworkFrame.layoutParams = artworkFrame.layoutParams.apply {
-            this.width = size
-            this.height = size
-        }
+        artworkFrame.visibility = View.GONE
     }
 
     // ===================== Controls =====================
 
     private fun setupNativeControls() {
+        backButton.setOnClickListener {
+            playerView.visibility = View.GONE
+            controlBar.visibility = View.GONE
+            stationSelectView.visibility = View.VISIBLE
+        }
         playPauseButton.setOnClickListener {
             if (isPlaying) pause() else play()
         }
-        nextButton.setOnClickListener { next(useCrossfade = true) }
+        nextButton.setOnClickListener { next(useCrossfade = crossfadeEnabled) }
         previousButton.setOnClickListener { previous() }
+        crossfadeToggle.setOnClickListener {
+            crossfadeEnabled = !crossfadeEnabled
+            updateCrossfadeToggle()
+        }
+        updateCrossfadeToggle()
     }
 
     // ===================== Station Loading =====================
@@ -297,7 +321,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 scaleType = ImageView.ScaleType.CENTER_CROP
                 setImageResource(R.drawable.ic_music_note)
                 if (station.coverThumbnail.isNotBlank()) {
-                    loadBitmap(station.coverThumbnail, this)
+                    loadBitmap(station.coverThumbnail, this, null)
                 }
             }
 
@@ -305,7 +329,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             val title = TextView(this).apply {
                 text = station.displayName
                 setTextColor(ContextCompat.getColor(this@MainActivity, R.color.cloud_white))
-                textSize = 17f
+                textSize = 18f
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                 maxLines = 1
                 gravity = android.view.Gravity.START
@@ -314,10 +338,21 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             // --- Meta info ---
             val meta = TextView(this).apply {
                 val resumeHint = if (station.slug == savedTenant) " • เล่นต่อจากครั้งล่าสุด" else ""
-                text = "${station.songCount} เพลง • ${station.playlistCount} Playlist$resumeHint"
+                text = "${station.songCount} songs  |  ${station.playlistCount} playlists$resumeHint"
                 setTextColor(ContextCompat.getColor(this@MainActivity, R.color.slate_300))
                 textSize = 12f
                 maxLines = 1
+            }
+
+            val cue = TextView(this).apply {
+                text = "OPEN"
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.cloud_white))
+                textSize = 10f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                letterSpacing = 0.18f
+                gravity = android.view.Gravity.CENTER
+                background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_station_action)
+                setPadding(dp(12), dp(7), dp(12), dp(7))
             }
 
             // --- Text column ---
@@ -342,6 +377,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 setPadding(dp(16), dp(14), dp(16), dp(14))
                 addView(thumbnail)
                 addView(textColumn)
+                addView(cue)
             }
 
             // --- Full card ---
@@ -394,15 +430,19 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private fun selectStation(station: NativeStation) {
         stationSelectView.visibility = View.GONE
         playerView.visibility = View.VISIBLE
+        controlBar.visibility = View.VISIBLE
         releasePlayer()
         isPlaying = false
         isPreparing = false
+        playbackStartedAtMs = 0L
+        playbackBasePositionMs = 0
         tenantSlug = station.slug
         stationLabel.text = station.displayName
-        statusLabel.text = "กำลังโหลด active playlist"
-        songTitle.text = "กำลังโหลดเพลง"
+        statusLabel.text = "กำลังโหลด"
+        songTitle.text = "กำลังโหลดเพลง..."
         songArtist.text = station.displayName
         artworkView.setImageResource(R.drawable.ic_music_note)
+        controlArtworkView.setImageResource(R.drawable.ic_music_note)
         updatePlayPauseIcon()
 
         pendingFuture = backgroundExecutor.submit {
@@ -453,7 +493,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     activePlaylistSignature = signature
                     songs = loadedSongs
                     currentIndex = songs.indexOfFirst { it.stableId == oldSongId }.takeIf { it >= 0 } ?: 0
-                    statusLabel.text = "อัปเดตเพลย์ลิสต์แล้ว"
+                    statusLabel.text = "อัปเดตแล้ว"
                     renderCurrentSong()
                     if (isPlaying) play()
                 }
@@ -505,12 +545,12 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     artist = item.optString("artist", "Music Bar").ifBlank { "Music Bar" },
                     thumbnail = item.optString("thumbnail", ""),
                     duration = item.optString("duration", ""),
-                    audioUrl = firstNonBlank(
+                    audioUrl = absoluteUrl(firstNonBlank(
                         item.optString("audio_url", ""),
                         item.optString("stream_url", ""),
                         item.optString("media_url", ""),
                         item.optString("url", ""),
-                    ),
+                    )),
                 )
             }
         }
@@ -546,11 +586,13 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private fun renderCurrentSong() {
         val song = songs.getOrNull(currentIndex) ?: return
         songTitle.text = song.title
+        songTitle.isSelected = true
         songArtist.text = song.artist
         durationMs = parseDuration(song.duration) * 1000
         updateProgress(positionMs = resumePositionMs.takeIf { it > 0 } ?: 0, durationMs = durationMs)
         renderQueue()
         loadArtwork(song.thumbnail)
+        if (!isPlaying && !isPreparing) statusLabel.text = "พร้อมเล่น"
         updatePlayPauseIcon()
         syncNotification()
         savePlaybackState()
@@ -559,42 +601,55 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private fun renderQueue() {
         queueList.removeAllViews()
         if (songs.size <= 1) return
-        val maxItems = minOf(6, songs.size - 1)
+        val maxItems = minOf(8, songs.size - 1)
         for (offset in 1..maxItems) {
             val song = songs[(currentIndex + offset) % songs.size]
 
-            // Badge
-            val badge = TextView(this).apply {
-                text = "$offset"
-                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.musicbar_violet))
-                textSize = 11f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                gravity = android.view.Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(dp(24), dp(24))
-                background = GradientDrawable().apply {
-                    val c = ContextCompat.getColor(this@MainActivity, R.color.musicbar_violet)
-                    setColor(android.graphics.Color.argb(35, android.graphics.Color.red(c), android.graphics.Color.green(c), android.graphics.Color.blue(c)))
-                    cornerRadius = dp(12).toFloat()
-                }
+            val cover = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
+                background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setPadding(dp(2), dp(2), dp(2), dp(2))
+                setImageResource(R.drawable.ic_music_note)
+                if (song.thumbnail.isNotBlank()) loadBitmap(song.thumbnail, this, null)
             }
 
             val title = TextView(this).apply {
                 text = song.title
                 setTextColor(ContextCompat.getColor(this@MainActivity, R.color.cloud_white))
-                textSize = 13f
+                textSize = 14f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
                 maxLines = 1
+            }
+
+            val artist = TextView(this).apply {
+                text = song.artist
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.slate_300))
+                textSize = 12f
+                maxLines = 1
+            }
+
+            val textColumn = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                     marginStart = dp(12)
                 }
+                addView(title)
+                addView(artist.apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { topMargin = dp(3) }
+                })
             }
 
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
                 background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_queue_row)
-                setPadding(dp(14), dp(10), dp(14), dp(10))
-                addView(badge)
-                addView(title)
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                addView(cover)
+                addView(textColumn)
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -608,43 +663,51 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     // ===================== Artwork with LRU Cache =====================
 
     private fun loadArtwork(url: String) {
-        if (url.isBlank()) {
+        val imageUrl = absoluteUrl(url)
+        if (imageUrl.isBlank()) {
             artworkView.setImageResource(R.drawable.ic_music_note)
+            controlArtworkView.setImageResource(R.drawable.ic_music_note)
             return
         }
         // Check cache first
-        val cached = bitmapCache.get(url)
+        val cached = bitmapCache.get(imageUrl)
         if (cached != null) {
             artworkView.setImageBitmap(cached)
+            controlArtworkView.setImageBitmap(cached)
             return
         }
         pendingFuture = backgroundExecutor.submit {
-            val bitmap = downloadBitmap(url)
+            val bitmap = downloadBitmap(imageUrl)
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
                 if (bitmap != null) {
-                    bitmapCache.put(url, bitmap)
+                    bitmapCache.put(imageUrl, bitmap)
                     artworkView.setImageBitmap(bitmap)
+                    controlArtworkView.setImageBitmap(bitmap)
                 } else {
                     artworkView.setImageResource(R.drawable.ic_music_note)
+                    controlArtworkView.setImageResource(R.drawable.ic_music_note)
                 }
             }
         }
     }
 
-    private fun loadBitmap(url: String, target: ImageView) {
-        val cached = bitmapCache.get(url)
+    private fun loadBitmap(url: String, target: ImageView, mirrorTarget: ImageView? = null) {
+        val imageUrl = absoluteUrl(url)
+        val cached = bitmapCache.get(imageUrl)
         if (cached != null) {
             target.setImageBitmap(cached)
+            mirrorTarget?.setImageBitmap(cached)
             return
         }
         pendingFuture = backgroundExecutor.submit {
-            val bitmap = downloadBitmap(url)
+            val bitmap = downloadBitmap(imageUrl)
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
                 if (bitmap != null) {
-                    bitmapCache.put(url, bitmap)
+                    bitmapCache.put(imageUrl, bitmap)
                     target.setImageBitmap(bitmap)
+                    mirrorTarget?.setImageBitmap(bitmap)
                 }
             }
         }
@@ -666,9 +729,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private fun play() {
         if (songs.isEmpty()) return
 
-        // Find next song that has audio_url (auto-skip YT-only songs)
-        val song = findNextPlayableSong(currentIndex)
-        if (song == null) {
+        val playableIndex = findPlayableIndex(currentIndex, forward = true, includeCurrent = true)
+        if (playableIndex == -1) {
             isPlaying = false
             statusLabel.text = "ไม่มีเพลงที่มี audio_url ใน playlist นี้"
             updatePlayPauseIcon()
@@ -677,48 +739,116 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             return
         }
 
-        isPlaying = true
-        updatePlayPauseIcon()
-        audioService?.acquirePlaybackLocks()
-        prepareAndPlay(song, resumePositionMs)
-        resumePositionMs = 0
-    }
-
-    private fun findNextPlayableSong(fromIndex: Int): NativeSong? {
-        if (songs.isEmpty()) return null
-        for (offset in 0 until songs.size) {
-            val idx = (fromIndex + offset) % songs.size
-            val s = songs[idx]
-            if (s.audioUrl.isNotBlank()) {
-                if (idx != currentIndex) currentIndex = idx
-                return s
-            }
+        if (playableIndex != currentIndex) {
+            currentIndex = playableIndex
+            resumePositionMs = 0
+            renderCurrentSong()
         }
-        return null
+
+        val song = songs[currentIndex]
+        val player = mediaPlayer
+        if (!isPreparing && player != null && preparedSongId == song.stableId) {
+            runCatching { player.start() }
+                .onSuccess {
+                    isPlaying = true
+                    playbackBasePositionMs = resumePositionMs
+                    playbackStartedAtMs = System.currentTimeMillis()
+                    statusLabel.text = "กำลังเล่น"
+                    updatePlayPauseIcon()
+                    syncNotification()
+                    savePlaybackState()
+                    audioService?.acquirePlaybackLocks()
+                }
+                .onFailure { startSong(song, resumePositionMs) }
+            return
+        }
+
+        startSong(song, resumePositionMs)
     }
 
-    private fun prepareAndPlay(song: NativeSong, seekMs: Int) {
+    private fun findPlayableIndex(fromIndex: Int, forward: Boolean, includeCurrent: Boolean): Int {
+        if (songs.isEmpty()) return -1
+        val firstOffset = if (includeCurrent) 0 else 1
+        for (offset in firstOffset until songs.size + firstOffset) {
+            val step = if (forward) offset else -offset
+            val idx = ((fromIndex + step) % songs.size + songs.size) % songs.size
+            if (songs[idx].audioUrl.isNotBlank()) return idx
+        }
+        return -1
+    }
+
+    private fun startSong(song: NativeSong, seekMs: Int) {
+        val generation = ++playbackGeneration
+        isPlaying = true
         isPreparing = true
-        statusLabel.text = "Buffering native stream"
+        statusLabel.text = "กำลังโหลด"
+        updatePlayPauseIcon()
+        syncNotification()
+        savePlaybackState()
+        audioService?.acquirePlaybackLocks()
         releasePlayer()
-        mediaPlayer = createPlayer(song.audioUrl).apply {
+        if (song.audioUrl.startsWith("http://") || song.audioUrl.startsWith("https://")) {
+            statusLabel.text = "กำลังโหลดไฟล์"
+            prepareCachedAndPlay(song, seekMs, generation)
+            return
+        }
+        mediaPlayer = try {
+            createPlayer(song.audioUrl)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+        val newPlayer = mediaPlayer
+        if (newPlayer == null) {
+            isPreparing = false
+            isPlaying = false
+            statusLabel.text = "เปิด stream ไม่สำเร็จ"
+            updatePlayPauseIcon()
+            syncNotification()
+            savePlaybackState()
+            audioService?.releasePlaybackLocks()
+            return
+        }
+        newPlayer.apply {
+            mainHandler.postDelayed({
+                if (!isDestroyed && generation == playbackGeneration && isPreparing) {
+                    releasePlayer()
+                    statusLabel.text = "กำลังโหลดไฟล์"
+                    prepareCachedAndPlay(song, seekMs, generation)
+                }
+            }, 8000)
             setOnPreparedListener { player ->
+                if (generation != playbackGeneration || !isPlaying) {
+                    runCatching { player.release() }
+                    return@setOnPreparedListener
+                }
                 isPreparing = false
-                durationMs = player.duration.takeIf { it > 0 } ?: durationMs
+                preparedSongId = song.stableId
+                durationMs = safeDuration(player)
                 if (seekMs > 0) player.seekTo(seekMs)
                 player.start()
-                statusLabel.text = "Playing native stream"
+                playbackBasePositionMs = seekMs.coerceAtLeast(0)
+                playbackStartedAtMs = System.currentTimeMillis()
+                resumePositionMs = playbackBasePositionMs
+                statusLabel.text = "กำลังเล่น"
                 updatePlayPauseIcon()
                 syncNotification()
+                savePlaybackState()
             }
             setOnCompletionListener {
-                next(useCrossfade = false)
+                if (generation == playbackGeneration) next(useCrossfade = false)
             }
             setOnErrorListener { _, what, extra ->
+                if (generation != playbackGeneration) return@setOnErrorListener true
                 isPreparing = false
                 this@MainActivity.isPlaying = false
-                statusLabel.text = "เล่น stream นี้ไม่สำเร็จ"
+                preparedSongId = ""
+                playbackStartedAtMs = 0L
+                playbackBasePositionMs = 0
+                statusLabel.text = "เล่น stream นี้ไม่สำเร็จ ($what/$extra)"
                 updatePlayPauseIcon()
+                syncNotification()
+                savePlaybackState()
                 audioService?.releasePlaybackLocks()
                 true
             }
@@ -727,6 +857,9 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     }
 
     private fun createPlayer(url: String): MediaPlayer {
+        val clean = url.trim()
+        val localFile = File(clean)
+        val source = if (localFile.isAbsolute && localFile.exists()) clean else absoluteUrl(clean)
         return MediaPlayer().apply {
             setAudioAttributes(
                 AudioAttributes.Builder()
@@ -734,15 +867,130 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build(),
             )
-            setDataSource(url)
+            if (localFile.isAbsolute && localFile.exists()) {
+                setDataSource(this@MainActivity, Uri.fromFile(localFile))
+            } else {
+                setDataSource(source)
+            }
+        }
+    }
+
+    private fun prepareCachedAndPlay(song: NativeSong, seekMs: Int, generation: Int) {
+        audioFuture?.cancel(true)
+        audioFuture = audioExecutor.submit {
+            val file = downloadAudioToCache(song)
+            runOnUiThread {
+                if (isDestroyed || generation != playbackGeneration) return@runOnUiThread
+                if (file == null) {
+                    isPreparing = false
+                    isPlaying = false
+                    statusLabel.text = "โหลดเพลงไม่สำเร็จ"
+                    updatePlayPauseIcon()
+                    syncNotification()
+                    savePlaybackState()
+                    audioService?.releasePlaybackLocks()
+                    return@runOnUiThread
+                }
+                mediaPlayer = try {
+                    createPlayer(file.absolutePath)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    null
+                }
+                val cachedPlayer = mediaPlayer
+                if (cachedPlayer == null) {
+                    isPreparing = false
+                    isPlaying = false
+                    statusLabel.text = "เปิดไฟล์เพลงไม่สำเร็จ"
+                    updatePlayPauseIcon()
+                    return@runOnUiThread
+                }
+                cachedPlayer.apply {
+                    setOnPreparedListener { player ->
+                        if (generation != playbackGeneration) {
+                            runCatching { player.release() }
+                            return@setOnPreparedListener
+                        }
+                        isPreparing = false
+                        this@MainActivity.isPlaying = true
+                        preparedSongId = song.stableId
+                        durationMs = safeDuration(player)
+                        if (seekMs > 0) player.seekTo(seekMs)
+                        val startResult = runCatching { player.start() }
+                        if (startResult.isFailure) {
+                            isPreparing = false
+                            this@MainActivity.isPlaying = false
+                            statusLabel.text = "เริ่มเล่นไม่สำเร็จ"
+                            updatePlayPauseIcon()
+                            syncNotification()
+                            savePlaybackState()
+                            audioService?.releasePlaybackLocks()
+                            return@setOnPreparedListener
+                        }
+                        playbackBasePositionMs = seekMs.coerceAtLeast(0)
+                        playbackStartedAtMs = System.currentTimeMillis()
+                        resumePositionMs = playbackBasePositionMs
+                        statusLabel.text = "กำลังเล่น"
+                        updatePlayPauseIcon()
+                        syncNotification()
+                        savePlaybackState()
+                    }
+                    setOnCompletionListener {
+                        if (generation == playbackGeneration) next(useCrossfade = false)
+                    }
+                    setOnErrorListener { _, what, extra ->
+                        if (generation != playbackGeneration) return@setOnErrorListener true
+                        isPreparing = false
+                        this@MainActivity.isPlaying = false
+                        statusLabel.text = "เล่นไฟล์ไม่สำเร็จ ($what/$extra)"
+                        updatePlayPauseIcon()
+                        syncNotification()
+                        savePlaybackState()
+                        true
+                    }
+                    prepareAsync()
+                }
+            }
+        }
+    }
+
+    private fun downloadAudioToCache(song: NativeSong): File? {
+        return try {
+            val safeName = song.stableId.replace(Regex("[^A-Za-z0-9._-]"), "_")
+            val file = File(cacheDir, "musicbar_$safeName.mp3")
+            if (file.exists() && file.length() > 1024 * 128) return file
+            val connection = (URL(song.audioUrl).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 15000
+                readTimeout = 30000
+                setRequestProperty("User-Agent", "MusicBarAndroid/1.0")
+                setRequestProperty("Accept", "audio/mpeg,audio/*;q=0.9,*/*;q=0.8")
+            }
+            connection.inputStream.use { input ->
+                file.outputStream().use { output -> input.copyTo(output) }
+            }
+            file.takeIf { it.length() > 0 }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 
     private fun pause() {
+        playbackGeneration++
         isPlaying = false
-        if (mediaPlayer?.isPlaying == true) mediaPlayer?.pause()
-        resumePositionMs = mediaPlayer?.currentPosition ?: resumePositionMs
-        statusLabel.text = "Paused"
+        isPreparing = false
+        val player = mediaPlayer
+        resumePositionMs = if (player != null) safeCurrentPosition(player) else resumePositionMs
+        if (player != null) {
+            if (runCatching { player.isPlaying }.getOrDefault(false)) {
+                runCatching { player.pause() }
+            } else if (preparedSongId.isBlank()) {
+                releasePlayer()
+            }
+        }
+        playbackBasePositionMs = resumePositionMs
+        playbackStartedAtMs = 0L
+        statusLabel.text = "หยุดชั่วคราว"
         updatePlayPauseIcon()
         syncNotification()
         savePlaybackState()
@@ -751,37 +999,50 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     private fun next(useCrossfade: Boolean) {
         if (songs.isEmpty()) return
-        // Find next song with audio_url (skip YT-only songs)
-        for (offset in 1..songs.size) {
-            val nextIndex = (currentIndex + offset) % songs.size
+        val nextIndex = findPlayableIndex(currentIndex, forward = true, includeCurrent = false)
+        if (nextIndex != -1) {
+            val shouldPlay = isPlaying || isPreparing || runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)
             val nextSong = songs[nextIndex]
-            if (nextSong.audioUrl.isNotBlank()) {
-                if (useCrossfade && isPlaying && mediaPlayer?.isPlaying == true) {
-                    crossfadeTo(nextIndex, nextSong)
-                } else {
-                    currentIndex = nextIndex
-                    resumePositionMs = 0
-                    renderCurrentSong()
-                    if (isPlaying) play()
-                }
-                return
+            if (useCrossfade && shouldPlay && runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)) {
+                crossfadeTo(nextIndex, nextSong)
+            } else {
+                currentIndex = nextIndex
+                resumePositionMs = 0
+                renderCurrentSong()
+                if (shouldPlay) startSong(nextSong, 0)
             }
+            return
         }
-        // No playable song found — stop
+
         statusLabel.text = "ไม่มีเพลงที่เล่นได้"
         isPlaying = false
+        isPreparing = false
         updatePlayPauseIcon()
         syncNotification()
         savePlaybackState()
     }
 
     private fun crossfadeTo(nextIndex: Int, nextSong: NativeSong) {
-        statusLabel.text = "Crossfading"
+        val generation = ++playbackGeneration
+        statusLabel.text = "กำลังเปลี่ยนเพลง"
         val fromPlayer = mediaPlayer ?: return
-        val toPlayer = createPlayer(nextSong.audioUrl)
+        val toPlayer = try {
+            createPlayer(nextSong.audioUrl)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            currentIndex = nextIndex
+            resumePositionMs = 0
+            renderCurrentSong()
+            startSong(nextSong, 0)
+            return
+        }
         fadingPlayer = toPlayer
         toPlayer.setVolume(0f, 0f)
         toPlayer.setOnPreparedListener {
+            if (generation != playbackGeneration || !isPlaying) {
+                runCatching { it.release() }
+                return@setOnPreparedListener
+            }
             it.start()
             val startedAt = System.currentTimeMillis()
             val tick = object : Runnable {
@@ -796,9 +1057,13 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                         fadingPlayer = null
                         currentIndex = nextIndex
                         resumePositionMs = 0
-                        durationMs = toPlayer.duration.takeIf { d -> d > 0 } ?: parseDuration(nextSong.duration) * 1000
+                        preparedSongId = nextSong.stableId
+                        durationMs = safeDuration(toPlayer).takeIf { it > 0 } ?: parseDuration(nextSong.duration) * 1000
+                        playbackBasePositionMs = 0
+                        playbackStartedAtMs = System.currentTimeMillis()
                         renderCurrentSong()
-                        statusLabel.text = "Playing native stream"
+                        statusLabel.text = "กำลังเล่น"
+                        syncNotification()
                         savePlaybackState()
                     } else {
                         mainHandler.postDelayed(this, 100)
@@ -808,26 +1073,34 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             mainHandler.post(tick)
         }
         toPlayer.setOnCompletionListener { next(useCrossfade = false) }
+        toPlayer.setOnErrorListener { _, _, _ ->
+            if (generation == playbackGeneration) {
+                currentIndex = nextIndex
+                resumePositionMs = 0
+                renderCurrentSong()
+                startSong(nextSong, 0)
+            }
+            true
+        }
         toPlayer.prepareAsync()
     }
 
     private fun previous() {
         if (songs.isEmpty()) return
-        // Find previous song with audio_url (skip YT-only songs)
-        for (offset in 1..songs.size) {
-            val prevIndex = ((currentIndex - offset) % songs.size + songs.size) % songs.size
+        val prevIndex = findPlayableIndex(currentIndex, forward = false, includeCurrent = false)
+        if (prevIndex != -1) {
+            val shouldPlay = isPlaying || isPreparing || runCatching { mediaPlayer?.isPlaying == true }.getOrDefault(false)
             val prevSong = songs[prevIndex]
-            if (prevSong.audioUrl.isNotBlank()) {
-                currentIndex = prevIndex
-                resumePositionMs = 0
-                renderCurrentSong()
-                if (isPlaying) play()
-                return
-            }
+            currentIndex = prevIndex
+            resumePositionMs = 0
+            renderCurrentSong()
+            if (shouldPlay) startSong(prevSong, 0)
+            return
         }
-        // No playable song found
+
         statusLabel.text = "ไม่มีเพลงที่เล่นได้"
         isPlaying = false
+        isPreparing = false
         updatePlayPauseIcon()
         syncNotification()
         savePlaybackState()
@@ -841,7 +1114,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             when (action) {
                 "play" -> play()
                 "pause" -> pause()
-                "next", "crossfade" -> next(useCrossfade = action == "crossfade")
+                "next", "crossfade" -> next(useCrossfade = action == "crossfade" && crossfadeEnabled)
                 "previous" -> previous()
             }
         }
@@ -854,10 +1127,15 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         playPauseButton.contentDescription = if (isPlaying) "Pause" else "Play"
     }
 
+    private fun updateCrossfadeToggle() {
+        crossfadeToggle.text = if (crossfadeEnabled) "CF ON" else "CF OFF"
+        crossfadeToggle.alpha = if (crossfadeEnabled) 1f else 0.55f
+    }
+
     private fun updateProgressFromPlayer() {
         val player = mediaPlayer
-        val position = if (player != null && !isPreparing) player.currentPosition else resumePositionMs
-        val duration = player?.duration?.takeIf { it > 0 } ?: durationMs
+        val position = if (player != null && !isPreparing) safeCurrentPosition(player) else resumePositionMs
+        val duration = if (player != null && !isPreparing) safeDuration(player) else durationMs
         updateProgress(position, duration)
         syncNotification()
     }
@@ -872,8 +1150,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private fun syncNotification() {
         val song = songs.getOrNull(currentIndex) ?: return
         val player = mediaPlayer
-        val position = player?.currentPosition ?: resumePositionMs
-        val duration = player?.duration?.takeIf { it > 0 } ?: durationMs
+        val position = if (player != null && !isPreparing) safeCurrentPosition(player) else resumePositionMs
+        val duration = if (player != null && !isPreparing) safeDuration(player) else durationMs
         if (isBound) {
             audioService?.configureNativePlayback(queueJson(), crossfadeMs)
             audioService?.updatePlaybackState(
@@ -889,7 +1167,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     private fun savePlaybackState() {
         val song = songs.getOrNull(currentIndex) ?: return
-        val position = mediaPlayer?.currentPosition ?: resumePositionMs
+        val position = mediaPlayer?.let { safeCurrentPosition(it) } ?: resumePositionMs
         prefs.edit()
             .putString(KEY_TENANT, tenantSlug)
             .putString(KEY_PLAYLISTS, activePlaylistSignature)
@@ -919,6 +1197,12 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     private fun parseDuration(value: String): Int {
         if (value.isBlank()) return 0
+        if (value.startsWith("PT")) {
+            val hours = Regex("(\\d+)H").find(value)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
+            val minutes = Regex("(\\d+)M").find(value)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
+            val seconds = Regex("(\\d+)S").find(value)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 0
+            return hours * 3600 + minutes * 60 + seconds
+        }
         val parts = value.split(":").mapNotNull { it.toIntOrNull() }
         return when (parts.size) {
             3 -> parts[0] * 3600 + parts[1] * 60 + parts[2]
@@ -935,11 +1219,38 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
+    private fun safeCurrentPosition(player: MediaPlayer): Int {
+        val actual = runCatching { player.currentPosition }.getOrDefault(0)
+        if (actual > 0) {
+            return actual
+        }
+        if (isPlaying && !isPreparing && playbackStartedAtMs > 0L) {
+            val elapsed = (System.currentTimeMillis() - playbackStartedAtMs).toInt().coerceAtLeast(0)
+            return (playbackBasePositionMs + elapsed).coerceAtMost(max(1, durationMs))
+        }
+        return resumePositionMs
+    }
+
+    private fun safeDuration(player: MediaPlayer): Int {
+        return runCatching { player.duration }.getOrDefault(durationMs).takeIf { it > 0 } ?: durationMs
+    }
+
+    private fun absoluteUrl(url: String): String {
+        val clean = url.trim()
+        return when {
+            clean.isBlank() || clean == "null" -> ""
+            clean.startsWith("http://") || clean.startsWith("https://") -> clean
+            clean.startsWith("/") -> "$baseUrl$clean"
+            else -> clean
+        }
+    }
+
     private fun releasePlayer() {
-        mediaPlayer?.release()
+        runCatching { mediaPlayer?.release() }
         mediaPlayer = null
-        fadingPlayer?.release()
+        runCatching { fadingPlayer?.release() }
         fadingPlayer = null
+        preparedSongId = ""
     }
 
     private fun enableFullscreenMode() {

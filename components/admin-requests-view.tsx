@@ -23,7 +23,7 @@ import type { SongRequest } from "@/lib/types";
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function AdminRequestsView() {
-  const { currentSong, isPlaying, togglePlay, playSongImmediately } =
+  const { currentSong, isPlaying, togglePlay, playSongImmediately, currentTime, duration } =
     usePlayer();
   const { data: requests = [], mutate } = useSWR<SongRequest[]>(
     "/api/requests",
@@ -37,17 +37,48 @@ export function AdminRequestsView() {
 
   const handlePlayPause = (req: SongRequest) => {
     try {
+      const hasValidAudio =
+        req.audio_url &&
+        typeof req.audio_url === "string" &&
+        req.audio_url.trim() !== "";
+
       if (currentSong?.youtube_id === req.youtube_id) {
-        togglePlay();
-      } else {
-        playSongImmediately({
-          id: req.id,
-          youtube_id: req.youtube_id,
-          title: req.title,
-          thumbnail: req.thumbnail,
-          artist: req.requested_by || "ลูกค้าทั่วไป",
-        });
+        // If already playing and healthy, just toggle
+        if (isPlaying && duration > 0) {
+          togglePlay();
+          return;
+        }
+        // If broken, restart if we have audio_url
+        if (hasValidAudio) {
+          playSongImmediately({
+            id: req.id,
+            youtube_id: req.youtube_id,
+            title: req.title,
+            thumbnail: req.thumbnail,
+            artist: req.requested_by || "ลูกค้าทั่วไป",
+            audio_url: req.audio_url,
+          });
+          return;
+        }
       }
+
+      // Different song: require audio_url
+      if (!hasValidAudio) {
+        toast.error("เพลงนี้ยังไม่มีไฟล์เสียง", {
+          description:
+            "กรุณาเพิ่มเพลงเข้า playlist ก่อน แล้วระบบจะจัดการไฟล์เสียงให้อัตโนมัติ",
+        });
+        return;
+      }
+
+      playSongImmediately({
+        id: req.id,
+        youtube_id: req.youtube_id,
+        title: req.title,
+        thumbnail: req.thumbnail,
+        artist: req.requested_by || "ลูกค้าทั่วไป",
+        audio_url: req.audio_url,
+      });
     } catch (err) {
       console.error("Play error:", err);
     }

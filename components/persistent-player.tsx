@@ -394,7 +394,7 @@ export function PersistentYouTubePlayer() {
         const songKey = `${playMode}-${currentIndex}-${currentSong.youtube_id}-${(currentSong as any)?.id}`
       if (songKey === lastPlayedKeyRef.current) return
       lastPlayedKeyRef.current = songKey
-	
+		
       // Audio is created and started by playSongImmediately (for autoplay).
       // If we're here from next/prev (not from a click), the audio hasn't
       // been started yet — start it now.
@@ -409,18 +409,18 @@ export function PersistentYouTubePlayer() {
       } else if (audioRef.current?.src) {
         isAudioModeRef.current = true
       }
-	
-	      setupAudioEvents()
-	      exposeMethods()
-	      return
-	    }
-	
-	    // No audio_url — skip playback (YT-only songs not allowed)
-	    if (lastPlayedKeyRef.current !== `${playMode}-${currentIndex}-${(currentSong as any)?.id}`) {
-	      lastPlayedKeyRef.current = `${playMode}-${currentIndex}-${(currentSong as any)?.id}`
-	      setIsPlaying(false)
-	    }
-	  }, [currentSong?.youtube_id, currentSong?.audio_url, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying, setupAudioEvents, stopAudio])
+		
+      setupAudioEvents()
+      exposeMethods()
+          return
+        }
+		
+        // No audio_url — skip playback (YT-only songs not allowed)
+        if (lastPlayedKeyRef.current !== `${playMode}-${currentIndex}-${(currentSong as any)?.id}`) {
+          lastPlayedKeyRef.current = `${playMode}-${currentIndex}-${(currentSong as any)?.id}`
+          setIsPlaying(false)
+        }
+      }, [currentSong?.youtube_id, currentSong?.audio_url, playMode, currentIndex, (currentSong as any)?.id, initPlayer, exposeMethods, setIsPlaying, setupAudioEvents, stopAudio])
 
   useEffect(() => {
     preloadNext(nextSong?.youtube_id)
@@ -478,14 +478,16 @@ export function PersistentYouTubePlayer() {
     return () => clearInterval(interval)
   }, [nextSong?.youtube_id, preloadNext, setCurrentTime, setDuration, setIsPlaying, startCrossfade])
 
+  // Cleanup on unmount only — do NOT clean up audio here as
+  // playSongImmediately handles audio lifecycle before creating new elements.
   useEffect(() => {
     return () => {
       if (crossfadeTimerRef.current) window.clearInterval(crossfadeTimerRef.current)
-      stopAudio()
       destroySlot(0)
       destroySlot(1)
     }
-  }, [destroySlot, stopAudio])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div
