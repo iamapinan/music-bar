@@ -1327,7 +1327,6 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
 
     private fun showPlaylistSelectionScreen() {
         playerView.visibility = View.GONE
-        controlBar.visibility = View.GONE
         playlistSelectView.visibility = View.VISIBLE
         playlistList.removeAllViews()
 
@@ -1462,14 +1461,28 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         val isMultiCol = screenWidthDp >= 400
         val isActive = selectedPlaylistIds.contains(playlistId)
 
+        val cover = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(88), dp(88))
+            background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            setPadding(dp(2), dp(2), dp(2), dp(2))
+            setImageResource(R.drawable.ic_playlist)
+            applyRoundedCorners(this, 10)
+            if (coverUrl.isNotBlank()) {
+                loadBitmap(coverUrl, this, null)
+            } else {
+                setColorFilter(ContextCompat.getColor(this@MainActivity, R.color.white))
+            }
+        }
+
         val title = TextView(this).apply {
             text = name
             setTextColor(
                 if (isActive) ContextCompat.getColor(this@MainActivity, R.color.white)
                 else ContextCompat.getColor(this@MainActivity, R.color.cloud_white)
             )
-            textSize = 14f
-            setTypeface(typeface, if (isActive) android.graphics.Typeface.BOLD_ITALIC else android.graphics.Typeface.BOLD)
+            textSize = 15f
+            setTypeface(typeface, if (isActive) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
             maxLines = 2
             ellipsize = android.text.TextUtils.TruncateAt.END
         }
@@ -1480,55 +1493,37 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 if (isActive) android.graphics.Color.parseColor("#D7D5FF")
                 else ContextCompat.getColor(this@MainActivity, R.color.slate_300)
             )
-            textSize = 12f
+            textSize = 13f
             maxLines = 1
         }
 
-        val cover = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(110)).apply {
-                bottomMargin = dp(8)
-            }
-            background = ContextCompat.getDrawable(this@MainActivity, R.drawable.bg_control_artwork)
-            applyRoundedCorners(this, 4)
-            if (coverUrl.isNotBlank()) {
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                setPadding(0, 0, 0, 0)
-                loadBitmap(coverUrl, this, null)
-            } else {
-                scaleType = ImageView.ScaleType.CENTER_INSIDE
-                setPadding(dp(24), dp(24), dp(24), dp(24))
-                setImageResource(R.drawable.ic_playlist)
-                setColorFilter(ContextCompat.getColor(this@MainActivity, R.color.white))
-            }
-        }
-
-        val cardContent = LinearLayout(this).apply {
+        val textColumn = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(8), dp(8), dp(8), dp(8))
-            addView(cover)
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = dp(14)
+            }
             addView(title)
             addView(subtitle.apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { topMargin = dp(2) }
+                ).apply { topMargin = dp(4) }
             })
         }
 
         return LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setTag(playlistId)
             background = ContextCompat.getDrawable(
                 this@MainActivity,
-                if (isActive) R.drawable.bg_playlist_card_active
-                else R.drawable.bg_playlist_card
+                if (isActive) R.drawable.bg_queue_row_active
+                else R.drawable.bg_queue_row
             )
-            addView(cardContent.apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            })
-
+            setPadding(dp(14), dp(14), dp(14), dp(14))
+            addView(cover)
+            addView(textColumn)
             layoutParams = if (isMultiCol) {
                 LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                     marginEnd = dp(6)
@@ -1542,16 +1537,11 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     bottomMargin = dp(12)
                 }
             }
-
             setOnClickListener {
-                playlistSelectView.visibility = View.GONE
-                playerView.visibility = View.VISIBLE
-                controlBar.visibility = View.VISIBLE
                 loadPlaylistSongs(playlistId)
             }
         }
     }
-
     private fun loadPlaylistSongs(playlistId: Int) {
         setLoadingState(true)
         backgroundExecutor.submit {
@@ -1580,6 +1570,10 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     requestQueue.clear()
                     requestIdMap.clear()
                     resumePositionMs = 0
+
+                    playlistSelectView.visibility = View.GONE
+                    playerView.visibility = View.VISIBLE
+                    // keep controlBar visible
 
                     val playableIdx = findPlayableIndex(0, true, true)
                     if (playableIdx == -1) {

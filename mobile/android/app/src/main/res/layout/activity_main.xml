@@ -432,7 +432,8 @@
             android:layout_weight="1"
             android:clipToPadding="false"
             android:fillViewport="true"
-            android:paddingVertical="12dp">
+            android:paddingVertical="12dp"
+            android:paddingBottom="120dp">
 
             <!-- Center and constrain width for balanced layout -->
             <LinearLayout
