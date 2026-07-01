@@ -108,6 +108,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private val selectedPlaylistIds = mutableListOf<Int>()
     private val cachedPlaylists = mutableListOf<JSONObject>()
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var refreshAnimator: android.animation.ObjectAnimator? = null
     private val prefs by lazy { getSharedPreferences("musicbar_native_player", Context.MODE_PRIVATE) }
 
     private val baseUrl = "https://musicbar.gracer.ai"
@@ -499,7 +500,17 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private fun refreshSongData() {
         if (tenantSlug.isBlank()) return
         statusLabel.text = "กำลังโหลด"
-        refreshButton.animate().rotationBy(360f).setDuration(500).start()
+
+        // Start continuous rotation animation
+        refreshAnimator?.cancel()
+        refreshButton.rotation = 0f
+        refreshAnimator = android.animation.ObjectAnimator.ofFloat(refreshButton, "rotation", 0f, 360f).apply {
+            duration = 800
+            repeatCount = android.animation.ObjectAnimator.INFINITE
+            interpolator = android.view.animation.LinearInterpolator()
+            start()
+        }
+
         pendingFuture = backgroundExecutor.submit {
             try {
                 val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
@@ -508,6 +519,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 val oldSongId = songs.getOrNull(currentIndex)?.stableId
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
+                    refreshAnimator?.cancel()
+                    refreshButton.rotation = 0f
                     selectedPlaylistIds.clear()
                     selectedPlaylistIds.addAll(initResult.activePlaylistIds)
                     activePlaylistSignature = initResult.activePlaylistIds.joinToString(",")
@@ -528,7 +541,13 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                runOnUiThread { if (!isDestroyed) statusLabel.text = "รีเฟรชไม่สำเร็จ" }
+                runOnUiThread {
+                    if (!isDestroyed) {
+                        refreshAnimator?.cancel()
+                        refreshButton.rotation = 0f
+                        statusLabel.text = "รีเฟรชไม่สำเร็จ"
+                    }
+                }
             }
         }
     }
