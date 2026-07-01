@@ -958,7 +958,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.play().then(() => {
         setIsPlaying(true)
       }).catch((err) => {
-        console.warn('Audio play failed:', err)
+        console.warn('Audio play failed:', err.name, err.message)
+        // If play was rejected (autoplay blocked), fallback: try loading
+        // without playing — the useEffect in PersistentYouTubePlayer will
+        // attempt to play when the audio is ready.
+        if (err.name === 'NotAllowedError') {
+          audio.load()
+        }
       })
     } catch (err) {
       console.warn('Failed to create Audio element:', err)

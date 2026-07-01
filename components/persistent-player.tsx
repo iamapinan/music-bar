@@ -101,8 +101,15 @@ export function PersistentYouTubePlayer() {
       }
     }
     audio.onerror = () => {
-      console.warn('Audio playback error')
-      isAudioModeRef.current = false
+        const err = audioRef.current?.error
+        console.warn('Audio playback error:', {
+            code: err?.code,
+            message: err?.message,
+            src: audioRef.current?.src?.slice(0, 80),
+            networkState: audioRef.current?.networkState,
+            readyState: audioRef.current?.readyState,
+        })
+        isAudioModeRef.current = false
     }
   }, [audioRef])
 
