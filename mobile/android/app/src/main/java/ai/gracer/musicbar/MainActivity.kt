@@ -153,7 +153,6 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private val activePlaylistTicker = object : Runnable {
         override fun run() {
             if (isDestroyed || playerView.visibility != View.VISIBLE) return
-            refreshActivePlaylistIfNeeded()
             fetchPendingRequests()
             mainHandler.postDelayed(this, 60000)
         }
