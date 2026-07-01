@@ -3,7 +3,7 @@ import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
   try {
-    const rateCheck = await checkRateLimit(request, { maxRequests: 20, windowMs: 60_000 })
+    const rateCheck = await checkRateLimit(request, { maxRequests: 60, windowMs: 60_000 })
     if (!rateCheck.allowed) {
       return new Response('Too many requests, please slow down', {
         status: 429,
@@ -56,7 +56,12 @@ export async function GET(request: Request) {
       headers['Range'] = rangeHeader
     }
 
-    const upstream = await fetch(audioUrl.trim(), { headers })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30_000)
+    const upstream = await fetch(audioUrl.trim(), {
+      headers,
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout))
 
     if (!upstream.ok) {
       console.error(`Audio proxy failed: ${upstream.status} for song ${songId}`)

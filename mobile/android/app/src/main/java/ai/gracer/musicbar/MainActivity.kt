@@ -1021,12 +1021,26 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         }
         playlistList.addView(loadingText)
 
-        // Use the playlists cached from the last mobile init call (no new HTTP request)
+        // Use cached playlists if available, otherwise fetch from API
         Thread {
             try {
                 val array = JSONArray()
-                for (pl in cachedPlaylists) {
-                    array.put(pl)
+                if (cachedPlaylists.isNotEmpty()) {
+                    for (pl in cachedPlaylists) {
+                        array.put(pl)
+                    }
+                } else {
+                    // Fallback: fetch playlists from API directly
+                    val tenantParam = URLEncoder.encode(tenantSlug, "UTF-8")
+                    val json = getJson("$baseUrl/api/mobile/init?tenant=$tenantParam")
+                    val root = JSONObject(json)
+                    val fetched = root.getJSONArray("playlists")
+                    cachedPlaylists.clear()
+                    for (i in 0 until fetched.length()) {
+                        val pl = fetched.getJSONObject(i)
+                        cachedPlaylists.add(pl)
+                        array.put(pl)
+                    }
                 }
                 
                 data class PlaylistInfo(val name: String, val id: Int, val coverUrl: String, val songCount: Int)
