@@ -178,6 +178,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isPlaying) {
+      // Don't start silent audio if main audio is already playing —
+      // browsers restrict to one audio context and would pause the main audio.
+      if (audioRef.current?.paused === false) return
       playSilentAudio()
     } else {
       pauseSilentAudio()
@@ -927,11 +930,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playSongImmediately = useCallback((song: any) => {
     // Only play songs with audio_url (streaming API only — no YT fallback)
     if (!song.audio_url || typeof song.audio_url !== 'string' || song.audio_url.trim() === '') {
-      console.log('[playSongImmediately] skipped — no audio_url', { title: song.title, audio_url: song.audio_url })
       return
     }
-
-    console.log('[playSongImmediately] starting', { title: song.title, audio_url: song.audio_url?.slice(0, 60) })
 
     const formattedSong = {
       ...song,
@@ -947,13 +947,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setIsPlaying(true)
 
     // Play it immediately (within user gesture context).
-    // playSilentAudio is NOT called here to avoid consuming the user gesture
-    // before the actual audio playback (autoplay policy).
+    // Don't call playSilentAudio here — it would start a second audio
+    // element and browsers (Chrome/Safari) pause the first one.
     try {
-      // Stop any existing audio — clear onerror to avoid spurious error
-      // when we clear the old element's src (resolves to page URL).
+      // Clear onerror on old audio before stopping it to avoid
+      // spurious error when old element's src is cleared.
       if (audioRef.current) {
-        console.log('[playSongImmediately] stopping old audio', { oldSrc: audioRef.current.src.slice(0, 60) })
         audioRef.current.onerror = null
         audioRef.current.pause()
         audioRef.current.src = ''
@@ -962,12 +961,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const audio = new Audio(song.audio_url)
       audio.volume = volume / 100
       audioRef.current = audio
-      console.log('[playSongImmediately] calling audio.play()', { volume: volume, muted: audio.muted })
       audio.play().then(() => {
-        console.log('[playSongImmediately] play() resolved OK')
         setIsPlaying(true)
       }).catch((err) => {
-        console.warn('[playSongImmediately] play() rejected:', err.name, err.message)
+        console.warn('Audio play failed:', err.name, err.message)
         if (err.name === 'NotAllowedError') {
           audio.load()
         }
