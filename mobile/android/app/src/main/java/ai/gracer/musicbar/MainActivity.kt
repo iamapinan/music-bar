@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private lateinit var loadingSpinner: ProgressBar
     private lateinit var playlistSelectButton: ImageButton
     private lateinit var refreshButton: ImageButton
+    private lateinit var viewToggleButton: ImageButton
     private lateinit var playlistRefreshButton: ImageButton
     private lateinit var playlistSelectView: LinearLayout
     private lateinit var playlistList: LinearLayout
@@ -103,6 +104,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
     private var isPlaying = false
     private var isPreparing = false
     private var crossfadeEnabled = true
+    private var isQueueGalleryMode = false
     private var playbackGeneration = 0
     private var preparedSongId = ""
     private var playbackStartedAtMs = 0L
@@ -154,7 +156,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         override fun run() {
             if (isDestroyed || playerView.visibility != View.VISIBLE) return
             fetchPendingRequests()
-            mainHandler.postDelayed(this, 60000)
+            mainHandler.postDelayed(this, 15000)
         }
     }
 
@@ -284,6 +286,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         loadingSpinner = findViewById(R.id.loadingSpinner)
         playlistSelectButton = findViewById(R.id.playlistSelectButton)
         refreshButton = findViewById(R.id.refreshButton)
+        viewToggleButton = findViewById(R.id.viewToggleButton)
         playlistRefreshButton = findViewById(R.id.playlistRefreshButton)
         playlistSelectView = findViewById(R.id.playlistSelectView)
         playlistList = findViewById(R.id.playlistList)
@@ -341,6 +344,11 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             updateCrossfadeToggle()
         }
         refreshButton.setOnClickListener { refreshSongData() }
+        viewToggleButton.setOnClickListener {
+            isQueueGalleryMode = !isQueueGalleryMode
+            updateViewToggleIcon()
+            renderQueue()
+        }
         playlistRefreshButton.setOnClickListener {
             cachedPlaylists.clear()
             showPlaylistSelectionScreen()
@@ -938,7 +946,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         }
     }
 
-    /** Fetch pending song requests and add them to request queue */
+    /** Fetch pending song requests and add them to request queue, then insert into songs list immediately */
     private fun fetchPendingRequests() {
         if (tenantSlug.isBlank()) return
         backgroundExecutor.submit {
@@ -947,6 +955,7 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                 val json = getJson("$baseUrl/api/requests?tenant=$tenantParam")
                 val array = JSONArray(json)
                 if (array.length() == 0) return@submit
+                val newSongs = mutableListOf<NativeSong>()
                 for (i in 0 until array.length()) {
                     val item = array.getJSONObject(i)
                     val reqId = item.getInt("id")
@@ -966,11 +975,24 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
                     )
                     requestQueue.add(song)
                     requestIdMap[stableKey] = reqId
+                    newSongs.add(song)
+                }
+                // Insert new request songs into songs list at currentIndex + 1
+                if (newSongs.isNotEmpty() && songs.isNotEmpty()) {
+                    val mutableSongs = songs.toMutableList()
+                    var insertAt = (currentIndex + 1).coerceIn(0, mutableSongs.size)
+                    for (newSong in newSongs) {
+                        mutableSongs.add(insertAt, newSong)
+                        insertAt++  // after insertion, next request goes after this one
+                    }
+                    songs = mutableSongs
                 }
                 // Update queue UI if visible
                 runOnUiThread {
                     if (!isDestroyed && songs.isNotEmpty()) {
-                        statusLabel.text = "มีคำขอเพลงใหม่ ${requestQueue.size} เพลง"
+                        val count = requestQueue.size
+                        statusLabel.text = "มีคำขอเพลงใหม่ $count เพลง"
+                        renderQueue()
                     }
                 }
             } catch (_: Exception) {}
@@ -1040,8 +1062,8 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
         if (songs.isEmpty()) return
 
         val isTablet = resources.configuration.smallestScreenWidthDp >= 600
-        if (isTablet) {
-            val colCount = 4
+        if (isTablet || isQueueGalleryMode) {
+            val colCount = if (isTablet) 4 else 2
             var currentRow: LinearLayout? = null
             for (idx in songs.indices) {
                 val song = songs[idx]
@@ -2264,6 +2286,14 @@ class MainActivity : AppCompatActivity(), BackgroundAudioService.NativeActionHan
             if (crossfadeEnabled) ContextCompat.getColor(this, R.color.progress_fill)
             else android.graphics.Color.WHITE
         )
+    }
+
+    private fun updateViewToggleIcon() {
+        viewToggleButton.setImageResource(
+            if (isQueueGalleryMode) R.drawable.ic_view_list
+            else R.drawable.ic_view_grid
+        )
+        viewToggleButton.contentDescription = if (isQueueGalleryMode) "List view" else "Gallery view"
     }
 
     private fun updateProgressFromPlayer() {
