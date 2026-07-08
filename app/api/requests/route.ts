@@ -16,42 +16,18 @@ export async function GET(request: Request) {
 
     const { origin } = new URL(request.url)
 
-    if (deviceId) {
-      const result = await cachedJson(cacheKey('requests', ctx.tenant.id, 'device', deviceId), 5, () => sql`
-        SELECT
-          sr.id, sr.song_id, sr.requested_by,
-          sr.status, sr.played_at, sr.created_at,
-          ROW_NUMBER() OVER (ORDER BY sr.created_at ASC) as queue_position,
-          s.youtube_id, s.title, s.thumbnail, s.duration
-        FROM song_requests sr
-        JOIN songs s ON sr.song_id = s.id
-        WHERE sr.tenant_id = ${ctx.tenant.id}
-          AND sr.status = 'pending'
-          AND sr.device_id = ${deviceId}
-          AND s.is_available = true
-        ORDER BY sr.created_at ASC
-      `)
-      const formatted = (result.data as any[]).map(req => ({
-        ...req,
-        thumbnail: req.thumbnail ? getProxiedUrl(req.thumbnail, origin) : req.thumbnail,
-      }))
-      return NextResponse.json(formatted, { headers: cacheHeaders(result.cache, startedAt) })
-    }
-
-    // Full list requires staff/admin authentication
-    const adminCtx = await requireTenantContext(request, { roles: ['owner', 'admin', 'staff'] })
-    if (isTenantError(adminCtx)) return adminCtx
-
-    const result = await cachedJson(cacheKey('requests', adminCtx.tenant.id, 'pending'), 5, () => sql`
+    // All pending requests (public) — used by mobile app to poll for new song requests
+    const result = await cachedJson(cacheKey('requests', ctx.tenant.id, 'pending'), 5, () => sql`
       SELECT
-        sr.id, sr.tenant_id, sr.song_id, sr.requested_by, sr.device_id,
+        sr.id, sr.song_id, sr.requested_by,
         sr.status, sr.played_at, sr.created_at,
         s.youtube_id, s.title, s.thumbnail, s.duration, s.audio_url
       FROM song_requests sr
       JOIN songs s ON sr.song_id = s.id
-      WHERE sr.tenant_id = ${adminCtx.tenant.id}
+      WHERE sr.tenant_id = ${ctx.tenant.id}
         AND sr.status = 'pending'
         AND s.is_available = true
+        ${deviceId ? sql`AND sr.device_id = ${deviceId}` : sql``}
       ORDER BY sr.created_at ASC
     `)
     const formatted = (result.data as any[]).map(req => ({

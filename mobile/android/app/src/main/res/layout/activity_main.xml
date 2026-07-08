@@ -92,19 +92,6 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Toggle between list/gallery view -->
-                <ImageButton
-                    android:id="@+id/viewToggleButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Gallery view"
-                    android:padding="6dp"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_view_grid"
-                    android:tint="@color/white" />
-
                 <!-- Refresh button to reload songs data -->
                 <ImageButton
                     android:id="@+id/refreshButton"
@@ -175,6 +162,35 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />
+
+                <!-- View toggle row: switch between list and gallery mode -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="คิวเพลง"
+                        android:textColor="#8E96BD"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.08" />
+
+                    <ImageButton
+                        android:id="@+id/viewToggleButton"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_control_secondary"
+                        android:contentDescription="Gallery view"
+                        android:padding="6dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/ic_view_grid" />
+                </LinearLayout>
 
                 <!-- Full-screen playlist items list -->
                 <LinearLayout
