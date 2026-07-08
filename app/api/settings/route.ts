@@ -49,10 +49,11 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin'] })
+    const { key, value } = await request.json()
+    const apiScopes = key === 'active_playlist_ids' ? ['playlist:switch'] : ['settings:write']
+    const ctx = await requireTenantContext(request, { roles: ['owner', 'admin'], apiScopes })
     if (isTenantError(ctx)) return ctx
 
-    const { key, value } = await request.json()
     await sql`
       INSERT INTO app_settings (tenant_id, key, value, updated_at)
       VALUES (${ctx.tenant.id}, ${key}, ${JSON.stringify(value)}, NOW())
@@ -62,6 +63,7 @@ export async function PATCH(request: Request) {
     await invalidateCache([
       cacheKey('settings', ctx.tenant.id),
       cacheKey('settings', 'public', ctx.tenant.id),
+      cacheKey('mobile:settings', ctx.tenant.id),
       cacheKey('playlists', ctx.tenant.id),
     ])
     return NextResponse.json({ success: true })

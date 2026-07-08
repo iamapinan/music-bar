@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { sql } from '@/lib/db'
 import { cachedJson, cacheKey, getCachedJson, setCachedJson, invalidateCache } from '@/lib/cache'
 import { ACTIVE_TENANT_COOKIE_NAME, getSessionUser, setActiveTenantCookie, type SessionUser } from '@/lib/auth/session'
+import { authenticateApiKey } from '@/lib/auth/api-key'
 
 export type TenantRole = 'owner' | 'admin' | 'staff'
 
@@ -38,6 +39,7 @@ export type TenantContext = {
   role: TenantRole | null
   sessionUser: SessionUser | null
   isSuperAdmin: boolean
+  authType?: 'session' | 'api-key' | 'public'
 }
 
 const allowedSlug = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/
@@ -252,7 +254,7 @@ function getTenantSlugFromRequest(request: Request) {
 
 export async function requireTenantContext(
   request: Request,
-  options: { public?: boolean; roles?: TenantRole[] } = {},
+  options: { public?: boolean; roles?: TenantRole[]; apiScopes?: string[] } = {},
 ): Promise<TenantContext | NextResponse> {
   const tenantSlug = getTenantSlugFromRequest(request)
   const sessionUser = await getSessionUser()
@@ -281,12 +283,30 @@ export async function requireTenantContext(
     return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
   }
 
+  if (options.apiScopes) {
+    const apiPrincipal = authenticateApiKey(request, tenant.slug, options.apiScopes)
+    if (apiPrincipal) {
+      if (options.roles && !options.roles.includes(apiPrincipal.role)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      return {
+        tenant,
+        user: null,
+        role: apiPrincipal.role,
+        sessionUser: null,
+        isSuperAdmin: false,
+        authType: 'api-key',
+      }
+    }
+  }
+
   if (options.public) {
     if (!tenant.is_active) {
       return NextResponse.json({ error: 'This store is temporarily closed', is_closed: true }, { status: 403 })
     }
     const role = dbUser ? await getUserTenantRole(dbUser.id, tenant.id) : null
-    return { tenant, user: dbUser, role: isSuperAdmin ? 'owner' : role, sessionUser, isSuperAdmin }
+    return { tenant, user: dbUser, role: isSuperAdmin ? 'owner' : role, sessionUser, isSuperAdmin, authType: dbUser ? 'session' : 'public' }
   }
 
   if (!dbUser) {
@@ -302,7 +322,7 @@ export async function requireTenantContext(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  return { tenant, user: dbUser, role, sessionUser, isSuperAdmin }
+  return { tenant, user: dbUser, role, sessionUser, isSuperAdmin, authType: 'session' }
 }
 
 export function isTenantError(value: TenantContext | NextResponse): value is NextResponse {

@@ -63,7 +63,7 @@ export async function GET(request: Request) {
       `,
     )
 
-    const settings = (settingsResult.data as { key: string; value: string }[]).reduce(
+    const settings = (settingsResult.data as unknown as { key: string; value: string }[]).reduce(
       (acc: Record<string, unknown>, row) => {
         try { acc[row.key] = JSON.parse(row.value) } catch { acc[row.key] = row.value }
         return acc
